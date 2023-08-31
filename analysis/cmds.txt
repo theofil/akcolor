@@ -1,0 +1,9 @@
+python -i ~/qplot/qplot.py andreas/LHC-Matchbox-VBFH.friend.root kostas/VBFHToInv.root --var "c21" --sel "nJets>=2" --norm --bins "6,0,180" --leg "VBF \xspace H\to inv \xspace Py8, VBF \xspace H\to inv \xspace H7" --yrange "0,0.2" --xtitle "\theta_{21}"  --drawopt "hist, e1" --legpos "0.35, 0.15, 0.6, 0.35"
+
+
+# old stuff
+python -i ~/qplot/qplot.py VBFHToInv.root qcd.root --var "c21" --sel "nJets>=2" --norm --bins "6,0,180" --leg "VBF H\to inv, QCD" --yrange "0,0.2" --xtitle "\theta_{21}"
+python -i ~/qplot/qplot.py VBFHToInv.root qcd.root --var "c12" --sel "nJets>=2" --norm --bins "10,0,180" --leg "VBF H, QCD"  --xtitle "\theta_{12}" --drawopt "e1" --save "c12_VBFH_QCD" --yrange "0.06,0.14"
+python -i ~/qplot/qplot.py VBFHToInv.root qcd.root --var "c21" --sel "nJets>=2" --norm --bins "10,0,180" --leg "VBF H, QCD"  --xtitle "\theta_{21}" --drawopt "e1" --save "c21_VBFH_QCD" --yrange "0.06,0.14"
+
+
