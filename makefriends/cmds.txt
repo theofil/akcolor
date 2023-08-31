@@ -1,0 +1,8 @@
+cd ~/work/h7/matchbox/CMSSW_10_6_30/src/ && cmsenv
+cd /afs/cern.ch/user/t/theofil/myeos/work/akcolor/friends
+python -i makefriends.py ~/files/akcolor/v1/LHC-Matchbox-VBFH.root --genWeight evweight
+python -i makefriends.py ~/files/akcolor/v1/LHC-Matchbox-VBFH.root --genWeight evweight --goFast 0.001
+
+python -i makefriends.py ~/files/akcolor/v1/LHC-Matchbox-dijets-mjj400.root --genWeight evweight --goFast 1
+python -i makefriends.py ~/files/akcolor/v1/LHC-Matchbox-VBFH.root --genWeight evweight --goFast 1
+
