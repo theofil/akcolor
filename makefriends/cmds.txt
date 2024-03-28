@@ -7,3 +7,4 @@ python -i makefriends.py ~/files/akcolor/v1/LHC-Matchbox-dijets-mjj400.root --ge
 python -i makefriends.py ~/files/akcolor/v1/LHC-Matchbox-VBFH.root --genWeight evweight --goFast 1
 
 python -i makefriends.py ~/files/akcolor/Spring2024/LHC-Matchbox-VBFH-2.root --genWeight evweight --xs 3.601 --goFast 0.001
+python -i makefriends.py ~/files/akcolor/Spring2024/LHC-Matchbox-dijets-mjj400_2.root --genWeight evweight --xs 14670000.0
