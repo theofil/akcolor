@@ -72,14 +72,15 @@ def get_momenta(obj, numprtcl):
     return np.array(mom, dtype=[('E', 'f8'), ('px', 'f8'), ('py', 'f8'), ('pz', 'f8'), ('id', 'int')])
 
 # convert to fastjet, but only if the pt is > minptc
-def convert_tofj(momin, minptc, maxrapc):
+def convert_tofj(momin, minptc, maxrapc, excludeNeutrinos = True):
     arrayout = []
     for mm in range(len(momin)):
         #print(momin[mm][1], momin[mm][2], momin[mm][3], momin[mm][0])
         fj = fastjet.PseudoJet(momin[mm][1], momin[mm][2], momin[mm][3], momin[mm][0])
-        if fj.perp() > minptc and abs(fj.eta()) < maxrapc:
-            arrayout.append(fj)
-        fj.set_user_index(int(momin[mm][4]))
+        if excludeNeutrinos:
+            if fj.perp() > minptc and abs(fj.eta()) < maxrapc:
+                arrayout.append(fj)
+            fj.set_user_index(int(momin[mm][4]))
     return arrayout
 
 def get_clusters(events, filename, jetalgo, jetR, maxevents=100000):
@@ -130,6 +131,8 @@ def deltaPhi( p1, p2):
 
 # equipe with the pull vector the selected pseudojets
 def fillPV(j, jetconst):
+    theta = -99
+    r = -99
     pullV = np.array([0., 0.])
     for jc in jetconst:
         if jc.pt() < 1.e-3: continue
@@ -140,20 +143,24 @@ def fillPV(j, jetconst):
     j.pv1 = pullV[0]
     j.pv2 = pullV[1]
     r = (j.pv1**2 + j.pv2**2)**0.5
-    theta  = np.arctan2(j.pv2/r, j.pv1/r)
+    if r>0:
+        theta  = np.arctan2(j.pv2/r, j.pv1/r)
     j.pvm = r
     j.pva = theta
 
 def RPA(j1, j2):
     '''cos21 needs j1 and j2 in that order, do not invert'''
+    theta21 = -99
+    cos21 = -99
     p  = np.array([[j1.pv1], [j1.pv2]])
     v2 = np.array([[j2.rapidity()] , [j2.phi()] ])
     v1 = np.array([[j1.rapidity()] , [j1.phi()] ])
     r = v2 - v1
     mag_p = (p.T).dot(p)[0][0]**0.5
     mag_r = (r.T).dot(r)[0][0]**0.5
-    cos21 = (r.T).dot(p)[0][0]/(mag_p*mag_r)
-    theta21 = np.arccos(cos21)*(180/np.pi)
+    if mag_p*mag_r>0:
+        cos21 = (r.T).dot(p)[0][0]/(mag_p*mag_r)
+        theta21 = np.arccos(cos21)*(180/np.pi)
     if args.debug == 3:
         print('p = ', p)
         print('v2 = ', v2)
@@ -451,13 +458,27 @@ if __name__ == "__main__":
                     higgs.append(momenta[mm])
                     if args.debug == 3:print('Higgs boson found', higgs)
 
-                if momenta[mm][4] != 25 and abs(momenta[mm][4]) != 12 and abs(momenta[mm][4]) != 14 and abs(momenta[mm][4]) != 16 and abs(momenta[mm][4]) != 11 and abs(momenta[mm][4]) != 13:
+                #if momenta[mm][4] != 25 and abs(momenta[mm][4]) != 12 and abs(momenta[mm][4]) != 14 and abs(momenta[mm][4]) != 16 and abs(momenta[mm][4]) != 11 and abs(momenta[mm][4]) != 13:
+                if momenta[mm][4] != 25 and abs(momenta[mm][4]) != 12 and abs(momenta[mm][4]) != 14 and abs(momenta[mm][4]) != 16: # includes electrons and muons inside the jets
                     momtocluster.append(momenta[mm])
                 else:
                     momNOcluster.append(momenta[mm])
 
-            jcPtMin, jcEtaMax      = 2.0, 4.0
+            # Phase-II offline cuts
+            # jcPtMin, jcEtaMax      = 2.0, 4.0
+            # jetPtMin, jetEtaMax    = 30.0, 3.0
+
+            # Run2/3 offline cuts
+            # jcPtMin, jcEtaMax      = 0.5, 2.4 
+            # jetPtMin, jetEtaMax    = 30.0, 2.0   
+
+            # Phase-II no cuts
+            jcPtMin, jcEtaMax      = 0.0, 10.0
             jetPtMin, jetEtaMax    = 30.0, 3.0
+
+            # Phase-II L1 cuts
+            # jcPtMin, jcEtaMax      = 2.0, 2.4
+            # jetPtMin, jetEtaMax    = 30.0, 2.0
 
             momfj = convert_tofj(momtocluster, jcPtMin,jcEtaMax)
             momfj_unclustered = convert_tofj(momNOcluster, jcPtMin,jcEtaMax)
