@@ -538,8 +538,8 @@ if __name__ == "__main__":
     print('hSumW.Integral() %2.1f'%hSumW.Integral())
     print('number of events processed %d'%count.alleve)
     print('number of entries in the TTree %d'%ttree.GetEntries())
-    print('number of sumW %3.1f'%count.sumW)
-    print('number of sumW2 %3.1f'%count.sumW2)
+    print('number of sumW %3.10f'%count.sumW)
+    print('number of sumW2 %3.10f'%count.sumW2)
 
     # creating output
     ofile.cd()
