@@ -32,6 +32,8 @@ parser.add_argument('--xs', default = 1.0, help = 'user provided cross section f
 parser.add_argument('--genWeight', default = "genWeight", help = 'MC weight from event generator', type=str)
 parser.add_argument('--goFast', default = 1.0, help = 'if set, will only process fraction of the entries', type=float)
 parser.add_argument('--debug', default = 0, help = 'user provided cross section for normalization', type=int)
+parser.add_argument('--skip', default = 0, help = 'skip first events', type=float)
+parser.add_argument('--totEve', default = -1, help = 'totEve to process', type=float)
 args = parser.parse_args()
 
 # https://root.cern.ch/root/html534/guides/users-guide/InputOutput.html#the-logical-root-file-tfile-and-tkey
@@ -83,41 +85,42 @@ def convert_tofj(momin, minptc, maxrapc, excludeNeutrinos = True):
             fj.set_user_index(int(momin[mm][4]))
     return arrayout
 
-def get_clusters(events, filename, jetalgo, jetR, maxevents=100000):
-    if maxevents > len(events):
-        maxevents = len(events)
-    print('Analyzing', maxevents, 'events from', filename)
-    # put the Higgs momenta into an array:
-    higgs = []
-    # return the cluster:
-    clusters_jets = []
-    # return the unclustered objects:
-    unclustered = []
-    # jet algorithm
-    jetdef = fastjet.JetDefinition(jetalgo, jetR)
-    # loop over events and analyze:
-    for yy in tqdm(range(0,maxevents)):
-        # put the momenta for clustering into array:
-        momtocluster = []
-        # and the rest into another array;
-        momNOcluster = []
-        # all the momenta from this event
-        momenta = events[yy]
-        #print(momenta)
-        for mm in range(0,len(momenta)):
-            if momenta[mm][4] == 25: # find a Higgs boson
-             higgs.append(momenta[mm])
-            if momenta[mm][4] != 25 and abs(momenta[mm][4]) != 12 and abs(momenta[mm][4]) != 14 and abs(momenta[mm][4]) != 16 and abs(momenta[mm][4]) != 11 and abs(momenta[mm][4]) != 13:
-                momtocluster.append(momenta[mm])
-            else:
-                momNOcluster.append(momenta[mm])
-        momfj = convert_tofj(momtocluster, jcPtMin,jcEtaMax)
-        momfj_unclustered = convert_tofj(momNOcluster, jcPtMin,jcEtaMax)
-
-        cluster = fastjet.ClusterSequence(momfj, jetdef)
-        clusters_jets.append(cluster)
-        unclustered.append(momfj_unclustered)
-    return clusters_jets, unclustered
+######## This is not used anywhere but is left for documentation
+###def get_clusters(events, filename, jetalgo, jetR, maxevents=100000):
+###    if maxevents > len(events):
+###        maxevents = len(events)
+###    print('Analyzing', maxevents, 'events from', filename)
+###    # put the Higgs momenta into an array:
+###    higgs = []
+###    # return the cluster:
+###    clusters_jets = []
+###    # return the unclustered objects:
+###    unclustered = []
+###    # jet algorithm
+###    jetdef = fastjet.JetDefinition(jetalgo, jetR)
+###    # loop over events and analyze:
+###    for yy in tqdm(range(0,maxevents)):
+###        # put the momenta for clustering into array:
+###        momtocluster = []
+###        # and the rest into another array;
+###        momNOcluster = []
+###        # all the momenta from this event
+###        momenta = events[yy]
+###        #print(momenta)
+###        for mm in range(0,len(momenta)):
+###            if momenta[mm][4] == 25: # find a Higgs boson
+###             higgs.append(momenta[mm])
+###            if momenta[mm][4] != 25 and abs(momenta[mm][4]) != 12 and abs(momenta[mm][4]) != 14 and abs(momenta[mm][4]) != 16 and abs(momenta[mm][4]) != 11 and abs(momenta[mm][4]) != 13:
+###                momtocluster.append(momenta[mm])
+###            else:
+###                momNOcluster.append(momenta[mm])
+###        momfj = convert_tofj(momtocluster, jcPtMin,jcEtaMax)
+###        momfj_unclustered = convert_tofj(momNOcluster, jcPtMin,jcEtaMax)
+###
+###        cluster = fastjet.ClusterSequence(momfj, jetdef)
+###        clusters_jets.append(cluster)
+###        unclustered.append(momfj_unclustered)
+###    return clusters_jets, unclustered
 
 # from https://gitlab.cern.ch/cms-sw/cmssw/blob/e303d9f2c3d4f25397db5feb7ad59d2f20c842f2/PhysicsTools/HeppyCore/python/utils/deltar.py
 def deltaPhi( p1, p2):
@@ -296,6 +299,11 @@ if __name__ == "__main__":
     t_b12         = array('f', [-3.]); tvars += [t_b12]      
     t_met         = array('f', [0.]) ; tvars += [t_met]      
     t_metphi      = array('f', [0.]) ; tvars += [t_metphi]   
+    t_higgsPt     = array('f', [0.]) ; tvars += [t_higgsPt]      
+    t_higgsM      = array('f', [0.]) ; tvars += [t_higgsM]      
+    t_higgsY      = array('f', [0.]) ; tvars += [t_higgsY]      
+    t_higgsPhi    = array('f', [0.]) ; tvars += [t_higgsPhi]      
+    t_higgsEta    = array('f', [0.]) ; tvars += [t_higgsEta]      
     t_weight      = array('f', [1.]) ; tvars += [t_weight]   
     t_kWeight     = array('f', [1.]) ; tvars += [t_kWeight]
     t_kFile       = array('i', [0]); tvars += [t_kFile]
@@ -338,6 +346,11 @@ if __name__ == "__main__":
     otree.Branch("dPhibb",     t_dPhibb,     "dPhibb/F")
     otree.Branch("met",        t_met,        "met/F")
     otree.Branch("metphi",     t_metphi,     "metphi/F")
+    otree.Branch("higgsPt",    t_higgsPt,    "higgsPt/F")
+    otree.Branch("higgsM",     t_higgsM,     "higgsM/F")
+    otree.Branch("higgsY",     t_higgsY,     "higgsY/F")
+    otree.Branch("higgsPhi",   t_higgsPhi,   "higgsPhi/F")
+    otree.Branch("higgsEta",   t_higgsEta,   "higgsEta/F")
     otree.Branch("weight",     t_weight,     "weight/F")
     otree.Branch("kWeight",    t_kWeight,    "kWeight/F")
     otree.Branch("kFile",      t_kFile,      "kFile/I")
@@ -418,6 +431,10 @@ if __name__ == "__main__":
 
         # start the bloody event loop for each tree
         for iev, event in enumerate(ttree):
+            # skip events
+            if iev < args.skip: continue
+            if args.totEve != -1 and (iev > args.skip + args.totEve): break
+
             if args.goFast and iev >=  args.goFast*ttree.GetEntries()  : break
             if minimalPrint and iev%10000 == 0: print('event %d of %s'%(iev, tfiles[ii].GetName()))
 
@@ -450,17 +467,29 @@ if __name__ == "__main__":
             objects = getattr(event,"objects")
             momenta = get_momenta(objects, numparticles)
 
-            if args.debug == 3: print('numparticles %d'%numparticles)
-            if args.debug == 3:print(momenta.size)
+            if args.debug >= 3: print('numparticles %d'%numparticles)
+            if args.debug >= 3: print(momenta.size)
 
+            METpx = 0
+            METpy = 0
+            invisible = [1000022, 1000012, 1000014, 1000016, 2000012, 2000014, 2000016, 1000039, 5100039, 4000012, 4000014, 4000016, 9900012, 9900014, 9900016, 39, 12, 14, 16, 25]
+            ### particle loop: mm is counting the particles of each event
             for mm in range(0,len(momenta)):
-                if momenta[mm][4] == 25: # find a Higgs boson
-                    higgs.append(momenta[mm])
-                    if args.debug == 3:print('Higgs boson found', higgs)
 
-                #if momenta[mm][4] != 25 and abs(momenta[mm][4]) != 12 and abs(momenta[mm][4]) != 14 and abs(momenta[mm][4]) != 16 and abs(momenta[mm][4]) != 11 and abs(momenta[mm][4]) != 13:
-                if momenta[mm][4] != 25 and abs(momenta[mm][4]) != 12 and abs(momenta[mm][4]) != 14 and abs(momenta[mm][4]) != 16: # includes electrons and muons inside the jets
+                (E, px, py, pz, pid)  = momenta[mm]
+                if args.debug == 4:
+                    if mm == 0: print('########## event %d ###########'%iev)
+                    print('(E %2.3f, px %2.3f, py %2.3f, pz %2.3f, pid %d)'%(E, px, py, pz, pid))
+
+                if pid == 25: # find a Higgs boson
+                    HiggsP4 = ROOT.TLorentzVector(px, py, pz, E)
+                    higgs.append(HiggsP4)
+                    if args.debug == 4:print('Higgs boson found (E %2.3f, px %2.3f, py %2.3f, pz %2.3f, pid %d)'%(E, px, py, pz, pid) , higgs)
+
+                if pid != 25 and abs(pid) != 12 and abs(pid) != 14 and abs(pid) != 16: 
                     momtocluster.append(momenta[mm])
+                    METpx -= px
+                    METpy -= py
                 else:
                     momNOcluster.append(momenta[mm])
 
@@ -514,6 +543,18 @@ if __name__ == "__main__":
                 if args.debug == 2: print('dijet found, calculating the pull vector for the first 2 leading jets (magnitute, angle) [%2.4f, %2.2f], [%2.4f, %2.2f] :'%(j1.pvm, j1.pva, j2.pvm, j2.pva))
 
 
+            # compute gen met
+            t_met[0] = np.sqrt(METpx*METpx + METpy*METpy)
+            t_metphi[0] = np.arctan2(METpy, METpx)
+
+            # store Higgs if it's there
+            if (len(higgs)>0): 
+                t_higgsPt[0] = higgs[0].Pt()
+                t_higgsM[0] = higgs[0].M()
+                t_higgsY[0] = higgs[0].Rapidity()
+                t_higgsPhi[0] = higgs[0].Phi()
+                t_higgsEta[0] = higgs[0].Eta()
+                print (t_higgsM[0], pid)
 
             #clusters_jets.append(cluster)
             #unclustered.append(momfj_unclustered)
