@@ -564,7 +564,6 @@ if __name__ == "__main__":
                 t_higgsY[0] = higgs[0].Rapidity()
                 t_higgsPhi[0] = higgs[0].Phi()
                 t_higgsEta[0] = higgs[0].Eta()
-                print (t_higgsM[0], pid)
 
             #clusters_jets.append(cluster)
             #unclustered.append(momfj_unclustered)

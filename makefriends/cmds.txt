@@ -8,6 +8,9 @@ cd /afs/cern.ch/user/t/theofil/myeos/work/akcolor/makefriends
 python3 ~/qplot/lazyskim.py ~/files/akcolor/Spring2024/LHC-Matchbox-VBFH-2.root --var "numparticles,objects,evweight" --sel "numparticles<1000" &
 python3 ~/qplot/lazyskim.py ~/files/akcolor/Spring2024/LHC-Matchbox-dijets-mjj400_2.root --var "numparticles,objects,evweight" --sel "numparticles<1000" &
 
+python makefriends.py ~/files/akcolor/Spring2024/skims/LHC-Matchbox-VBFH-2.lazyskim.root --genWeight evweight --xs 3.601 --goFast 0.01
+python makefriends.py ~/files/akcolor/Spring2024/skims/LHC-Matchbox-dijets-mjj400_2.lazyskim.root --genWeight evweight --xs 14670000.0 --goFast 0.01
+
 # python makefriends.py ~/files/akcolor/Spring2024/LHC-Matchbox-VBFH-2.root --genWeight evweight --xs 3.601 --goFast 0.01
 # python makefriends.py ~/files/akcolor/Spring2024/LHC-Matchbox-dijets-mjj400_2.root --genWeight evweight --xs 14670000.0 --goFast 0.01
 
