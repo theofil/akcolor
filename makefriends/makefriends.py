@@ -63,7 +63,11 @@ listOfknownTrees = ['Events','events', 'ntuple/tree', 'tree', 'Data']
 
 # get momentum of ith particle in format  E, px, py, pz, id
 def ith_momentum(obj, ith):
-        return (obj[0*1000+ith],obj[1*1000+ith],obj[2*1000+ith],obj[3*1000+ith],int(obj[4*1000+ith]))
+    #return (obj[0*10000+ith],obj[1*10000+ith],obj[2*10000+ith],obj[3*10000+ith],int(obj[4*10000+ith]))
+    return (obj[0*1000+ith],obj[1*1000+ith],obj[2*1000+ith],obj[3*1000+ith],int(obj[4*1000+ith]))
+
+
+
 
 # get momenta
 def get_momenta(obj, numprtcl):
@@ -307,6 +311,7 @@ if __name__ == "__main__":
     t_weight      = array('f', [1.]) ; tvars += [t_weight]   
     t_kWeight     = array('f', [1.]) ; tvars += [t_kWeight]
     t_kFile       = array('i', [0]); tvars += [t_kFile]
+    t_kBadFlag    = array('i', [0]); tvars += [t_kBadFlag]
     
    #kWeight
  
@@ -354,6 +359,7 @@ if __name__ == "__main__":
     otree.Branch("weight",     t_weight,     "weight/F")
     otree.Branch("kWeight",    t_kWeight,    "kWeight/F")
     otree.Branch("kFile",      t_kFile,      "kFile/I")
+    otree.Branch("kBadFlag",   t_kBadFlag,   "kBadFlag/I")
     
     def fillJets(collection):
         nmax = min(len(collection), nJetsMax)
@@ -466,6 +472,10 @@ if __name__ == "__main__":
             numparticles  = getattr(event, "numparticles")
             objects = getattr(event,"objects")
             momenta = get_momenta(objects, numparticles)
+
+            # by default all events are good, i.e., have kBadFlag = 0
+            t_kBadFlag[0] = 0
+            if numparticles >= 1000: t_kBadFlag[0] = 1 
 
             if args.debug >= 3: print('numparticles %d'%numparticles)
             if args.debug >= 3: print(momenta.size)
