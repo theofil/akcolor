@@ -61,10 +61,13 @@ class counter:
 # list of known TTrees
 listOfknownTrees = ['Events','events', 'ntuple/tree', 'tree', 'Data']
 
+# define maximum numparticles, as a trivial funciton
+maxNpartcl = lambda : 10000
+
 # get momentum of ith particle in format  E, px, py, pz, id
 def ith_momentum(obj, ith):
-    #return (obj[0*10000+ith],obj[1*10000+ith],obj[2*10000+ith],obj[3*10000+ith],int(obj[4*10000+ith]))
-    return (obj[0*1000+ith],obj[1*1000+ith],obj[2*1000+ith],obj[3*1000+ith],int(obj[4*1000+ith]))
+    arraySize = int(maxNpartcl())
+    return (obj[0*arraySize+ith],obj[1*arraySize+ith],obj[2*arraySize+ith],obj[3*arraySize+ith],int(obj[4*arraySize+ith]))
 
 
 
@@ -475,7 +478,7 @@ if __name__ == "__main__":
 
             # by default all events are good, i.e., have kBadFlag = 0
             t_kBadFlag[0] = 0
-            if numparticles >= 1000: t_kBadFlag[0] = 1 
+            if numparticles >= maxNpartcl(): t_kBadFlag[0] = 1 
 
             if args.debug >= 3: print('numparticles %d'%numparticles)
             if args.debug >= 3: print(momenta.size)
