@@ -45,6 +45,7 @@ fi
 for (( JOB=0; JOB<nJOBS; JOB++ )); do
     SKIP=$((JOB * TOT))
     python makefriends.py "$FILE" --genWeight evweight --xs $XS --skip $SKIP --totEve $TOT --jobId $JOB &
+    disown %1
 done
 
 

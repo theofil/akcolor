@@ -19,4 +19,5 @@ python makefriends.py ~/files/akcolor/Spring2024/LHC-Matchbox-dijets-mjj400_5.ro
 
 ### 
 
-./jobs.sh -f ~/files/akcolor/Spring2024/LHC-Matchbox-VBFH-3.root -n 3 -t 2 -x 3.601
+./jobs.sh -f ~/files/akcolor/Spring2024/LHC-Matchbox-VBFH-3.root -n 10 -t 100000 -x 3.601
+./jobs.sh -f ~/files/akcolor/Spring2024/LHC-Matchbox-dijets-mjj400_5.root -n 10 -t 100000 -x 14670000.0
