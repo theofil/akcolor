@@ -34,6 +34,7 @@ parser.add_argument('--goFast', default = 1.0, help = 'if set, will only process
 parser.add_argument('--debug', default = 0, help = 'user provided cross section for normalization', type=int)
 parser.add_argument('--skip', default = 0, help = 'skip first events', type=float)
 parser.add_argument('--totEve', default = -1, help = 'totEve to process', type=float)
+parser.add_argument('--jobId', default = -1, help = 'jobId to append in the output', type=float)
 args = parser.parse_args()
 
 # https://root.cern.ch/root/html534/guides/users-guide/InputOutput.html#the-logical-root-file-tfile-and-tkey
@@ -265,7 +266,9 @@ if __name__ == "__main__":
     print("sumWtot %d   Ntot %d"%(sumWtot, Ntot))
 
     # one output tree for all inputs, using the name of the first by default
-    outname = tfiles[0].GetName()[0:-4].split('/')[-1]+'friend'+'.root'
+    outname = tfiles[0].GetName()[0:-4].split('/')[-1]+'friend'
+    if args.jobId!=-1: outname += '_'+str(int(args.jobId))
+    outname += '.root'
 
     # change the outname on user's request
     if args.output != '': outname = args.output
@@ -432,16 +435,32 @@ if __name__ == "__main__":
     jetalgo = fastjet.antikt_algorithm
     jetdef  = fastjet.JetDefinition(jetalgo, jetR)
 
-
-
     # loop over the trees
-    for ii,ttree in enumerate(ttrees):
-        print("opening %s"%tfiles[ii].GetName())
+    for ii, ttree in enumerate(ttrees):
+        print("opening %s" % tfiles[ii].GetName())
 
-        # start the bloody event loop for each tree
-        for iev, event in enumerate(ttree):
-            # skip events
-            if iev < args.skip: continue
+        # Get the total number of entries in the tree
+        nentries = ttree.GetEntries()
+
+        # Set the starting point for the event loop based on args.skip
+        start_entry = int(args.skip)
+        if start_entry >= nentries:
+            print("Skipping entire tree %s, as skip value is too large." % tfiles[ii].GetName())
+            continue
+
+        # Event loop starting directly from 'start_entry'
+        for iev in range(start_entry, nentries):
+            # Retrieve the specific entry
+            ttree.GetEntry(iev)
+            event = ttree  
+#    # loop over the trees
+#    for ii,ttree in enumerate(ttrees):
+#        print("opening %s"%tfiles[ii].GetName())
+#
+#        # start the bloody event loop for each tree
+#        for iev, event in enumerate(ttree):
+#            # skip events
+#            if iev < args.skip: continue
             if args.totEve != -1 and (iev >= args.skip + args.totEve): break
 
             if args.goFast and iev >=  args.goFast*ttree.GetEntries()  : break
