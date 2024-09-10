@@ -453,14 +453,6 @@ if __name__ == "__main__":
             # Retrieve the specific entry
             ttree.GetEntry(iev)
             event = ttree  
-#    # loop over the trees
-#    for ii,ttree in enumerate(ttrees):
-#        print("opening %s"%tfiles[ii].GetName())
-#
-#        # start the bloody event loop for each tree
-#        for iev, event in enumerate(ttree):
-#            # skip events
-#            if iev < args.skip: continue
             if args.totEve != -1 and (iev >= args.skip + args.totEve): break
 
             if args.goFast and iev >=  args.goFast*ttree.GetEntries()  : break
@@ -526,16 +518,16 @@ if __name__ == "__main__":
                     momNOcluster.append(momenta[mm])
 
             # Phase-II offline cuts
-            jcPtMin, jcEtaMax      = 2.0, 4.0
-            jetPtMin, jetEtaMax    = 30.0, 3.0
+            # jcPtMin, jcEtaMax      = 2.0, 4.0
+            # jetPtMin, jetEtaMax    = 30.0, 3.0
 
             # Run2/3 offline cuts
             # jcPtMin, jcEtaMax      = 0.5, 2.4 
             # jetPtMin, jetEtaMax    = 30.0, 2.0   
 
             # Phase-II no cuts
-            # jcPtMin, jcEtaMax      = 0.0, 10.0
-            # jetPtMin, jetEtaMax    = 30.0, 3.0
+            jcPtMin, jcEtaMax      = 0.0, 10.0
+            jetPtMin, jetEtaMax    = 30.0, 3.0
 
             # Phase-II L1 cuts
             # jcPtMin, jcEtaMax      = 2.0, 2.4
