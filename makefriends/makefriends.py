@@ -182,6 +182,15 @@ def RPA(j1, j2):
         print('(r.T).dot(p)[0][0] = ', (r.T).dot(p)[0][0])
     return theta21
 
+# equipe with the pull vector the selected pseudojets
+def fillPV3(j, jetconst):
+    pullV3 = 0
+    for jc in jetconst:
+        if jc.pt() < 1.e-3: continue
+        dY    = jc.rapidity() - j.rapidity()
+        pullV3 +=  (jc.pt()/j.pt())*dY
+    j.pv3 = pullV3
+
 
 # translate a LorentzVector to TLorentzVector
 toTLV = lambda x: ROOT.TLorentzVector(x.px(), x.py(), x.pz(), x.e())  
@@ -290,6 +299,7 @@ if __name__ == "__main__":
     t_jetM        = array('f', [0.  for i in range(nJetsMax)]); tvars += [t_jetM] 
     t_jetPV1      = array('f', [0.  for i in range(nJetsMax)]); tvars += [t_jetPV1]
     t_jetPV2      = array('f', [0.  for i in range(nJetsMax)]); tvars += [t_jetPV2]     
+    t_jetPV3      = array('f', [0.  for i in range(nJetsMax)]); tvars += [t_jetPV3]     
     t_jetPVA      = array('f', [0.  for i in range(nJetsMax)]); tvars += [t_jetPVA]     
     t_jetPVM      = array('f', [0.  for i in range(nJetsMax)]); tvars += [t_jetPVM]     
     t_jetFlag     = array('i', [0   for i in range(nJetsMax)]); tvars += [t_jetFlag]    
@@ -338,6 +348,7 @@ if __name__ == "__main__":
     otree.Branch("jetM",       t_jetM,       "jetM[nJets]/F")
     otree.Branch("jetPV1",     t_jetPV1,     "jetPV1[nJets]/F")
     otree.Branch("jetPV2",     t_jetPV2,     "jetPV2[nJets]/F")
+    otree.Branch("jetPV3",     t_jetPV3,     "jetPV3[nJets]/F")
     otree.Branch("jetPVA",     t_jetPVA,     "jetPVA[nJets]/F")
     otree.Branch("jetPVM",     t_jetPVM,     "jetPVM[nJets]/F")
     otree.Branch("jetFlag",    t_jetFlag,    "jetFlag[nJets]/I")
@@ -377,6 +388,7 @@ if __name__ == "__main__":
             t_jetM[iobj]       = round(obj.m(), 1)
             t_jetPV1[iobj]     = round(obj.pv1,     7)
             t_jetPV2[iobj]     = round(obj.pv2,     7)
+            t_jetPV3[iobj]     = round(obj.pv3,     7)
             t_jetPVA[iobj]     = round(obj.pva,     5)
             t_jetPVM[iobj]     = round(obj.pvm,     7)
             #t_jetFlag[iobj]    = obj.flag
@@ -547,6 +559,7 @@ if __name__ == "__main__":
             for jet in jets:
                 jcs = [jc for jc in jet.constituents() if jc.pt>2 and abs(jc.eta())<4]
                 fillPV(jet, jcs)
+                fillPV3(jet, jcs)
                 jet.p4 = toTLV(jet)
 
             # alias to jets for code combatibility
