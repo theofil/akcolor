@@ -1,8 +1,9 @@
 cd ~/work/h7/matchbox/CMSSW_10_6_30/src/ && cmsenv
 cd /afs/cern.ch/user/t/theofil/myeos/work/akcolor/makefriends
 
-# VBF: 3.601(5)e-03 nb
-# QCD: 14.67(1)e+03 nb
+# VBF Hqq: 3.601(5)e-03 nb
+# QCD jj : 14.67(1)e+03 nb
+# QCD Hjj: 0.134506(2)e-03 nb
 
 # skims
 python3 ~/qplot/lazyskim.py ~/files/akcolor/Spring2024/LHC-Matchbox-VBFH-2.root --var "numparticles,objects,evweight" --sel "numparticles<1000" &
@@ -21,3 +22,4 @@ python makefriends.py ~/files/akcolor/Spring2024/LHC-Matchbox-dijets-mjj400_5.ro
 
 ./jobs.sh -f ~/files/akcolor/Spring2024/LHC-Matchbox-VBFH-3.root -n 10 -t 100000 -x 3.601
 ./jobs.sh -f ~/files/akcolor/Spring2024/LHC-Matchbox-dijets-mjj400_5.root -n 10 -t 100000 -x 14670000.0
+./jobs.sh -f /eos/user/a/apapaefs/Projects/Pull/Fall2024/LHC-LHEMG5-ggHjj.root -n 10 -t 100000 -x 0.134506
