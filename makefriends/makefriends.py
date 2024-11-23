@@ -150,7 +150,13 @@ def fillPV(j, jetconst):
         dY    = jc.rapidity() - j.rapidity()
         dPhi  =  deltaPhi(jc.phi(), j.phi())
         r     = (dY**2 + dPhi**2)**0.5
-        pullV +=  (jc.pt()/j.pt())*r*np.array([dY, dPhi])
+        jvec  = np.array([j.px(), j.py(), j.pz()])
+        jcvec = np.array([jc.px(), jc.py(), jc.pz()])
+        jcL   = ((jvec@jcvec)/(jvec@jvec))*jvec
+        jcT   = jcvec - jcL
+        ptRel = (jcT@jcT)**0.5
+        pullV +=  ptRel*np.array([dY, dPhi])
+        # print('PtRel = %2.2f r = %2.2f |jcT| = %2.2f'%( PtRel(jc, j), r, (jcT@jcT)**0.5)) # works!
     j.pv1 = pullV[0]
     j.pv2 = pullV[1]
     r = (j.pv1**2 + j.pv2**2)**0.5
@@ -217,19 +223,12 @@ def Pt03(p, particles):
     return sumPt
 
 # calculate the pt of a particle relative to its closest jet
-def PtRel(p, jets):
-    ptrel = 0
-    minDR = 1.e9
+def PtRel(p, jet):
     myP4 = toTLV(p)
-        
-    for aJet in jets:
-        aJetP4 = toTLV(aJet)
-        DR = myP4.DeltaR(aJetP4)
-        if 0 < DR < minDR:
-            DR = minDR
-            ptrel = myP4.Perp(aJetP4.Vect())
+    myJet = toTLV(jet)
+    ptrel = myP4.Perp(myJet.Vect())
+    return ptrel    
             
-    return ptrel            
 
 
 #  main starts here
