@@ -1,5 +1,4 @@
-cd ~/work/h7/matchbox/CMSSW_10_6_30/src/ && cmsenv
-cd /afs/cern.ch/user/t/theofil/myeos/work/akcolor/makefriends
+export 'LD_PRELOAD=/usr/lib64/libfreetype.so'
 
 # VBF Hqq: 3.601(5)e-03 nb
 # QCD jj : 14.67(1)e+03 nb
@@ -9,14 +8,14 @@ cd /afs/cern.ch/user/t/theofil/myeos/work/akcolor/makefriends
 python3 ~/qplot/lazyskim.py ~/files/akcolor/Spring2024/LHC-Matchbox-VBFH-2.root --var "numparticles,objects,evweight" --sel "numparticles<1000" &
 python3 ~/qplot/lazyskim.py ~/files/akcolor/Spring2024/LHC-Matchbox-dijets-mjj400_2.root --var "numparticles,objects,evweight" --sel "numparticles<1000" &
 
-python makefriends.py ~/files/akcolor/Spring2024/skims/LHC-Matchbox-VBFH-2.lazyskim.root --genWeight evweight --xs 3.601 --goFast 0.01
+python3 makefriends.py ~/files/akcolor/Spring2024/skims/LHC-Matchbox-VBFH-2.lazyskim.root --genWeight evweight --xs 3.601 --goFast 0.01
 python makefriends.py ~/files/akcolor/Spring2024/skims/LHC-Matchbox-dijets-mjj400_2.lazyskim.root --genWeight evweight --xs 14670000.0 --goFast 0.01
 
-# python makefriends.py ~/files/akcolor/Spring2024/LHC-Matchbox-VBFH-2.root --genWeight evweight --xs 3.601 --goFast 0.01
-# python makefriends.py ~/files/akcolor/Spring2024/LHC-Matchbox-dijets-mjj400_2.root --genWeight evweight --xs 14670000.0 --goFast 0.01
+# python3 makefriends.py ~/files/akcolor/Spring2024/LHC-Matchbox-VBFH-2.root --genWeight evweight --xs 3.601 --goFast 0.01
+# python3 makefriends.py ~/files/akcolor/Spring2024/LHC-Matchbox-dijets-mjj400_2.root --genWeight evweight --xs 14670000.0 --goFast 0.01
 
-python makefriends.py ~/files/akcolor/Spring2024/LHC-Matchbox-VBFH-3.root  --genWeight evweight --xs 3.601 --goFast 0.01
-python makefriends.py ~/files/akcolor/Spring2024/LHC-Matchbox-dijets-mjj400_5.root --genWeight evweight --xs 14670000.0 --goFast 0.01
+python3 makefriends.py ~/files/akcolor/Spring2024/LHC-Matchbox-VBFH-3.root  --genWeight evweight --xs 3.601 --goFast 0.01
+python3 makefriends.py ~/files/akcolor/Spring2024/LHC-Matchbox-dijets-mjj400_5.root --genWeight evweight --xs 14670000.0 --goFast 0.01
 
 ### 
 
