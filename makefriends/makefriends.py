@@ -556,7 +556,7 @@ if __name__ == "__main__":
 
             # devise the jets with pull vector and TLorentzVector accessed through p4 member
             for jet in jets:
-                jcs = [jc for jc in jet.constituents() if jc.pt()>2 and abs(jc.eta())<4]
+                jcs = [jc for jc in jet.constituents() if jc.pt()>jcPtMin and abs(jc.eta())<jcEtaMax]
                 fillPV(jet, jcs)
                 fillPV3(jet, jcs)
                 jet.p4 = toTLV(jet)
