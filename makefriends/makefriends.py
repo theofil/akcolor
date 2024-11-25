@@ -530,16 +530,16 @@ if __name__ == "__main__":
                     momNOcluster.append(momenta[mm])
 
             # Phase-II offline cuts
-            # jcPtMin, jcEtaMax      = 2.0, 4.0
-            # jetPtMin, jetEtaMax    = 30.0, 3.0
+            jcPtMin, jcEtaMax      = 2.0, 4.0
+            jetPtMin, jetEtaMax    = 30.0, 3.0
 
             # Run2/3 offline cuts
             # jcPtMin, jcEtaMax      = 0.5, 2.4 
             # jetPtMin, jetEtaMax    = 30.0, 2.0   
 
             # Phase-II no cuts
-            jcPtMin, jcEtaMax      = 0.0, 10.0
-            jetPtMin, jetEtaMax    = 30.0, 3.0
+            # jcPtMin, jcEtaMax      = 0.0, 10.0
+            # jetPtMin, jetEtaMax    = 30.0, 3.0
 
             # Phase-II L1 cuts
             # jcPtMin, jcEtaMax      = 2.0, 2.4
@@ -557,7 +557,7 @@ if __name__ == "__main__":
 
             # devise the jets with pull vector and TLorentzVector accessed through p4 member
             for jet in jets:
-                jcs = [jc for jc in jet.constituents() if jc.pt()>2 and abs(jc.eta())<4]
+                jcs = [jc for jc in jet.constituents() if jc.pt()>jcPtMin and abs(jc.eta())<jcEtaMax]
                 fillPV(jet, jcs)
                 fillPV3(jet, jcs)
                 jet.p4 = toTLV(jet)
