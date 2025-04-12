@@ -1,4 +1,7 @@
-export 'LD_PRELOAD=/usr/lib64/libfreetype.so'
+#export 'LD_PRELOAD=/usr/lib64/libfreetype.so'
+cd ~/work/color/CMSSW_13_3_1/src/
+cmsenv
+cd - 
 
 # VBF Hqq: 3.601(5)e-03 nb
 # QCD jj : 14.67(1)e+03 nb
