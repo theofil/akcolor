@@ -223,7 +223,7 @@ def PtRel(p, jets):
         aJetP4 = toTLV(aJet)
         DR = myP4.DeltaR(aJetP4)
         if 0 < DR < minDR:
-            DR = minDR
+            minDR = DR
             ptrel = myP4.Perp(aJetP4.Vect())
             
     return ptrel            
@@ -400,12 +400,12 @@ if __name__ == "__main__":
     t_muonM         = array('f', [0 for i in range(nMuonsMax)])
     t_muonPtRel     = array('f', [0 for i in range(nMuonsMax)])
     t_muonPt03      = array('f', [0 for i in range(nMuonsMax)])
-    otree.Branch("nMuons",     t_nMuons,   "nMuons/I")
+    otree.Branch("nMuons",     t_nMuons,     "nMuons/I")
     otree.Branch("muonPt",     t_muonPt,     "muonPt[nMuons]/F")
     otree.Branch("muonEta",    t_muonEta,    "muonEta[nMuons]/F")
     otree.Branch("muonPhi",    t_muonPhi,    "muonPhi[nMuons]/F")
     otree.Branch("muonM",      t_muonM,      "muonM[nMuons]/F")
-    otree.Branch("muonPtRel",  t_muonPtRel,   "muonPtRel[nMuons]/F")
+    otree.Branch("muonPtRel",  t_muonPtRel,  "muonPtRel[nMuons]/F")
     otree.Branch("muonPt03",   t_muonPt03,   "muonPt03[nMuons]/F")
 
     def fillMuons(collection):

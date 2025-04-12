@@ -1,0 +1,3 @@
+cd ~/work/color/CMSSW_13_3_1/src/
+cmsenv
+cd - 
