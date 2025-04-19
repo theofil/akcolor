@@ -36,27 +36,28 @@ python -i ~/qplot/qplot.py dijets.root VBFHToInv.root QCDHtoInv.root --var "abs(
 
 ### mjj500
 
-### leading forward jet
-python -i ~/qplot/qplot.py dijets.root VBFHToInv.root QCDHtoInv.root --var "abs(jetPVA[0])" --sel "(nJets>=2 && mjj>500 && jetPVA[0]!=-99 && jetEta[0]>1.4)" --bins "10,0,3.14159" --leg "QCD jj,VBF Hqq,QCD Hjj" --xtitle "leading jet |#theta_{t}|"  --drawopt "e1" --legpos "0.66, 0.72, 0.89, 0.93"   --save --outputDir "qplots/mjj500/forward" --nover --nunder --norm --yrange "0.049, 0.151" --yaxisCentered
+python -i ~/qplot/qplot.py dijets.root VBFHToInv.root QCDHtoInv.root --var "abs(jetSPVA[0])" --sel "(nJets>=2 && mjj>500 && jetSPVA[0]!=-99)" --bins "10,0,3.14159" --leg "QCD jj,VBF Hqq,QCD Hjj" --xtitle "leading jet |#theta_{s}|"  --drawopt "e1" --legpos "0.66, 0.72, 0.89, 0.93"   --save --outputDir "qplots/mjj500/" --nover --nunder --norm --yrange "0.049, 0.151" --yaxisCentered
 
-### leading forward jet pv3
-python -i ~/qplot/qplot.py dijets.root VBFHToInv.root QCDHtoInv.root --var "(jetPV3[0])" --sel "(nJets>=2 && mjj>500 && jetPVA[0]!=-99 && jetEta[0]>1.4)" --bins "50,-0.0050,0.0050" --leg "QCD jj,VBF Hqq,QCD Hjj" --xtitle "leading jet |pv3|"  --drawopt "e1" --legpos "0.66, 0.72, 0.89, 0.93"   --save --outputDir "qplots/mjj500/forward" --nover --nunder --norm --yaxisCentered --logy
 
-### leading backward jet
-python -i ~/qplot/qplot.py dijets.root VBFHToInv.root QCDHtoInv.root --var "abs(jetPVA[0])" --sel "(nJets>=2 && mjj>500 && jetPVA[0]!=-99 && jetEta[0]<-1.4)" --bins "10,0,3.14159" --leg "QCD jj,VBF Hqq,QCD Hjj" --xtitle "leading jet |#theta_{t}|"  --drawopt "e1" --legpos "0.15, 0.72, 0.39, 0.93"   --save --outputDir "qplots/mjj500/backward" --nover --nunder --norm --yrange "0.049, 0.151" --yaxisCentered
-
-### magnitute
+#### magnitute
 python -i ~/qplot/qplot.py dijets.root VBFHToInv.root QCDHtoInv.root --var "abs(jetPVM[0])" --sel "(nJets>=2 && mjj>500 && jetPVA[0]!=-99)" --bins "10,0,0.01" --leg "QCD jj,VBF Hqq,QCD Hjj" --xtitle "leading jet #vec{|t|}"  --drawopt "e1" --legpos "0.66, 0.72, 0.89, 0.93"   --save --outputDir "qplots/mjj500/" --nover --nunder --norm
 
 
-### c21
+#### c21
 python -i ~/qplot/qplot.py dijets.root VBFHToInv.root QCDHtoInv.root --var "c21/180*3.141592653" --sel "(nJets>=2 && mjj>500 && jetPVA[0]!=-99)" --bins "10,0,3.14159" --leg "QCD jj,VBF Hqq,QCD Hjj" --xtitle "#theta_{21}"  --drawopt "e1" --legpos "0.66, 0.72, 0.89, 0.93"   --save --outputDir "qplots/mjj500/" --nover --nunder --norm --yrange "0.049, 0.151" --yaxisCentered
 
-### mjj
+#### mjj
 python -i ~/qplot/qplot.py dijets.root VBFHToInv.root QCDHtoInv.root --var "mjj" --sel "(nJets>=2 && mjj>500)*kWeight" --bins "30,500,2000" --leg "QCD jj,VBF Hqq,QCD Hjj" --drawopt "e1" --legpos "0.66, 0.72, 0.89, 0.93" --logy --yrange "1e-4,1e6"   --save --outputDir "qplots/mjj500"
 
 
 ####################3
 slices with root
+
+python -i ~/qplot/qplot.py dijets.root --var "mjj" --sel "(nJets>=2 && mjj>500 && jetSPVA[0]!=-99 && abs(jetSPVA[0])<0.3*3.1416)*kWeight, (nJets>=2 && mjj>500 && jetSPVA[0]!=-99 && abs(jetSPVA[0])>0.7*3.1416)*kWeight" --bins "30,500,2000" --leg "|#theta_t| < 0.3#pi,|#theta_t| > 0.7#pi" --drawopt "e1" --legpos "0.62, 0.72, 0.85, 0.93" --norm --logy   --save --outputDir "qplots/slices"
+
+python -i ~/qplot/qplot.py QCDHtoInv.root --var "mjj" --sel "(nJets>=2 && mjj>500 && jetSPVA[0]!=-99 && abs(jetSPVA[0])<0.3*3.1416)*kWeight, (nJets>=2 && mjj>500 && jetSPVA[0]!=-99 && abs(jetSPVA[0])>0.7*3.1416)*kWeight" --bins "50,500,4000" --leg "|#theta_{t}| < 0.3#pi,|#theta_{t}| > 0.7#pi" --drawopt "e1" --legpos "0.62, 0.72, 0.85, 0.93" --norm --logy   --save --outputDir "qplots/slices"
+
+python -i ~/qplot/qplot.py VBFHtoInv.root --var "mjj" --sel "(nJets>=2 && mjj>500 && jetSPVA[0]!=-99 && abs(jetSPVA[0])<0.3*3.1416)*kWeight, (nJets>=2 && mjj>500 && jetSPVA[0]!=-99 && abs(jetSPVA[0])>0.7*3.1416)*kWeight" --bins "50,500,4000" --leg "|#theta_{t}| < 0.3#pi,|#theta_{t}| > 0.7#pi" --drawopt "e1" --legpos "0.62, 0.72, 0.85, 0.93" --norm --logy   --save --outputDir "qplots/slices"
+
 
 python -i ~/qplot/qplot.py dijets.root --var "mjj" --sel "(nJets>=2 && mjj>500 && jetPVA[0]!=-99 && jetEta[0]>1.4 && abs(jetPVA[0])<0.3*3.1416)*kWeight, (nJets>=2 && mjj>500 && jetPVA[0]!=-99 && jetEta[0]>1.4 && abs(jetPVA[0])>0.7*3.1416)*kWeight" --bins "30,500,2000" --leg "|#theta_t| < 0.3#pi,|#theta_t| > 0.7#pi" --drawopt "e1" --legpos "0.66, 0.72, 0.89, 0.93" --norm --logy   --save --outputDir "qplots/slices"
