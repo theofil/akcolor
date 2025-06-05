@@ -21,12 +21,14 @@ python3 makefriends.py ~/files/akcolor/Spring2024/LHC-Matchbox-VBFH-3.root  --ge
 python3 makefriends.py ~/files/akcolor/Spring2024/LHC-Matchbox-dijets-mjj400_5.root --genWeight evweight --xs 14670000.0 --goFast 0.01
 
 ### 
+rm *.friend.root
 
-./jobs.sh -f ~/files/akcolor/Spring2024/LHC-Matchbox-VBFH-3.root -n 10 -t 100000 -x 3.601
-./jobs.sh -f ~/files/akcolor/Spring2024/LHC-Matchbox-dijets-mjj400_5.root -n 10 -t 100000 -x 14670000.0
-./jobs.sh -f /eos/user/a/apapaefs/Projects/Pull/Fall2024/LHC-LHEMG5-ggHjj.root -n 10 -t 100000 -x 0.134506
+./jobs.sh -f ~/files/akcolor/Spring2024/LHC-Matchbox-VBFH-3.root -n 20 -t 50000 -x 3.601
+./jobs.sh -f ~/files/akcolor/Spring2024/LHC-Matchbox-dijets-mjj400_5.root -n 20 -t 50000 -x 14670000.0
+./jobs.sh -f /eos/user/a/apapaefs/Projects/Pull/Fall2024/LHC-LHEMG5-ggHjj.root -n 20 -t 50000 -x 0.134506
 
 ###
+
 hadd LHC-Matchbox-VBFH-3.friend.root LHC-Matchbox-VBFH-3.friend_*.root
 hadd LHC-Matchbox-dijets-mjj400_5.friend.root LHC-Matchbox-dijets-mjj400_5.friend_*.root
 hadd LHC-LHEMG5-ggHjj.friend.root LHC-LHEMG5-ggHjj.friend_*.root
