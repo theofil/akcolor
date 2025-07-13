@@ -1,36 +1,47 @@
-#export 'LD_PRELOAD=/usr/lib64/libfreetype.so'
-cd ~/work/color/CMSSW_13_3_1/src/
-cmsenv
-cd - 
+### Summer2025 -- pipeline 
 
-# VBF Hqq: 3.601(5)e-03 nb
-# QCD jj : 14.67(1)e+03 nb
-# QCD Hjj: 0.134506(2)e-03 nb
+# assumes that you start from the akcolor/makefriends/ folder
+# it will create sym links and tmp folders and cp the scipt inside the temp folders
 
-# skims
-python3 ~/qplot/lazyskim.py ~/files/akcolor/Spring2024/LHC-Matchbox-VBFH-2.root --var "numparticles,objects,evweight" --sel "numparticles<1000" &
-python3 ~/qplot/lazyskim.py ~/files/akcolor/Spring2024/LHC-Matchbox-dijets-mjj400_2.root --var "numparticles,objects,evweight" --sel "numparticles<1000" &
+### prepare job execution folder for CRCENTRAL
 
-python3 makefriends.py ~/files/akcolor/Spring2024/skims/LHC-Matchbox-VBFH-2.lazyskim.root --genWeight evweight --xs 3.601 --goFast 0.01
-python makefriends.py ~/files/akcolor/Spring2024/skims/LHC-Matchbox-dijets-mjj400_2.lazyskim.root --genWeight evweight --xs 14670000.0 --goFast 0.01
+mkdir crcentral
+cd crcentral
+cp ../cmds.txt .
+cp ../jobs.sh .
+cp ../makefriends.py .
 
-# python3 makefriends.py ~/files/akcolor/Spring2024/LHC-Matchbox-VBFH-2.root --genWeight evweight --xs 3.601 --goFast 0.01
-# python3 makefriends.py ~/files/akcolor/Spring2024/LHC-Matchbox-dijets-mjj400_2.root --genWeight evweight --xs 14670000.0 --goFast 0.01
+# make symlinks to the CRCENTRAL parent files
 
-python3 makefriends.py ~/files/akcolor/Spring2024/LHC-Matchbox-VBFH-3.root  --genWeight evweight --xs 3.601 --goFast 0.01
-python3 makefriends.py ~/files/akcolor/Spring2024/LHC-Matchbox-dijets-mjj400_5.root --genWeight evweight --xs 14670000.0 --goFast 0.01
+ln -s /eos/user/a/apapaefs/Projects/Pull/Summer2025/Herwig/LHC-Matchbox-VBFH-CRCENTRAL.root VBFHtoInv.root
+ln -s /eos/user/a/apapaefs/Projects/Pull/Summer2025/Herwig/LHC-Matchbox-dijets-CRCENTRAL.root dijets.root
+ln -s /eos/user/a/apapaefs/Projects/Pull/Summer2025/Herwig/LHC-LHEMG5-ggHjj-CRCENTRAL.root QCDHtoInv.root
 
-### 
-rm *.friend.root
 
-./jobs.sh -f ~/files/akcolor/Spring2024/LHC-Matchbox-VBFH-3.root -n 20 -t 50000 -x 3.601
-./jobs.sh -f ~/files/akcolor/Spring2024/LHC-Matchbox-dijets-mjj400_5.root -n 20 -t 50000 -x 14670000.0
-./jobs.sh -f /eos/user/a/apapaefs/Projects/Pull/Fall2024/LHC-LHEMG5-ggHjj.root -n 20 -t 50000 -x 0.134506
+### prepare job execution folder for CRPR25
 
-###
+mkdir crpr25
+cd crpr25
+cp ../cmds.txt .
+cp ../jobs.sh .
+cp ../makefriends.py .
 
-hadd LHC-Matchbox-VBFH-3.friend.root LHC-Matchbox-VBFH-3.friend_*.root
-hadd LHC-Matchbox-dijets-mjj400_5.friend.root LHC-Matchbox-dijets-mjj400_5.friend_*.root
-hadd LHC-LHEMG5-ggHjj.friend.root LHC-LHEMG5-ggHjj.friend_*.root
 
+# make symlinks to the CRPR25 parent files
+
+ln -s /eos/user/a/apapaefs/Projects/Pull/Summer2025/Herwig/LHC-Matchbox-VBFH-CRPR25.root VBFHtoInv.root
+ln -s /eos/user/a/apapaefs/Projects/Pull/Summer2025/Herwig/LHC-Matchbox-dijets-CRPR25.root dijets.root
+ln -s /eos/user/a/apapaefs/Projects/Pull/Summer2025/Herwig/LHC-LHEMG5-ggHjj-CRPR25.root QCDHtoInv.root
+
+
+### execution part 
+# cd to the desired (CRCENTRAL or CRPR25 ...) folder
+
+./jobs.sh -f VBFHtoInv.root -n 20 -t 50000 -x 3.601
+./jobs.sh -f dijets.root    -n 20 -t 50000 -x 14670000.0
+./jobs.sh -f QCDHtoInv.root -n 20 -t 50000 -x 0.134506
+
+hadd VBFHtoInv.friend.root VBFHtoInv.friend_*root
+hadd dijets.friend.root dijets.friend_*root
+hadd QCDHtoInv.friend.root QCDHtoInv.friend_*.root
 rm *friend_*.root
