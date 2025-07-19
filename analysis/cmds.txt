@@ -61,3 +61,15 @@ python -i ~/qplot/qplot.py VBFHtoInv.root --var "mjj" --sel "(nJets>=2 && mjj>50
 
 
 python -i ~/qplot/qplot.py dijets.root --var "mjj" --sel "(nJets>=2 && mjj>500 && jetPVA[0]!=-99 && jetEta[0]>1.4 && abs(jetPVA[0])<0.3*3.1416)*kWeight, (nJets>=2 && mjj>500 && jetPVA[0]!=-99 && jetEta[0]>1.4 && abs(jetPVA[0])>0.7*3.1416)*kWeight" --bins "30,500,2000" --leg "|#theta_t| < 0.3#pi,|#theta_t| > 0.7#pi" --drawopt "e1" --legpos "0.66, 0.72, 0.89, 0.93" --norm --logy   --save --outputDir "qplots/slices"
+
+
+### links
+path="/Users/konstantinostheofilatos/files/akcolor/Spring2024/kt/R1.0/"
+ln -s /Users/konstantinostheofilatos/files/akcolor/Spring2024/kt/R1.0/LHC-LHEMG5-ggHjj.friend.root QCDHtoInv.root
+ln -s path+LHC-LHEMG5-ggHjj.friend.root QCDHtoInv.root
+ln -s /Users/konstantinostheofilatos/files/akcolor/Spring2024/kt/R1.0/LHC-Matchbox-VBFH-3.friend.root
+
+mypath="/Users/konstantinostheofilatos/files/akcolor/Spring2024/kt/R1.0/"
+ln -s "${mypath}LHC-LHEMG5-ggHjj.friend.root" QCDHtoInv.root
+ln -s "${mypath}LHC-Matchbox-VBFH-3.friend.root" VBFHtoInv.root
+ln -s "${mypath}LHC-Matchbox-dijets-mjj400_5.friend.root" dijets.root
