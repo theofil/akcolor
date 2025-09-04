@@ -519,7 +519,7 @@ if __name__ == "__main__":
                     higgs.append(HiggsP4)
                     if args.debug == 4:print('Higgs boson found (E %2.3f, px %2.3f, py %2.3f, pz %2.3f, pid %d)'%(E, px, py, pz, pid) , higgs)
 
-                if pid != 25 and abs(pid) != 12 and abs(pid) != 14 and abs(pid) != 16: 
+                if pid != 25 and abs(pid) != 12 and abs(pid) != 14 and abs(pid) != 16 and abs(pid) != 15: # exclude stable Higgs, neutrinos and taus 
                     momtocluster.append(momenta[mm])
                     METpx -= px
                     METpy -= py

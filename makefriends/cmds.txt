@@ -1,47 +1,49 @@
-### Summer2025 -- pipeline 
+### Winter2025 -- pipeline 
 
 # assumes that you start from the akcolor/makefriends/ folder
 # it will create sym links and tmp folders and cp the scipt inside the temp folders
 
-### prepare job execution folder for CRCENTRAL
+### prepare job execution folder for Winter2025
 
-mkdir crcentral
-cd crcentral
+mkdir winter25
+cd winter25
 cp ../cmds.txt .
 cp ../jobs.sh .
 cp ../makefriends.py .
 
-# make symlinks to the CRCENTRAL parent files
+# make symlinks
 
-ln -s /eos/user/a/apapaefs/Projects/Pull/Summer2025/Herwig/LHC-Matchbox-VBFH-CRCENTRAL.root VBFHtoInv.root
-ln -s /eos/user/a/apapaefs/Projects/Pull/Summer2025/Herwig/LHC-Matchbox-dijets-CRCENTRAL.root dijets.root
-ln -s /eos/user/a/apapaefs/Projects/Pull/Summer2025/Herwig/LHC-LHEMG5-ggHjj-CRCENTRAL.root QCDHtoInv.root
-
-
-### prepare job execution folder for CRPR25
-
-mkdir crpr25
-cd crpr25
-cp ../cmds.txt .
-cp ../jobs.sh .
-cp ../makefriends.py .
-
-
-# make symlinks to the CRPR25 parent files
-
-ln -s /eos/user/a/apapaefs/Projects/Pull/Summer2025/Herwig/LHC-Matchbox-VBFH-CRPR25.root VBFHtoInv.root
-ln -s /eos/user/a/apapaefs/Projects/Pull/Summer2025/Herwig/LHC-Matchbox-dijets-CRPR25.root dijets.root
-ln -s /eos/user/a/apapaefs/Projects/Pull/Summer2025/Herwig/LHC-LHEMG5-ggHjj-CRPR25.root QCDHtoInv.root
-
+ln -s /eos/home-a/apapaefs/Projects/Pull/Summer2025/Herwig_13.6/LHC-Matchbox-VBFH-13.6.root VBFHtoInv.root
+ln -s /eos/home-a/apapaefs/Projects/Pull/Summer2025/Herwig_13.6/LHC-Matchbox-VBFW-13.6.root VBFWtoInv.root
+ln -s /eos/home-a/apapaefs/Projects/Pull/Summer2025/Herwig_13.6/LHC-Matchbox-VBFZ-13.6.root VBFZtoInv.root
+ln -s /eos/home-a/apapaefs/Projects/Pull/Summer2025/Herwig_13.6/LHC-LHEMG5-ggHjj-13.6.root QCDHtoInv.root
+ln -s /eos/home-a/apapaefs/Projects/Pull/Summer2025/Herwig_13.6/LHC-LHEMG5-ppWjj-13.6-merged.root QCDWtoInv.root
+ln -s /eos/home-a/apapaefs/Projects/Pull/Summer2025/Herwig_13.6/LHC-LHEMG5-ppZjj-13.6.root QCDZtoInv.root
 
 ### execution part 
-# cd to the desired (CRCENTRAL or CRPR25 ...) folder
+# cross sections in pb
 
-./jobs.sh -f VBFHtoInv.root -n 20 -t 50000 -x 3.601
-./jobs.sh -f dijets.root    -n 20 -t 50000 -x 14670000.0
-./jobs.sh -f QCDHtoInv.root -n 20 -t 50000 -x 0.134506
+./jobs.sh -f VBFHtoInv.root -n 20 -t 50000 -x 3.901
+./jobs.sh -f VBFWtoInv.root -n 20 -t 50000 -x 15.37
+./jobs.sh -f VBFZtoInv.root -n 20 -t 50000 -x 1.605
+./jobs.sh -f QCDHtoInv.root -n 20 -t 50000 -x 2.26114
+./jobs.sh -f QCDWtoInv.root -n 20 -t 50000 -x 4790
+./jobs.sh -f QCDZtoInv.root -n 20 -t 50000 -x 0.5108
 
 hadd VBFHtoInv.friend.root VBFHtoInv.friend_*root
-hadd dijets.friend.root dijets.friend_*root
+hadd VBFWtoInv.friend.root VBFWtoInv.friend_*root
+hadd VBFZtoInv.friend.root VBFZtoInv.friend_*root
 hadd QCDHtoInv.friend.root QCDHtoInv.friend_*.root
+hadd QCDWtoInv.friend.root QCDWtoInv.friend_*.root
+hadd QCDZtoInv.friend.root QCDZtoInv.friend_*.root
 rm *friend_*.root
+
+### testing (one job with 100 events) 
+# ./jobs.sh -f VBFWtoInv.root -n 1 -t 100 -x 15.37 
+python3 makefriends.py VBFHtoInv.root --genWeight evweight --xs 3.901 --totEve 1000
+python3 makefriends.py VBFWtoInv.root --genWeight evweight --xs 15.37 --totEve 1000
+python3 makefriends.py VBFZtoInv.root --genWeight evweight --xs 1.605 --totEve 1000
+python3 makefriends.py QCDHtoInv.root --genWeight evweight --xs 2.26114 --totEve 1000
+python3 makefriends.py QCDWtoInv.root --genWeight evweight --xs 4790 --totEve 1000
+python3 makefriends.py QCDZtoInv.root --genWeight evweight --xs 0.5108 --totEve 1000
+
