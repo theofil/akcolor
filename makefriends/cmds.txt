@@ -17,7 +17,7 @@ ln -s /eos/home-a/apapaefs/Projects/Pull/Summer2025/Herwig_13.6/LHC-Matchbox-VBF
 ln -s /eos/home-a/apapaefs/Projects/Pull/Summer2025/Herwig_13.6/LHC-Matchbox-VBFW-13.6.root VBFWtoInv.root
 ln -s /eos/home-a/apapaefs/Projects/Pull/Summer2025/Herwig_13.6/LHC-Matchbox-VBFZ-13.6.root VBFZtoInv.root
 ln -s /eos/home-a/apapaefs/Projects/Pull/Summer2025/Herwig_13.6/LHC-LHEMG5-ggHjj-13.6.root QCDHtoInv.root
-ln -s /eos/home-a/apapaefs/Projects/Pull/Summer2025/Herwig_13.6/LHC-LHEMG5-ppWjj-13.6-merged.root QCDWtoInv.root
+ln -s /eos/home-a/apapaefs/Projects/Pull/Summer2025/Herwig_13.6/LHC-LHEMG5-ppWjj-13.6.root QCDWtoInv.root
 ln -s /eos/home-a/apapaefs/Projects/Pull/Summer2025/Herwig_13.6/LHC-LHEMG5-ppZjj-13.6.root QCDZtoInv.root
 
 ### execution part 
@@ -27,8 +27,8 @@ ln -s /eos/home-a/apapaefs/Projects/Pull/Summer2025/Herwig_13.6/LHC-LHEMG5-ppZjj
 ./jobs.sh -f VBFWtoInv.root -n 20 -t 50000 -x 15.37
 ./jobs.sh -f VBFZtoInv.root -n 20 -t 50000 -x 1.605
 ./jobs.sh -f QCDHtoInv.root -n 20 -t 50000 -x 2.26114
-./jobs.sh -f QCDWtoInv.root -n 20 -t 50000 -x 4790
-./jobs.sh -f QCDZtoInv.root -n 20 -t 50000 -x 0.5108
+./jobs.sh -f QCDWtoInv.root -n 20 -t 50000 -x 4791
+./jobs.sh -f QCDZtoInv.root -n 20 -t 50000 -x 0.48297
 
 hadd VBFHtoInv.friend.root VBFHtoInv.friend_*root
 hadd VBFWtoInv.friend.root VBFWtoInv.friend_*root
@@ -44,6 +44,6 @@ python3 makefriends.py VBFHtoInv.root --genWeight evweight --xs 3.901 --totEve 1
 python3 makefriends.py VBFWtoInv.root --genWeight evweight --xs 15.37 --totEve 1000
 python3 makefriends.py VBFZtoInv.root --genWeight evweight --xs 1.605 --totEve 1000
 python3 makefriends.py QCDHtoInv.root --genWeight evweight --xs 2.26114 --totEve 1000
-python3 makefriends.py QCDWtoInv.root --genWeight evweight --xs 4790 --totEve 1000
-python3 makefriends.py QCDZtoInv.root --genWeight evweight --xs 0.5108 --totEve 1000
+python3 makefriends.py QCDWtoInv.root --genWeight evweight --xs 4791 --totEve 1000
+python3 makefriends.py QCDZtoInv.root --genWeight evweight --xs 0.48297 --totEve 1000
 
