@@ -1,0 +1,27 @@
+{
+    "hidden_layers": [128, 64, 32],
+    "dropout": 0.3,
+    "batch_norm": true,
+    "learning_rate": 0.001,
+    "batch_size": 4096,
+    "epochs": 200,
+    "patience": 20,
+    "mjj_cut": 400,
+    "feature_sets": {
+        "a": {
+            "name": "kinematic",
+            "cols": [0, 1, 2, 3],
+            "labels": ["mjj", "|dYjj|", "|dPhijj|", "ptjj"]
+        },
+        "b": {
+            "name": "pull",
+            "cols": [4, 5, 6, 7],
+            "labels": ["|SPVA[0]|", "|SPVA[1]|", "PVM[0]", "PVM[1]"]
+        },
+        "c": {
+            "name": "combined",
+            "cols": [0, 1, 2, 3, 4, 5, 6, 7],
+            "labels": ["mjj", "|dYjj|", "|dPhijj|", "ptjj", "|SPVA[0]|", "|SPVA[1]|", "PVM[0]", "PVM[1]"]
+        }
+    }
+}

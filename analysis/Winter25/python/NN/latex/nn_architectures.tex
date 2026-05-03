@@ -1,0 +1,92 @@
+% Neural-network architecture section — \input{nn_architectures} in main paper
+
+\subsection{Neural-network architectures}
+\label{sec:nn_arch}
+
+Three binary classifiers are trained to discriminate VBF~$H\!\to\!\text{inv}$ signal
+from the QCD multijet background.
+Each classifier is a fully-connected multilayer perceptron (MLP) implemented in
+PyTorch~\cite{pytorch}.
+The three networks are identical in every architectural and training detail;
+the \emph{only} difference between them is the set of input features, as
+described below.
+
+\subsubsection*{Network architecture}
+
+Each MLP maps an input vector $\mathbf{x}\in\mathbb{R}^{N_\text{in}}$ to a
+single scalar output $\hat{y}\in(0,1)$ through three hidden layers of widths
+$128$, $64$, and $32$, followed by a sigmoid activation:
+%
+\begin{equation}
+  \hat{y} = \sigma\!\left(
+    W_4\,g\!\left(W_3\,g\!\left(W_2\,g\!\left(W_1\,\mathbf{x}+b_1\right)+b_2\right)+b_3\right)+b_4
+  \right),
+\end{equation}
+%
+where $g$ denotes the composed activation block (BatchNorm $\to$ ReLU $\to$
+Dropout) applied after each hidden linear layer, and $\sigma$ is the sigmoid
+function.
+Concretely, each hidden layer consists of:
+%
+\begin{enumerate}
+  \item a linear transformation,
+  \item batch normalisation~\cite{batchnorm},
+  \item a ReLU activation,
+  \item dropout with probability $p=0.3$.
+\end{enumerate}
+%
+The output layer is a single linear unit followed by a sigmoid, yielding a
+signal probability score.
+All input features are standardised to zero mean and unit variance using
+statistics computed on the training set only.
+
+\subsubsection*{Input features}
+
+The three models differ solely in which features are passed as input:
+%
+\begin{table}[h]
+  \centering
+  \caption{Input features for each of the three classifiers.
+           $m_{jj}$: dijet invariant mass;
+           $|\Delta y_{jj}|$: absolute rapidity separation of the two leading jets;
+           $|\Delta\phi_{jj}|$: absolute azimuthal-angle separation;
+           $p_{T,jj}$: dijet transverse momentum;
+           $|\text{SPVA}[j_{1,2}]|$: magnitude of the signed pull-vector angle
+           for the leading (subleading) jet;
+           $\text{PVM}[j_{1,2}]$: pull-vector magnitude for the
+           leading (subleading) jet.}
+  \label{tab:nn_features}
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{clcc}
+    \hline\hline
+    Model & Description & $N_\text{in}$ & Input features \\
+    \hline
+    A & Kinematic & 4 &
+      $m_{jj},\;|\Delta y_{jj}|,\;|\Delta\phi_{jj}|,\;p_{T,jj}$ \\
+    B & Colour / pull & 4 &
+      $|\text{SPVA}[j_1]|,\;|\text{SPVA}[j_2]|,\;\text{PVM}[j_1],\;\text{PVM}[j_2]$ \\
+    C & Combined & 8 &
+      all features from models A and B \\
+    \hline\hline
+  \end{tabular}
+\end{table}
+
+Model~A uses only standard VBF kinematic discriminants.
+Model~B uses only jet colour-flow observables (pull vector angle and magnitude),
+which are sensitive to the colour singlet nature of the VBF topology.
+Model~C combines both sets and therefore has a wider input layer
+($N_\text{in}=8$) while keeping the hidden-layer widths unchanged.
+
+\subsubsection*{Training details}
+
+All three networks are trained with the same procedure:
+binary cross-entropy loss, the Adam optimiser~\cite{adam} with initial learning
+rate $\eta=10^{-3}$, and a \textsc{ReduceLROnPlateau} scheduler that halves
+$\eta$ after five epochs without improvement in the validation loss.
+Training proceeds for up to 200 epochs with early stopping: training is halted
+if the validation loss does not improve for 20 consecutive epochs, and the
+checkpoint with the lowest validation loss is retained.
+The mini-batch size is 4096 events.
+The full dataset is split 60\,/\,20\,/\,20 into training, validation, and
+held-out inference sets using a fixed random seed.
+Events are required to satisfy $m_{jj}>400\;\text{GeV}$.
