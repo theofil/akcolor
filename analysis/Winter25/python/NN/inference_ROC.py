@@ -16,7 +16,8 @@ from model import MLP
 
 # ── paths ──────────────────────────────────────────────────────────────────────
 NN_DIR   = Path(__file__).resolve().parent
-FIGS     = NN_DIR / 'figs'
+FIGS     = NN_DIR / 'paper' / 'figs'
+SCRIPT   = Path(__file__).stem
 MODELS   = NN_DIR / 'models'
 DATA_DIR = NN_DIR.parents[1]   # Winter25/
 
@@ -86,7 +87,8 @@ def run_inference(key):
     model = MLP(len(cols), arch['hidden_layers'],
                 arch['dropout'], arch['batch_norm']).to(device)
     model.load_state_dict(torch.load(MODELS / f'model_{key}.pt',
-                                     map_location=device))
+                                     map_location=device,
+                                     weights_only=True))
     model.eval()
     with torch.no_grad():
         scores = model(Xt).cpu().numpy()
@@ -124,7 +126,7 @@ for key, s in [('mjj',   X_inf[:, 0]),
 # ── helpers ────────────────────────────────────────────────────────────────────
 def save_fig(fig, name):
     for ext in ('pdf', 'png'):
-        fig.savefig(FIGS / f'{name}.{ext}', bbox_inches='tight')
+        fig.savefig(FIGS / f'{SCRIPT}_{name}.{ext}', bbox_inches='tight')
     plt.close(fig)
     print(f'  saved {name}')
 
@@ -148,14 +150,14 @@ for key in ('mjj', 'spva0'):
 ax.plot([0, 1], [0, 1], 'k--', lw=1, alpha=0.4)
 ax.set_xlabel('False Positive Rate', fontsize=20)
 ax.set_ylabel('True Positive Rate', fontsize=20)
-ax.set_title('VBF H vs QCD H', fontsize=22)
+ax.set_title('VBF h vs QCD h', fontsize=22)
 ax.legend(fontsize=14, loc='lower right')
 ax.set_xlim(0, 1)
 ax.set_ylim(0, 1)
 ax.tick_params(axis='both', labelsize=16)
 ax.grid(True, linestyle=':', alpha=0.4)
 plt.tight_layout()
-save_fig(fig, 'ROC_comparison')
+save_fig(fig, 'comparison')
 
 
 # ── score distributions ────────────────────────────────────────────────────────

@@ -8,16 +8,17 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from pathlib import Path
 
-FIGS = Path('figs')
+FIGS   = Path(__file__).resolve().parent / 'NN' / 'paper' / 'figs'
+SCRIPT = Path(__file__).stem
 FIGS.mkdir(exist_ok=True)
 
 samples = [
-    {'name': 'QCDHtoInv', 'label': 'QCD Hjj', 'file': '../QCDHtoInv.root', 'group': 'QCD'},
-    {'name': 'QCDZtoInv', 'label': 'QCD Zjj', 'file': '../QCDZtoInv.root', 'group': 'QCD'},
-    {'name': 'QCDWtoInv', 'label': 'QCD Wjj', 'file': '../QCDWtoInv.root', 'group': 'QCD'},
-    {'name': 'VBFHtoInv', 'label': 'VBF Hqq', 'file': '../VBFHtoInv.root', 'group': 'VBF'},
-    {'name': 'VBFZtoInv', 'label': 'VBF Zqq', 'file': '../VBFZtoInv.root', 'group': 'VBF'},
-    {'name': 'VBFWtoInv', 'label': 'VBF Wqq', 'file': '../VBFWtoInv.root', 'group': 'VBF'},
+    {'name': 'QCDHtoInv', 'label': 'QCD h', 'file': '../QCDHtoInv.root', 'group': 'QCD'},
+    {'name': 'QCDZtoInv', 'label': 'QCD Z', 'file': '../QCDZtoInv.root', 'group': 'QCD'},
+    {'name': 'QCDWtoInv', 'label': 'QCD W', 'file': '../QCDWtoInv.root', 'group': 'QCD'},
+    {'name': 'VBFHtoInv', 'label': 'VBF h', 'file': '../VBFHtoInv.root', 'group': 'VBF'},
+    {'name': 'VBFZtoInv', 'label': 'VBF Z', 'file': '../VBFZtoInv.root', 'group': 'VBF'},
+    {'name': 'VBFWtoInv', 'label': 'VBF W', 'file': '../VBFWtoInv.root', 'group': 'VBF'},
 ]
 
 mjj_cut = 400
@@ -25,7 +26,7 @@ bins = np.linspace(0, 0.02, 21)
 bin_centers = (bins[:-1] + bins[1:]) / 2
 bin_width = bins[1] - bins[0]
 
-colors = {'H': 'black', 'Z': '#1f77b4', 'W': '#d62728'}
+colors = {'h': 'black', 'Z': '#1f77b4', 'W': '#d62728'}
 line_styles = {'QCD': '-', 'VBF': ':'}
 
 
@@ -52,7 +53,7 @@ def norm_hist(values, bins):
 
 def save(fig, name):
     for ext in ('pdf', 'png'):
-        fig.savefig(FIGS / f'{name}.{ext}', bbox_inches='tight')
+        fig.savefig(FIGS / f'{SCRIPT}_{name}.{ext}', bbox_inches='tight')
     plt.close(fig)
     print(f'  saved figs/{name}.pdf + .png')
 
@@ -63,7 +64,7 @@ fig, ax = plt.subplots(figsize=(6, 6))
 
 for s in samples:
     label = s['label']
-    key = 'H' if 'H' in label else 'Z' if 'Z' in label else 'W'
+    key = 'h' if 'h' in label else 'Z' if 'Z' in label else 'W'
     color = colors[key]
     linestyle = line_styles[s['group']]
 
@@ -83,7 +84,7 @@ ax.set_yscale('log')
 ax.grid(True, linestyle=':', alpha=0.4)
 ax.legend(loc='upper right', frameon=False, fontsize=12)
 plt.tight_layout()
-save(fig, f'PVM_leading_jet_mjj_gt_{mjj_cut}')
+save(fig, f'leading_jet_mjj_gt_{mjj_cut}')
 
 
 viewer = Path.home() / 'qplots' / 'viewer.py'

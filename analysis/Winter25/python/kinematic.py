@@ -7,16 +7,20 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from pathlib import Path
 
-FIGS = Path('figs')
+sys.path.insert(0, str(Path(__file__).resolve().parent / 'NN'))
+from style import apply_style, FIG_SIZE
+
+FIGS   = Path(__file__).resolve().parent / 'NN' / 'paper' / 'figs'
+SCRIPT = Path(__file__).stem
 FIGS.mkdir(exist_ok=True)
 
 samples = [
-    {'name': 'QCDHtoInv', 'label': 'QCD Hjj', 'file': '../QCDHtoInv.root'},
-    {'name': 'QCDZtoInv', 'label': 'QCD Zjj', 'file': '../QCDZtoInv.root'},
-    {'name': 'QCDWtoInv', 'label': 'QCD Wjj', 'file': '../QCDWtoInv.root'},
-    {'name': 'VBFHtoInv', 'label': 'VBF Hqq', 'file': '../VBFHtoInv.root'},
-    {'name': 'VBFZtoInv', 'label': 'VBF Zqq', 'file': '../VBFZtoInv.root'},
-    {'name': 'VBFWtoInv', 'label': 'VBF Wqq', 'file': '../VBFWtoInv.root'},
+    {'name': 'QCDHtoInv', 'label': 'QCD h', 'file': '../QCDHtoInv.root'},
+    {'name': 'QCDZtoInv', 'label': 'QCD Z', 'file': '../QCDZtoInv.root'},
+    {'name': 'QCDWtoInv', 'label': 'QCD W', 'file': '../QCDWtoInv.root'},
+    {'name': 'VBFHtoInv', 'label': 'VBF h', 'file': '../VBFHtoInv.root'},
+    {'name': 'VBFZtoInv', 'label': 'VBF Z', 'file': '../VBFZtoInv.root'},
+    {'name': 'VBFWtoInv', 'label': 'VBF W', 'file': '../VBFWtoInv.root'},
 ]
 
 branches = ['mjj', 'kWeight', 'ptjj', 'dYjj', 'dPhijj']
@@ -34,12 +38,12 @@ print('All samples loaded.\n')
 
 # ── style ──────────────────────────────────────────────────────────────────────
 sample_style = {
-    'QCD Hjj': {'color': 'black',   'linestyle': '-'},
-    'QCD Zjj': {'color': '#1f77b4', 'linestyle': '-'},
-    'QCD Wjj': {'color': '#d62728', 'linestyle': '-'},
-    'VBF Hqq': {'color': 'black',   'linestyle': ':'},
-    'VBF Wqq': {'color': '#d62728', 'linestyle': ':'},
-    'VBF Zqq': {'color': '#1f77b4', 'linestyle': ':'},
+    'QCD h': {'color': 'black',   'linestyle': '-'},
+    'QCD Z': {'color': '#1f77b4', 'linestyle': '-'},
+    'QCD W': {'color': '#d62728', 'linestyle': '-'},
+    'VBF h': {'color': 'black',   'linestyle': ':'},
+    'VBF W': {'color': '#d62728', 'linestyle': ':'},
+    'VBF Z': {'color': '#1f77b4', 'linestyle': ':'},
 }
 
 plt.rcParams.update({
@@ -53,7 +57,7 @@ plt.rcParams.update({
 
 def save(fig, name):
     for ext in ('pdf', 'png'):
-        fig.savefig(FIGS / f'{name}.{ext}', bbox_inches='tight')
+        fig.savefig(FIGS / f'{SCRIPT}_{name}.{ext}', bbox_inches='tight')
     plt.close(fig)
     print(f'  saved figs/{name}.pdf + .png')
 
@@ -151,6 +155,86 @@ plot_shapes('dYjj', np.linspace(0, 5, 11), '$|\\Delta y(jj)|$',
 print('Plotting dPhijj...')
 plot_shapes('dPhijj', np.linspace(0, np.pi, 11), '$|\\Delta\\phi(jj)|$ [rad]',
             'upper left', (0.02, 0.98), 'dPhijj_norm', mjj_cut=200, transform=np.abs)
+
+# ── plot 6: mjj cross-section weighted — QCD h vs VBF h ─────────────────────
+print('Plotting mjj events/pb (QCD h vs VBF h)...')
+h_data  = [s for s in data if s['label'] in ('QCD h', 'VBF h')]
+bins_mjj = np.linspace(200, 1000, 41)
+bc_mjj   = (bins_mjj[:-1] + bins_mjj[1:]) / 2
+
+fig, ax = plt.subplots(figsize=FIG_SIZE)
+for s in h_data:
+    style    = sample_style[s['label']]
+    w        = s['kWeight']
+    hist, _  = np.histogram(s['mjj'], bins=bins_mjj, weights=w)
+    hist_err = np.sqrt(np.histogram(s['mjj'], bins=bins_mjj, weights=w**2)[0])
+    ax.hist(bc_mjj, bins=bins_mjj, weights=hist, histtype='step',
+            linewidth=3, color=style['color'], linestyle=style['linestyle'],
+            label=s['label'])
+    ax.errorbar(bc_mjj, hist, yerr=hist_err, fmt='none',
+                color=style['color'], capsize=3, capthick=1, elinewidth=1)
+
+apply_style(ax,
+            xlabel='m(jj) [GeV]',
+            ylabel='Events / pb',
+            title='',
+            xlim=(200, 1000),
+            legend_loc='upper right',
+            log_y=True)
+plt.tight_layout()
+save(fig, 'mjj_norm_H')
+
+# ── plot 7: mjj cross-section weighted — QCD W vs VBF W ─────────────────────
+print('Plotting mjj events/pb (QCD W vs VBF W)...')
+w_data = [s for s in data if s['label'] in ('QCD W', 'VBF W')]
+
+fig, ax = plt.subplots(figsize=FIG_SIZE)
+for s in w_data:
+    style    = sample_style[s['label']]
+    w        = s['kWeight']
+    hist, _  = np.histogram(s['mjj'], bins=bins_mjj, weights=w)
+    hist_err = np.sqrt(np.histogram(s['mjj'], bins=bins_mjj, weights=w**2)[0])
+    ax.hist(bc_mjj, bins=bins_mjj, weights=hist, histtype='step',
+            linewidth=3, color=style['color'], linestyle=style['linestyle'],
+            label=s['label'])
+    ax.errorbar(bc_mjj, hist, yerr=hist_err, fmt='none',
+                color=style['color'], capsize=3, capthick=1, elinewidth=1)
+
+apply_style(ax,
+            xlabel='m(jj) [GeV]',
+            ylabel='Events / pb',
+            title='',
+            xlim=(200, 1000),
+            legend_loc='upper right',
+            log_y=True)
+plt.tight_layout()
+save(fig, 'mjj_norm_W')
+
+# ── plot 8: mjj cross-section weighted — QCD Z vs VBF Z ─────────────────────
+print('Plotting mjj events/pb (QCD Z vs VBF Z)...')
+z_data = [s for s in data if s['label'] in ('QCD Z', 'VBF Z')]
+
+fig, ax = plt.subplots(figsize=FIG_SIZE)
+for s in z_data:
+    style    = sample_style[s['label']]
+    w        = s['kWeight']
+    hist, _  = np.histogram(s['mjj'], bins=bins_mjj, weights=w)
+    hist_err = np.sqrt(np.histogram(s['mjj'], bins=bins_mjj, weights=w**2)[0])
+    ax.hist(bc_mjj, bins=bins_mjj, weights=hist, histtype='step',
+            linewidth=3, color=style['color'], linestyle=style['linestyle'],
+            label=s['label'])
+    ax.errorbar(bc_mjj, hist, yerr=hist_err, fmt='none',
+                color=style['color'], capsize=3, capthick=1, elinewidth=1)
+
+apply_style(ax,
+            xlabel='m(jj) [GeV]',
+            ylabel='Events / pb',
+            title='',
+            xlim=(200, 1000),
+            legend_loc='upper right',
+            log_y=True)
+plt.tight_layout()
+save(fig, 'mjj_norm_Z')
 
 viewer = Path.home() / 'qplots' / 'viewer.py'
 print(f'\nAll figures saved to {FIGS.resolve()}')

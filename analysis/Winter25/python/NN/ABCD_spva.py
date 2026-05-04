@@ -14,7 +14,8 @@ sys.path.insert(0, str(Path(__file__).parent))
 from model import MLP
 
 NN_DIR   = Path(__file__).resolve().parent
-FIGS     = NN_DIR / 'figs'
+FIGS     = NN_DIR / 'paper' / 'figs'
+SCRIPT   = Path(__file__).stem
 MODELS   = NN_DIR / 'models'
 DATA_DIR = NN_DIR.parents[1]
 
@@ -77,7 +78,7 @@ def norm_hist(values, bins):
 
 def save_fig(fig, name):
     for ext in ('pdf', 'png'):
-        fig.savefig(FIGS / f'{name}.{ext}', bbox_inches='tight')
+        fig.savefig(FIGS / f'{SCRIPT}_{name}.{ext}', bbox_inches='tight')
     plt.close(fig)
     print(f'  saved {name}')
 
@@ -113,14 +114,14 @@ masks_bkg = region_masks(sc_bkg, spva0_bkg)
 masks_sig = region_masks(sc_sig, spva0_sig)
 
 region_style = {
-    'A': {'color': 'steelblue',  'label': r'A: low NN, high $|\theta_s|$'},
-    'B': {'color': 'crimson',    'label': r'B: high NN, high $|\theta_s|$'},
-    'C': {'color': 'darkgreen',  'label': r'C: low NN, low $|\theta_s|$'},
-    'D': {'color': 'darkorange', 'label': r'D: high NN, low $|\theta_s|$'},
+    'A': {'color': 'steelblue',  'label': r'A: low NN kin, high $|\theta_s|$'},
+    'B': {'color': 'crimson',    'label': r'B: high NN kin, high $|\theta_s|$'},
+    'C': {'color': 'darkgreen',  'label': r'C: low NN kin, low $|\theta_s|$'},
+    'D': {'color': 'darkorange', 'label': r'D: high NN kin, low $|\theta_s|$'},
 }
 
 print('\nEvent counts per region:')
-print(f'  {"Region":<6}  {"QCD H":>8}  {"VBF H":>8}')
+print(f'  {"Region":<6}  {"QCD h":>8}  {"VBF h":>8}')
 for r in ('A', 'B', 'C', 'D'):
     print(f'  {r:<6}  {masks_bkg[r].sum():>8}  {masks_sig[r].sum():>8}')
 
@@ -128,8 +129,8 @@ bins        = np.linspace(400, 1000, 36)
 bin_centers = (bins[:-1] + bins[1:]) / 2
 
 for sample, mjj, masks, tag in [
-    ('QCD H', mjj_bkg, masks_bkg, 'QCD'),
-    ('VBF H', mjj_sig, masks_sig, 'VBF'),
+    ('QCD h', mjj_bkg, masks_bkg, 'QCD'),
+    ('VBF h', mjj_sig, masks_sig, 'VBF'),
 ]:
     fig, ax = plt.subplots(figsize=(6, 6))
 
@@ -150,7 +151,7 @@ for sample, mjj, masks, tag in [
     ax.legend(loc='upper right', frameon=False, fontsize=14)
 
     plt.tight_layout()
-    save_fig(fig, f'ABCD_spva_{tag}')
+    save_fig(fig, tag)
 
 viewer = Path.home() / 'qplots' / 'viewer.py'
 print(f'\nDone. Figures saved to {FIGS.resolve()}')

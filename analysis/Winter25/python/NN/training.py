@@ -17,7 +17,8 @@ from model import MLP
 
 # ── paths ──────────────────────────────────────────────────────────────────────
 NN_DIR  = Path(__file__).resolve().parent
-FIGS    = NN_DIR / 'figs'
+FIGS    = NN_DIR / 'paper' / 'figs'
+SCRIPT  = Path(__file__).stem
 MODELS  = NN_DIR / 'models'
 DATA_DIR = NN_DIR.parents[1]   # Winter25/
 
@@ -92,7 +93,7 @@ def normalize(X_tr, X_va, X_te):
 
 def save_fig(fig, name):
     for ext in ('pdf', 'png'):
-        fig.savefig(FIGS / f'{name}.{ext}', bbox_inches='tight')
+        fig.savefig(FIGS / f'{SCRIPT}_{name}.{ext}', bbox_inches='tight')
     plt.close(fig)
     print(f'  saved {name}')
 
@@ -210,7 +211,7 @@ def train_model(key):
     axes[2].grid(True, linestyle=':', alpha=0.4)
 
     plt.tight_layout()
-    save_fig(fig, f'training_history_{key}')
+    save_fig(fig, f'history_{key}')
 
     print(f'  best val loss={best_val:.4f}  final AUC={hist["val_auc"][-1]:.4f}')
     return hist
