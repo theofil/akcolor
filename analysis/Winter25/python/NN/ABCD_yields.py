@@ -127,6 +127,21 @@ for r in ('A', 'B', 'C', 'D'):
     rows[r] = (y_qcd, e_qcd, y_vbf, e_vbf, y_tot, e_tot)
     print(f'  {r:<6}  {y_qcd:>12.4g}  {y_vbf:>12.4g}  {y_tot:>12.4g}')
 
+# ── B*C/A with error propagation ──────────────────────────────────────────────
+def bca(r_b, r_c, r_a, col):
+    idx = {'qcd': (0, 1), 'vbf': (2, 3), 'tot': (4, 5)}[col]
+    y_b, e_b = rows[r_b][idx[0]], rows[r_b][idx[1]]
+    y_c, e_c = rows[r_c][idx[0]], rows[r_c][idx[1]]
+    y_a, e_a = rows[r_a][idx[0]], rows[r_a][idx[1]]
+    val = y_b * y_c / y_a
+    err = val * np.sqrt((e_b / y_b)**2 + (e_c / y_c)**2 + (e_a / y_a)**2)
+    return val, err
+
+bca_qcd = bca('B', 'C', 'A', 'qcd')
+bca_vbf = bca('B', 'C', 'A', 'vbf')
+bca_tot = bca('B', 'C', 'A', 'tot')
+print(f'  {"B*C/A":<6}  {bca_qcd[0]:>12.4g}  {bca_vbf[0]:>12.4g}  {bca_tot[0]:>12.4g}')
+
 # ── build LaTeX table ──────────────────────────────────────────────────────────
 tex_rows = []
 for r in ('A', 'B', 'C', 'D'):
@@ -134,11 +149,14 @@ for r in ('A', 'B', 'C', 'D'):
     tex_rows.append(
         f'    {region_desc[r]} & {fmt(y_qcd, e_qcd)} & {fmt(y_vbf, e_vbf)} & {fmt(y_tot, e_tot)} \\\\'
     )
+tex_rows += [
+    r'    \hline',
+    f'    $B\\cdot C/A$ & {fmt(*bca_qcd)} & {fmt(*bca_vbf)} & {fmt(*bca_tot)} \\\\',
+]
 
 lumi_label = f'{LUMI/1e3:.0f}'
 block = '\n'.join([
     '% BEGIN_ABCD_YIELDS',
-    r'\appendix',
     r'\section{ABCD Region Yields}',
     r'',
     r'\begin{table}[h]',
