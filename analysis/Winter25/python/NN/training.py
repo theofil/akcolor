@@ -1,4 +1,5 @@
 import sys
+import argparse
 import json
 import numpy as np
 import uproot
@@ -22,8 +23,17 @@ SCRIPT  = Path(__file__).stem
 MODELS  = NN_DIR / 'models'
 DATA_DIR = NN_DIR.parents[1]   # Winter25/
 
-BKG_FILE = DATA_DIR / 'QCDHtoInv.root'
-SIG_FILE = DATA_DIR / 'VBFHtoInv.root'
+_parser = argparse.ArgumentParser()
+_parser.add_argument('--process', default='H', choices=['H', 'Z', 'W'])
+_parser.add_argument('keys', nargs='*')
+_args = _parser.parse_args()
+
+PROCESS       = _args.process.upper()
+PROC_PREFIX   = f'{PROCESS}_' if PROCESS != 'H' else ''
+keys_to_train = tuple(_args.keys) if _args.keys else ('a', 'c', 'd', 'e', 'f')
+
+BKG_FILE = DATA_DIR / f'QCD{PROCESS}toInv.root'
+SIG_FILE = DATA_DIR / f'VBF{PROCESS}toInv.root'
 
 arch = json.load(open(NN_DIR / 'architecture.json'))
 FEATURE_SETS = arch['feature_sets']
@@ -33,30 +43,39 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f'Device: {device}')
 
 # ── data loading ───────────────────────────────────────────────────────────────
-# column layout: [mjj, |dYjj|, |dPhijj|, ptjj, |SPVA[0]|, |SPVA[1]|, PVM[0], PVM[1]]
+# column layout:
+#   0-3:   mjj, dYjj, dPhijj, ptjj
+#   4-5:   PVM[0], PVM[1]
+#   6-13:  jetPt[0..1], jetEta[0..1], jetPhi[0..1], jetM[0..1]
+#   14-15: c21, c12  (flat dijet colour-flow variables)
+#   16-17: PVA[0], PVA[1]  (unsigned pull vector angle)
 
 def load_file(path, label):
     print(f'Loading {path.name}...')
     with uproot.open(str(path)) as f:
-        flat   = f['events'].arrays(['mjj', 'dYjj', 'dPhijj', 'ptjj'], library='np')
-        jagged = f['events'].arrays(['jetSPVA', 'jetPVM'], library='ak')
+        flat   = f['events'].arrays(['mjj', 'dYjj', 'dPhijj', 'ptjj', 'c21', 'c12'], library='np')
+        jagged = f['events'].arrays(['jetPVM', 'jetPt', 'jetEta', 'jetPhi', 'jetM', 'jetPVA'], library='ak')
 
-    spva = ak.pad_none(jagged['jetSPVA'], 2, axis=1)
-    pvm  = ak.pad_none(jagged['jetPVM'],  2, axis=1)
-    spva0 = np.abs(ak.to_numpy(ak.fill_none(spva[:, 0], np.nan)))
-    spva1 = np.abs(ak.to_numpy(ak.fill_none(spva[:, 1], np.nan)))
-    pvm0  = ak.to_numpy(ak.fill_none(pvm[:, 0], np.nan))
-    pvm1  = ak.to_numpy(ak.fill_none(pvm[:, 1], np.nan))
+    def pad2(arr):
+        return ak.pad_none(arr, 2, axis=1)
+
+    pvm  = pad2(jagged['jetPVM'])
+    jpt  = pad2(jagged['jetPt'])
+    jeta = pad2(jagged['jetEta'])
+    jphi = pad2(jagged['jetPhi'])
+    jm   = pad2(jagged['jetM'])
+    jpva = pad2(jagged['jetPVA'])
+
+    def col(arr, i): return ak.to_numpy(ak.fill_none(arr[:, i], np.nan))
 
     X = np.column_stack([
-        flat['mjj'],
-        np.abs(flat['dYjj']),
-        np.abs(flat['dPhijj']),
-        flat['ptjj'],
-        spva0, spva1, pvm0, pvm1,
+        flat['mjj'], flat['dYjj'], flat['dPhijj'], flat['ptjj'],
+        col(pvm, 0), col(pvm, 1),
+        col(jpt, 0), col(jpt, 1), col(jeta, 0), col(jeta, 1),
+        col(jphi, 0), col(jphi, 1), col(jm, 0), col(jm, 1),
+        flat['c21'], flat['c12'], col(jpva, 0), col(jpva, 1),
     ])
 
-    # mjj cut + drop any NaN row
     mask = (flat['mjj'] > MJJ_CUT) & ~np.isnan(X).any(axis=1)
     X = X[mask].astype(np.float32)
     print(f'  {X.shape[0]} events after mjj > {MJJ_CUT} and NaN removal')
@@ -79,7 +98,7 @@ idx_train = idx[:n_train]
 idx_val   = idx[n_train:n_train + n_val]
 idx_inf   = idx[n_train + n_val:]
 
-np.savez(NN_DIR / 'split_indices.npz',
+np.savez(NN_DIR / (f'split_indices_{PROCESS}.npz' if PROCESS != 'H' else 'split_indices.npz'),
          idx_train=idx_train, idx_val=idx_val, idx_inf=idx_inf)
 print(f'\nSplit — train: {len(idx_train)}  val: {len(idx_val)}  inference: {len(idx_inf)}')
 
@@ -113,7 +132,7 @@ def train_model(key):
     y_tr = y[idx_train]
     y_va = y[idx_val]
 
-    np.savez(NN_DIR / f'norm_{key}.npz', mu=mu, std=std)
+    np.savez(NN_DIR / f'norm_{PROC_PREFIX}{key}.npz', mu=mu, std=std)
 
     loader_tr = DataLoader(
         TensorDataset(torch.from_numpy(Xk_tr), torch.from_numpy(y_tr)),
@@ -171,7 +190,7 @@ def train_model(key):
         if v_loss < best_val:
             best_val   = v_loss
             no_improve = 0
-            torch.save(model.state_dict(), MODELS / f'model_{key}.pt')
+            torch.save(model.state_dict(), MODELS / f'model_{PROC_PREFIX}{key}.pt')
         else:
             no_improve += 1
             if no_improve >= arch['patience']:
@@ -217,7 +236,7 @@ def train_model(key):
     return hist
 
 
-for key in ('a', 'b', 'c'):
+for key in keys_to_train:
     train_model(key)
 
 print('\nAll models trained. Run inference_ROC.py to compare.')

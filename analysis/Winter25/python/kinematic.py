@@ -236,7 +236,4 @@ apply_style(ax,
 plt.tight_layout()
 save(fig, 'mjj_norm_Z')
 
-viewer = Path.home() / 'qplots' / 'viewer.py'
 print(f'\nAll figures saved to {FIGS.resolve()}')
-print(f'Launching viewer...')
-os.execv(sys.executable, [sys.executable, str(viewer), str(FIGS.resolve())])

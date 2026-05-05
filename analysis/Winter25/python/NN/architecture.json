@@ -11,17 +11,27 @@
         "a": {
             "name": "kinematic",
             "cols": [0, 1, 2, 3],
-            "labels": ["mjj", "|dYjj|", "|dPhijj|", "ptjj"]
-        },
-        "b": {
-            "name": "pull",
-            "cols": [4, 5, 6, 7],
-            "labels": ["|SPVA[0]|", "|SPVA[1]|", "PVM[0]", "PVM[1]"]
+            "labels": ["mjj", "dYjj", "dPhijj", "ptjj"]
         },
         "c": {
             "name": "combined",
-            "cols": [0, 1, 2, 3, 4, 5, 6, 7],
-            "labels": ["mjj", "|dYjj|", "|dPhijj|", "ptjj", "|SPVA[0]|", "|SPVA[1]|", "PVM[0]", "PVM[1]"]
+            "cols": [0, 1, 2, 3, 4, 5, 14, 15, 16, 17],
+            "labels": ["mjj", "dYjj", "dPhijj", "ptjj", "PVM[0]", "PVM[1]", "c21", "c12", "PVA[0]", "PVA[1]"]
+        },
+        "d": {
+            "name": "raw",
+            "cols": [6, 7, 8, 9, 10, 11, 12, 13],
+            "labels": ["jetPt[0]", "jetPt[1]", "jetEta[0]", "jetEta[1]", "jetPhi[0]", "jetPhi[1]", "jetM[0]", "jetM[1]"]
+        },
+        "e": {
+            "name": "wild",
+            "cols": [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17],
+            "labels": ["PVM[0]", "PVM[1]", "jetPt[0]", "jetPt[1]", "jetEta[0]", "jetEta[1]", "jetPhi[0]", "jetPhi[1]", "jetM[0]", "jetM[1]", "c21", "c12", "PVA[0]", "PVA[1]"]
+        },
+        "f": {
+            "name": "pull_new",
+            "cols": [4, 5, 14, 15, 16, 17],
+            "labels": ["PVM[0]", "PVM[1]", "c21", "c12", "PVA[0]", "PVA[1]"]
         }
     }
 }

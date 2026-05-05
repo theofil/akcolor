@@ -87,7 +87,4 @@ plt.tight_layout()
 save(fig, f'leading_jet_mjj_gt_{mjj_cut}')
 
 
-viewer = Path.home() / 'qplots' / 'viewer.py'
 print(f'\nAll figures saved to {FIGS.resolve()}')
-print('Launching viewer...')
-os.execv(sys.executable, [sys.executable, str(viewer), str(FIGS.resolve())])
