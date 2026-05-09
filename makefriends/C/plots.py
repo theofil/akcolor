@@ -25,8 +25,8 @@ ROOT.gStyle.SetOptTitle(0)
 
 FIGS.mkdir(parents=True, exist_ok=True)
 
-# hLeadJetSPVA is plotted separately below as a comparison; skip individual files
-SKIP_HISTS   = {'hLeadJetSPVA'}
+# hLeadJetSPVA and hLeadJetSPVM are plotted separately below; skip individual files
+SKIP_HISTS   = {'hLeadJetSPVA', 'hLeadJetSPVM'}
 HIST_CLASSES = {'TH1F', 'TH2F', 'TH2Poly'}
 
 for root_file in sorted(DATA_DIR.glob('*slimfriend.root')):
@@ -66,11 +66,13 @@ for root_file in sorted(DATA_DIR.glob('*slimfriend.root')):
 
     f.Close()
 
-# ── Erase stale per-sample hLeadJetSPVA PDFs ─────────────────────────────────
+# ── Erase stale per-sample PDFs ──────────────────────────────────────────────
 for stale in ('hLeadJetSPVA_QCDHtoInv.slimfriend.pdf',
               'hLeadJetSPVA_VBFHtoInv.slimfriend.pdf',
               'hLeadJetSPVA_comparison.pdf',
-              'hLeadJetSPVA_comparison.png'):
+              'hLeadJetSPVA_comparison.png',
+              'hLeadJetSPVM_QCDHtoInv.slimfriend.pdf',
+              'hLeadJetSPVM_VBFHtoInv.slimfriend.pdf'):
     p = FIGS / stale
     if p.exists():
         p.unlink()
@@ -130,6 +132,54 @@ apply_style(ax,
 plt.tight_layout()
 for ext in ('pdf', 'png'):
     outpath = str(FIGS / f'jetSPVA.{ext}')
+    fig.savefig(outpath, bbox_inches='tight')
+    print('Saved', outpath)
+plt.close(fig)
+
+# ── Leading-jet PVM |t⃗| comparison (matplotlib, log-y, matching pvm.py style) ─
+spvm_bins        = np.linspace(0, 0.06, 21)
+spvm_bin_centers = (spvm_bins[:-1] + spvm_bins[1:]) / 2
+spvm_bin_width   = spvm_bins[1] - spvm_bins[0]
+
+fig, ax = plt.subplots(figsize=FIG_SIZE)
+
+for s in spva_samples:
+    fpath = DATA_DIR / f'{s["name"]}.slimfriend.root'
+    if not fpath.exists():
+        print(f'  Skipping {fpath} (not found)')
+        continue
+    with uproot.open(str(fpath)) as rf:
+        if 'hLeadJetSPVM' not in rf:
+            print(f'  hLeadJetSPVM not found in {fpath}')
+            continue
+        h         = rf['hLeadJetSPVM']
+        counts    = h.values()
+        variances = h.variances()
+
+    norm = counts.sum() * spvm_bin_width
+    if norm > 0:
+        hist     = counts / norm
+        hist_err = np.sqrt(variances) / norm
+    else:
+        hist     = np.zeros_like(counts, dtype=float)
+        hist_err = np.zeros_like(counts, dtype=float)
+
+    ax.hist(spvm_bin_centers, bins=spvm_bins, weights=hist, histtype='step',
+            linewidth=3, color=colors[s['proc']], linestyle=line_styles[s['group']],
+            label=s['label'])
+    ax.errorbar(spvm_bin_centers, hist, yerr=hist_err, fmt='none',
+                color=colors[s['proc']], capsize=3, capthick=1, elinewidth=1)
+
+apply_style(ax,
+            xlabel=r'$|\vec{t}\,|$',
+            ylabel='Normalized density',
+            title='',
+            xlim=(0, 0.06),
+            log_y=True,
+            legend_loc='upper right')
+plt.tight_layout()
+for ext in ('pdf', 'png'):
+    outpath = str(FIGS / f'jetSPVM.{ext}')
     fig.savefig(outpath, bbox_inches='tight')
     print('Saved', outpath)
 plt.close(fig)

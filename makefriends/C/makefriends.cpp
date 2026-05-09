@@ -10,7 +10,9 @@
 #include "TFile.h"
 #include "TTree.h"
 #include "TH1D.h"
+#include "TH1F.h"
 #include "TH2Poly.h"
+#include "TCanvas.h"
 #include "TLorentzVector.h"
 #include "ROOT/RDataFrame.hxx"
 
@@ -131,6 +133,11 @@ int main(int argc, char* argv[]) {
     TH1F* hLeadJetSPVA = new TH1F("hLeadJetSPVA","hLeadJetSPVA", 20, 0., M_PI);
     hLeadJetSPVA->Sumw2();
 
+    // leading-jet PVM |t⃗| (20 bins, 0–0.06), matching pvm.py linspace(0,0.06,21)
+    TH1F* hLeadJetSPVM = new TH1F("hLeadJetSPVM","hLeadJetSPVM", 20, 0., 0.06);
+    hLeadJetSPVM->Sumw2();
+    hLeadJetSPVM->GetXaxis()->SetTitle("|#vec{t}|");
+
     // TH2Poly jetShape — 64 phi × 30 rho annular sectors
     TH2Poly* jetShape = new TH2Poly("jetShape","jetShape",-0.5,0.5,-0.5,0.5);
     jetShape->Sumw2();
@@ -245,10 +252,13 @@ int main(int argc, char* argv[]) {
             sumP4(jets, 2).M() > 400. &&
             jets[0].eta() * jets[1].eta() < 0.) {
 
-            // |SPVA| for leading and subleading jet — two fills per event
-            for (int ij = 0; ij < 2; ++ij)
+            // |SPVA| and PVM for leading and subleading jet — two fills per event
+            for (int ij = 0; ij < 2; ++ij) {
                 if (pvs[ij].spva > -90.)
                     hLeadJetSPVA->Fill(std::abs(pvs[ij].spva), o_kWeight);
+                if (pvs[ij].pvm > -90.)
+                    hLeadJetSPVM->Fill(pvs[ij].pvm, o_kWeight);
+            }
 
             // fill jetShape from both leading jets (sign-flip dY for backward jet)
             for (int ij = 0; ij < 2; ++ij) {
@@ -290,7 +300,20 @@ int main(int argc, char* argv[]) {
     hSumW->Write();
     jetShape->Write();
     hLeadJetSPVA->Write();
+    hLeadJetSPVM->Write();
     ofile->Write();
+
+    // save hLeadJetSPVM as PDF+PNG in log-y scale
+    {
+        TCanvas c("cSPVM","",800,600);
+        c.SetLogy();
+        hLeadJetSPVM->SetLineWidth(2);
+        hLeadJetSPVM->Draw("HIST E");
+        std::string base = outname.substr(0, outname.size()-5); // strip .root
+        c.SaveAs((base + "_spvm.pdf").c_str());
+        c.SaveAs((base + "_spvm.png").c_str());
+    }
+
     ofile->Close();
     ifile->Close();
     return 0;
