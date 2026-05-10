@@ -44,7 +44,7 @@ for root_file in sorted(DATA_DIR.glob('*slimfriend.root')):
             continue
         obj = key.ReadObj()
         hname = obj.GetName()
-        if hname in SKIP_HISTS:
+        if hname in SKIP_HISTS or hname.startswith('jetSPVA_'):
             continue
         obj.SetTitle('')
         is2d = classname in ('TH2F', 'TH2Poly')
@@ -72,7 +72,19 @@ for stale in ('hLeadJetSPVA_QCDHtoInv.slimfriend.pdf',
               'hLeadJetSPVA_comparison.pdf',
               'hLeadJetSPVA_comparison.png',
               'hLeadJetSPVM_QCDHtoInv.slimfriend.pdf',
-              'hLeadJetSPVM_VBFHtoInv.slimfriend.pdf'):
+              'hLeadJetSPVM_VBFHtoInv.slimfriend.pdf',
+              'jetSPVA_a-1p0b2p0_QCDHtoInv.slimfriend.pdf',
+              'jetSPVA_a-1p0b2p0_VBFHtoInv.slimfriend.pdf',
+              'jetSPVA_a-2p0b2p0_QCDHtoInv.slimfriend.pdf',
+              'jetSPVA_a-2p0b2p0_VBFHtoInv.slimfriend.pdf',
+              'jetSPVA_a1p0b-1p0_QCDHtoInv.slimfriend.pdf',
+              'jetSPVA_a1p0b-1p0_VBFHtoInv.slimfriend.pdf',
+              'jetSPVA_a1p0b1p0_QCDHtoInv.slimfriend.pdf',
+              'jetSPVA_a1p0b1p0_VBFHtoInv.slimfriend.pdf',
+              'jetSPVA_a1p0b2p0_QCDHtoInv.slimfriend.pdf',
+              'jetSPVA_a1p0b2p0_VBFHtoInv.slimfriend.pdf',
+              'jetSPVA_a2p0b2p0_QCDHtoInv.slimfriend.pdf',
+              'jetSPVA_a2p0b2p0_VBFHtoInv.slimfriend.pdf'):
     p = FIGS / stale
     if p.exists():
         p.unlink()
@@ -87,7 +99,7 @@ spva_samples = [
     {'name': 'VBFZtoInv', 'label': 'VBF Z', 'group': 'VBF', 'proc': 'Z'},
     {'name': 'VBFWtoInv', 'label': 'VBF W', 'group': 'VBF', 'proc': 'W'},
 ]
-colors      = {'H': 'black', 'Z': '#1f77b4', 'W': '#d62728'}
+proc_colors = {'H': 'black', 'Z': '#1f77b4', 'W': '#d62728'}
 line_styles = {'QCD': '-', 'VBF': ':'}
 
 bins        = np.linspace(0, np.pi, 21)
@@ -118,10 +130,10 @@ for s in spva_samples:
         hist_err = np.zeros_like(counts, dtype=float)
 
     ax.hist(bin_centers, bins=bins, weights=hist, histtype='step',
-            linewidth=3, color=colors[s['proc']], linestyle=line_styles[s['group']],
+            linewidth=3, color=proc_colors[s['proc']], linestyle=line_styles[s['group']],
             label=s['label'])
     ax.errorbar(bin_centers, hist, yerr=hist_err, fmt='none',
-                color=colors[s['proc']], capsize=3, capthick=1, elinewidth=1)
+                color=proc_colors[s['proc']], capsize=3, capthick=1, elinewidth=1)
 
 apply_style(ax,
             xlabel=r'$|\theta_s|$ [rad]',
@@ -132,6 +144,77 @@ apply_style(ax,
 plt.tight_layout()
 for ext in ('pdf', 'png'):
     outpath = str(FIGS / f'jetSPVA.{ext}')
+    fig.savefig(outpath, bbox_inches='tight')
+    print('Saved', outpath)
+plt.close(fig)
+
+# ── Leading-jet |SPVA| VBF/QCD ratio ─────────────────────────────────────────
+procs = ['H', 'Z', 'W']
+proc_names = {'H': ('QCDHtoInv', 'VBFHtoInv'),
+              'Z': ('QCDZtoInv', 'VBFZtoInv'),
+              'W': ('QCDWtoInv', 'VBFWtoInv')}
+proc_labels = {'H': 'h', 'Z': 'Z', 'W': 'W'}
+
+fig, ax = plt.subplots(figsize=FIG_SIZE)
+
+for proc in procs:
+    qcd_name, vbf_name = proc_names[proc]
+
+    qcd_counts, qcd_vars = None, None
+    vbf_counts, vbf_vars = None, None
+
+    for sample_name, store in [(qcd_name, 'qcd'), (vbf_name, 'vbf')]:
+        fpath = DATA_DIR / f'{sample_name}.slimfriend.root'
+        if not fpath.exists():
+            print(f'  Skipping {fpath} (not found)')
+            break
+        with uproot.open(str(fpath)) as rf:
+            if 'hLeadJetSPVA' not in rf:
+                print(f'  hLeadJetSPVA not found in {fpath}')
+                break
+            h = rf['hLeadJetSPVA']
+            if store == 'qcd':
+                qcd_counts, qcd_vars = h.values(), h.variances()
+            else:
+                vbf_counts, vbf_vars = h.values(), h.variances()
+
+    if qcd_counts is None or vbf_counts is None:
+        continue
+
+    qcd_norm = qcd_counts.sum() * bin_width
+    vbf_norm = vbf_counts.sum() * bin_width
+    if qcd_norm <= 0 or vbf_norm <= 0:
+        continue
+
+    qcd_hist = qcd_counts / qcd_norm
+    vbf_hist = vbf_counts / vbf_norm
+    qcd_err  = np.sqrt(qcd_vars) / qcd_norm
+    vbf_err  = np.sqrt(vbf_vars) / vbf_norm
+
+    mask = qcd_hist > 0
+    ratio     = np.where(mask, vbf_hist / np.where(mask, qcd_hist, 1), np.nan)
+    ratio_err = np.where(mask,
+                         ratio * np.sqrt((np.where(mask, vbf_err / np.where(mask, vbf_hist, 1), 0))**2 +
+                                         (np.where(mask, qcd_err / np.where(mask, qcd_hist, 1), 0))**2),
+                         np.nan)
+
+    ax.hist(bin_centers, bins=bins, weights=np.where(np.isnan(ratio), 0, ratio),
+            histtype='step', linewidth=3, color=proc_colors[proc],
+            label=proc_labels[proc])
+    ax.errorbar(bin_centers, ratio, yerr=ratio_err, fmt='none',
+                color=proc_colors[proc], capsize=3, capthick=1, elinewidth=1)
+
+ax.axhline(1.0, color='gray', linewidth=1, linestyle='--')
+
+apply_style(ax,
+            xlabel=r'$|\theta_s|$ [rad]',
+            ylabel='VBF / QCD',
+            title='',
+            xlim=(0, np.pi),
+            legend_loc='upper right')
+plt.tight_layout()
+for ext in ('pdf', 'png'):
+    outpath = str(FIGS / f'jetSPVA_ratio.{ext}')
     fig.savefig(outpath, bbox_inches='tight')
     print('Saved', outpath)
 plt.close(fig)
@@ -165,10 +248,10 @@ for s in spva_samples:
         hist_err = np.zeros_like(counts, dtype=float)
 
     ax.hist(spvm_bin_centers, bins=spvm_bins, weights=hist, histtype='step',
-            linewidth=3, color=colors[s['proc']], linestyle=line_styles[s['group']],
+            linewidth=3, color=proc_colors[s['proc']], linestyle=line_styles[s['group']],
             label=s['label'])
     ax.errorbar(spvm_bin_centers, hist, yerr=hist_err, fmt='none',
-                color=colors[s['proc']], capsize=3, capthick=1, elinewidth=1)
+                color=proc_colors[s['proc']], capsize=3, capthick=1, elinewidth=1)
 
 apply_style(ax,
             xlabel=r'$|\vec{t}\,|$',
@@ -180,6 +263,71 @@ apply_style(ax,
 plt.tight_layout()
 for ext in ('pdf', 'png'):
     outpath = str(FIGS / f'jetSPVM.{ext}')
+    fig.savefig(outpath, bbox_inches='tight')
+    print('Saved', outpath)
+plt.close(fig)
+
+# ── Leading-jet PVM VBF/QCD ratio ────────────────────────────────────────────
+fig, ax = plt.subplots(figsize=FIG_SIZE)
+
+for proc in procs:
+    qcd_name, vbf_name = proc_names[proc]
+
+    qcd_counts, qcd_vars = None, None
+    vbf_counts, vbf_vars = None, None
+
+    for sample_name, store in [(qcd_name, 'qcd'), (vbf_name, 'vbf')]:
+        fpath = DATA_DIR / f'{sample_name}.slimfriend.root'
+        if not fpath.exists():
+            print(f'  Skipping {fpath} (not found)')
+            break
+        with uproot.open(str(fpath)) as rf:
+            if 'hLeadJetSPVM' not in rf:
+                print(f'  hLeadJetSPVM not found in {fpath}')
+                break
+            h = rf['hLeadJetSPVM']
+            if store == 'qcd':
+                qcd_counts, qcd_vars = h.values(), h.variances()
+            else:
+                vbf_counts, vbf_vars = h.values(), h.variances()
+
+    if qcd_counts is None or vbf_counts is None:
+        continue
+
+    qcd_norm = qcd_counts.sum() * spvm_bin_width
+    vbf_norm = vbf_counts.sum() * spvm_bin_width
+    if qcd_norm <= 0 or vbf_norm <= 0:
+        continue
+
+    qcd_hist = qcd_counts / qcd_norm
+    vbf_hist = vbf_counts / vbf_norm
+    qcd_err  = np.sqrt(qcd_vars) / qcd_norm
+    vbf_err  = np.sqrt(vbf_vars) / vbf_norm
+
+    mask = qcd_hist > 0
+    ratio     = np.where(mask, vbf_hist / np.where(mask, qcd_hist, 1), np.nan)
+    ratio_err = np.where(mask,
+                         ratio * np.sqrt((np.where(mask, vbf_err / np.where(mask, vbf_hist, 1), 0))**2 +
+                                         (np.where(mask, qcd_err / np.where(mask, qcd_hist, 1), 0))**2),
+                         np.nan)
+
+    ax.hist(spvm_bin_centers, bins=spvm_bins, weights=np.where(np.isnan(ratio), 0, ratio),
+            histtype='step', linewidth=3, color=proc_colors[proc],
+            label=proc_labels[proc])
+    ax.errorbar(spvm_bin_centers, ratio, yerr=ratio_err, fmt='none',
+                color=proc_colors[proc], capsize=3, capthick=1, elinewidth=1)
+
+ax.axhline(1.0, color='gray', linewidth=1, linestyle='--')
+
+apply_style(ax,
+            xlabel=r'$|\vec{t}\,|$',
+            ylabel='VBF / QCD',
+            title='',
+            xlim=(0, 0.06),
+            legend_loc='upper right')
+plt.tight_layout()
+for ext in ('pdf', 'png'):
+    outpath = str(FIGS / f'jetSPVM_ratio.{ext}')
     fig.savefig(outpath, bbox_inches='tight')
     print('Saved', outpath)
 plt.close(fig)

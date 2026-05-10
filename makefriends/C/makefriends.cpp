@@ -18,8 +18,9 @@
 
 #include "fastjet/ClusterSequence.hh"
 
-static const int MAXNPART = 10000;
-static const int NJETMAX  = 2;
+static const int    MAXNPART = 10000;
+static const int    NJETMAX  = 2;
+static const double JET_R    = 0.4;
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -33,14 +34,15 @@ inline double deltaPhi(double p1, double p2) {
 struct JetPV { double pvm = -99., pva = -99., spva = -99.; };
 
 JetPV fillPV(const fastjet::PseudoJet& jet,
-             const std::vector<fastjet::PseudoJet>& jcs) {
+             const std::vector<fastjet::PseudoJet>& jcs,
+             double a = 1.0, double b = 1.0, double c = 0.0) {
     double pv0 = 0., pv1 = 0.;
     for (const auto& jc : jcs) {
         if (jc.pt() < 1e-3) continue;
         double dY   = jc.rapidity() - jet.rapidity();
         double dPhi = deltaPhi(jc.phi(), jet.phi());
         double r    = std::sqrt(dY*dY + dPhi*dPhi);
-        double w    = (jc.pt() / jet.pt()) * r;
+        double w    = std::pow(jc.pt() / jet.pt(), a) * std::pow(r / std::pow(JET_R, c), b);
         pv0 += w * dY;
         pv1 += w * dPhi;
     }
