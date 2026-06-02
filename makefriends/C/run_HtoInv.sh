@@ -4,10 +4,21 @@ set -euo pipefail
 WORKDIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$WORKDIR"
 
+make
+
 # ── Parse arguments ───────────────────────────────────────────────────────────
 GO_FAST=false
-for arg in "$@"; do
-    [[ "$arg" == "--goFast" ]] && GO_FAST=true
+GO_FAST_N=100
+for (( i=1; i<=$#; i++ )); do
+    arg="${!i}"
+    if [[ "$arg" == "--goFast" ]]; then
+        GO_FAST=true
+        next=$((i+1))
+        if [[ $next -le $# && "${!next}" =~ ^[0-9]+$ ]]; then
+            GO_FAST_N="${!next}"
+            i=$next
+        fi
+    fi
 done
 
 # ── Symlinks ──────────────────────────────────────────────────────────────────
@@ -29,129 +40,49 @@ for link in "${!ALL_SYMLINKS[@]}"; do
 done
 
 if $GO_FAST; then
-    # ── goFast: single foreground run, 1000 events per sample ─────────────────
-    echo "[$(date +%H:%M:%S)] --goFast: 1 x 1000 events per sample, running sequentially..."
-    ./makefriends VBFHtoInv.root --genWeight evweight --xs 3.901   --totEve 1000 --output VBFHtoInv.slimfriend.root
-    ./makefriends QCDHtoInv.root --genWeight evweight --xs 2.26114 --totEve 1000 --output QCDHtoInv.slimfriend.root
+    # ── goFast: single foreground run, GO_FAST_N events per sample ───────────
+    echo "[$(date +%H:%M:%S)] --goFast: 1 x ${GO_FAST_N} events per sample, running sequentially..."
+    ./makefriends VBFHtoInv.root --genWeight evweight --xs 3.901   --totEve "$GO_FAST_N" --output VBFHtoInv.friend.root
+    ./makefriends QCDHtoInv.root --genWeight evweight --xs 2.26114 --totEve "$GO_FAST_N" --output QCDHtoInv.friend.root
     echo "[$(date +%H:%M:%S)] goFast runs complete."
 else
-    # ── Create jobs.sh dynamically ────────────────────────────────────────────
-    cat > jobs.sh << 'JOBSEOF'
-#!/bin/bash
-
-usage() {
-    echo "Usage: $0 -f FILE -n nJOBS -t TOT -x XS"
-    echo ""
-    echo "  -f FILE     Input ROOT file"
-    echo "  -n nJOBS    Number of parallel jobs"
-    echo "  -t TOT      Events per job"
-    echo "  -x XS       Cross-section in pb"
-    exit 1
-}
-
-FILE=""
-nJOBS=0
-TOT=0
-XS=0.0
-
-while [[ "$#" -gt 0 ]]; do
-    case $1 in
-        -f|--file)  FILE="$2";  shift ;;
-        -n|--njobs) nJOBS="$2"; shift ;;
-        -t|--tot)   TOT="$2";   shift ;;
-        -x|--xs)    XS="$2";    shift ;;
-        --help)     usage ;;
-        *) echo "Unknown parameter: $1"; usage ;;
-    esac
-    shift
-done
-
-if [[ -z "$FILE" || "$nJOBS" -eq 0 || "$TOT" -eq 0 ]]; then
-    echo "Error: missing required arguments."
-    usage
-fi
-
-for (( JOB=0; JOB<nJOBS; JOB++ )); do
-    SKIP=$((JOB * TOT))
-    ./makefriends "$FILE" --genWeight evweight --xs "$XS" --skip "$SKIP" --totEve "$TOT" --jobId "$JOB" &
-done
-JOBSEOF
-    chmod +x jobs.sh
-    echo "Created jobs.sh"
-
-    # ── Launch jobs ───────────────────────────────────────────────────────────
-    echo "[$(date +%H:%M:%S)] Launching VBFHtoInv jobs (20 x 50000 events, xs=3.901 pb)..."
-    ./jobs.sh -f VBFHtoInv.root -n 20 -t 50000 -x 3.901
-
-    echo "[$(date +%H:%M:%S)] Launching QCDHtoInv jobs (20 x 50000 events, xs=2.26114 pb)..."
-    ./jobs.sh -f QCDHtoInv.root -n 20 -t 50000 -x 2.26114
-
-    # ── Wait for all output files to exist AND be closed ──────────────────────
-    # ROOT creates the file immediately on open but only finalizes it on close.
-    # fuser returns 0 if any process holds the file open, non-zero when closed.
-    wait_for_files() {
-        local stem=$1   # e.g. VBFHtoInv
-        local n=$2
-        while true; do
-            local files=()
-            while IFS= read -r -d '' f; do
-                files+=("$f")
-            done < <(find . -maxdepth 1 -name "${stem}slimfriend_*.root" -print0 2>/dev/null)
-
-            local count=${#files[@]}
-            local closed=0
-            for f in "${files[@]}"; do
-                fuser "$f" &>/dev/null || closed=$((closed + 1))
-            done
-
-            echo "[$(date +%H:%M:%S)] $stem: $count/$n files exist, $closed closed"
-            [ "$count" -ge "$n" ] && [ "$closed" -ge "$n" ] && break
-            sleep 30
+    # ── Launch jobs (inline so bash `wait` can reap them) ────────────────────
+    launch_jobs() {
+        local file=$1 njobs=$2 tot=$3 xs=$4
+        for (( JOB=0; JOB<njobs; JOB++ )); do
+            ./makefriends "$file" --genWeight evweight --xs "$xs" \
+                --skip $((JOB * tot)) --totEve "$tot" --jobId "$JOB" &
         done
     }
 
-    echo "Waiting for jobs to complete..."
-    wait_for_files VBFHtoInv 20
-    wait_for_files QCDHtoInv 20
+    echo "[$(date +%H:%M:%S)] Launching VBFHtoInv jobs (20 x 50000 events, xs=3.901 pb)..."
+    launch_jobs VBFHtoInv.root 20 50000 3.901
+
+    echo "[$(date +%H:%M:%S)] Launching QCDHtoInv jobs (20 x 50000 events, xs=2.26114 pb)..."
+    launch_jobs QCDHtoInv.root 20 50000 2.26114
+
+    # ── Wait for all background jobs to finish ────────────────────────────────
+    echo "Waiting for all jobs to complete..."
+    wait
     echo "[$(date +%H:%M:%S)] All jobs finished."
 
-    # ── Merge with hadd ───────────────────────────────────────────────────────
-    HADD_FORCE=""
-    EXISTING=()
-    for f in VBFHtoInv.slimfriend.root QCDHtoInv.slimfriend.root; do
-        [ -f "$f" ] && EXISTING+=("$f")
-    done
-
-    if [ ${#EXISTING[@]} -gt 0 ]; then
-        echo "WARNING: the following output files already exist:"
-        for f in "${EXISTING[@]}"; do echo "  $f"; done
-        read -r -p "Overwrite? [y/N] " answer
-        case "$answer" in
-            [yY]|[yY][eE][sS]) HADD_FORCE="-f" ;;
-            *) echo "Aborted."; exit 1 ;;
-        esac
-    fi
-
+    # ── Merge with hadd (always overwrite — we just produced the inputs) ──────
     echo "Merging VBFHtoInv output files..."
-    hadd $HADD_FORCE VBFHtoInv.slimfriend.root VBFHtoInv*_*.root
+    hadd -f VBFHtoInv.friend.root VBFHtoInv*_*.root
 
     echo "Merging QCDHtoInv output files..."
-    hadd $HADD_FORCE QCDHtoInv.slimfriend.root QCDHtoInv*_*.root
+    hadd -f QCDHtoInv.friend.root QCDHtoInv*_*.root
 fi
 
 # ── Collect output files into friends/ ───────────────────────────────────────
 mkdir -p friends
-mv VBFHtoInv.slimfriend.root friends/
-mv QCDHtoInv.slimfriend.root friends/
+mv VBFHtoInv.friend.root friends/
+mv QCDHtoInv.friend.root friends/
 echo "Moved slimfriend files to friends/"
 
 # ── Remove per-job intermediate files ────────────────────────────────────────
 echo "Removing intermediate per-job files..."
-rm -f *slimfriend_*.root
-
-# ── Remove dynamically created jobs.sh ───────────────────────────────────────
-rm -f jobs.sh
-echo "Removed jobs.sh"
+rm -f *friend_*.root
 
 # ── Remove symlinks ───────────────────────────────────────────────────────────
 for link in "${!ALL_SYMLINKS[@]}"; do

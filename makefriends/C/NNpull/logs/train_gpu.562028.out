@@ -1,0 +1,47 @@
+Loading background ...
+  QCD: 64481 events
+Loading signal ...
+  VBF: 116030 events
+Split: train=126357, val=27077, test=27077
+Device: cuda
+Epoch   1  train=0.3881  val=0.3776  lr=1.00e-03
+Epoch   2  train=0.3790  val=0.3762  lr=1.00e-03
+Epoch   3  train=0.3764  val=0.3740  lr=1.00e-03
+Epoch   4  train=0.3759  val=0.3745  lr=1.00e-03
+Epoch   5  train=0.3748  val=0.3737  lr=1.00e-03
+Epoch   6  train=0.3750  val=0.3783  lr=1.00e-03
+Epoch   7  train=0.3739  val=0.3759  lr=1.00e-03
+Epoch   8  train=0.3738  val=0.3731  lr=1.00e-03
+Epoch   9  train=0.3734  val=0.3721  lr=1.00e-03
+Epoch  10  train=0.3727  val=0.3729  lr=1.00e-03
+Epoch  11  train=0.3725  val=0.3723  lr=1.00e-03
+Epoch  12  train=0.3720  val=0.3742  lr=1.00e-03
+Epoch  13  train=0.3724  val=0.3725  lr=1.00e-03
+Epoch  14  train=0.3723  val=0.3757  lr=1.00e-03
+Epoch  15  train=0.3714  val=0.3756  lr=5.00e-04
+Epoch  16  train=0.3710  val=0.3718  lr=5.00e-04
+Epoch  17  train=0.3707  val=0.3718  lr=5.00e-04
+Epoch  18  train=0.3703  val=0.3724  lr=5.00e-04
+Epoch  19  train=0.3699  val=0.3717  lr=5.00e-04
+Epoch  20  train=0.3697  val=0.3721  lr=5.00e-04
+Epoch  21  train=0.3695  val=0.3720  lr=5.00e-04
+Epoch  22  train=0.3696  val=0.3716  lr=5.00e-04
+Epoch  23  train=0.3693  val=0.3713  lr=5.00e-04
+Epoch  24  train=0.3692  val=0.3721  lr=5.00e-04
+Epoch  25  train=0.3693  val=0.3726  lr=5.00e-04
+Epoch  26  train=0.3691  val=0.3721  lr=5.00e-04
+Epoch  27  train=0.3693  val=0.3715  lr=5.00e-04
+Epoch  28  train=0.3691  val=0.3716  lr=5.00e-04
+Epoch  29  train=0.3687  val=0.3716  lr=2.50e-04
+Epoch  30  train=0.3680  val=0.3717  lr=2.50e-04
+Epoch  31  train=0.3680  val=0.3716  lr=2.50e-04
+Epoch  32  train=0.3680  val=0.3713  lr=2.50e-04
+Epoch  33  train=0.3676  val=0.3718  lr=2.50e-04
+Epoch  34  train=0.3676  val=0.3718  lr=2.50e-04
+Epoch  35  train=0.3677  val=0.3717  lr=1.25e-04
+Epoch  36  train=0.3668  val=0.3721  lr=1.25e-04
+Epoch  37  train=0.3667  val=0.3716  lr=1.25e-04
+Epoch  38  train=0.3671  val=0.3716  lr=1.25e-04
+Early stopping at epoch 38.
+Best val loss: 0.3713
+Saved /eos/home-t/theofil/work/akcolor/makefriends/C/NNpull/loss_curve.pdf

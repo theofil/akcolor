@@ -1,0 +1,50 @@
+/cvmfs/sft.cern.ch/lcg/views/LCG_109_cuda/x86_64-el9-gcc13-opt/lib/python3.13/site-packages/torch/cuda/__init__.py:435: UserWarning: 
+    Found GPU0 Tesla V100-PCIE-32GB which is of cuda capability 7.0.
+    Minimum and Maximum cuda capability supported by this version of PyTorch is
+    (7.5) - (9.0)
+    
+  queued_call()
+/cvmfs/sft.cern.ch/lcg/views/LCG_109_cuda/x86_64-el9-gcc13-opt/lib/python3.13/site-packages/torch/cuda/__init__.py:435: UserWarning: 
+    Please install PyTorch with a following CUDA
+    configurations:  12.6 12.8 following instructions at
+    https://pytorch.org/get-started/locally/
+    
+  queued_call()
+Traceback (most recent call last):
+  File "/eos/home-t/theofil/work/akcolor/makefriends/C/NNpull/train.py", line 193, in <module>
+    main()
+    ~~~~^^
+  File "/eos/home-t/theofil/work/akcolor/makefriends/C/NNpull/train.py", line 144, in main
+    loss = criterion(model(x_jet_b, x_jcs_b, mask_b), yb)
+                     ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/cvmfs/sft.cern.ch/lcg/views/LCG_109_cuda/x86_64-el9-gcc13-opt/lib/python3.13/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/cvmfs/sft.cern.ch/lcg/views/LCG_109_cuda/x86_64-el9-gcc13-opt/lib/python3.13/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/eos/home-t/theofil/work/akcolor/makefriends/C/NNpull/model.py", line 35, in forward
+    h = self.phi(x_jcs.view(B * N, F)).view(B, N, -1)   # (B, NC_MAX, 64)
+        ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "/cvmfs/sft.cern.ch/lcg/views/LCG_109_cuda/x86_64-el9-gcc13-opt/lib/python3.13/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/cvmfs/sft.cern.ch/lcg/views/LCG_109_cuda/x86_64-el9-gcc13-opt/lib/python3.13/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/cvmfs/sft.cern.ch/lcg/views/LCG_109_cuda/x86_64-el9-gcc13-opt/lib/python3.13/site-packages/torch/nn/modules/container.py", line 253, in forward
+    input = module(input)
+  File "/cvmfs/sft.cern.ch/lcg/views/LCG_109_cuda/x86_64-el9-gcc13-opt/lib/python3.13/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/cvmfs/sft.cern.ch/lcg/views/LCG_109_cuda/x86_64-el9-gcc13-opt/lib/python3.13/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/cvmfs/sft.cern.ch/lcg/views/LCG_109_cuda/x86_64-el9-gcc13-opt/lib/python3.13/site-packages/torch/nn/modules/activation.py", line 143, in forward
+    return F.relu(input, inplace=self.inplace)
+           ~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/cvmfs/sft.cern.ch/lcg/views/LCG_109_cuda/x86_64-el9-gcc13-opt/lib/python3.13/site-packages/torch/nn/functional.py", line 1721, in relu
+    result = torch.relu(input)
+torch.AcceleratorError: CUDA error: no kernel image is available for execution on the device
+Search for `cudaErrorNoKernelImageForDevice' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+

@@ -1,0 +1,4 @@
+source /cvmfs/sft.cern.ch/lcg/views/LCG_106_cuda/x86_64-el9-gcc11-opt/setup.sh
+module load lxbatch/eossubmit   # this is needed for EosSubmit https://batchdocs.web.cern.ch/local/eossubmit.html
+
+

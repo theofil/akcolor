@@ -1,0 +1,11 @@
+module load lxbatch/eossubmit
+condor_submit train_gpu.sub
+###
+condor_q                        # check job status
+condor_q -better-analyze 1234567  # diagnose if job stays idle
+tail -f logs/train_gpu.1234567.out  # watch stdout live once running
+###
+condor_submit NNpull/train_gpu.sub
+condor_submit NNkin/train_gpu.sub
+cd NNkin && python compare_roc.py 
+compare_roc.pdf

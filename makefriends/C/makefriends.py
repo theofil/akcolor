@@ -48,6 +48,8 @@ listOfknownTrees = ['Events','events', 'ntuple/tree', 'tree', 'Data']
 # define maximum numparticles, as a trivial funciton
 maxNpartcl = lambda : 10000
 
+ptMIN = 0.0  # pt threshold for jet constituents used in pull vector calculation
+
 # get momentum of ith particle in format  E, px, py, pz, id
 def ith_momentum(obj, ith):
     arraySize = int(maxNpartcl())
@@ -401,7 +403,7 @@ if __name__ == "__main__":
 
             # devise the jets with pull vector and TLorentzVector accessed through p4 member
             for jet in jets:
-                jcs = [jc for jc in jet.constituents() if jc.pt()>jcPtMin and abs(jc.eta())<jcEtaMax]
+                jcs = [jc for jc in jet.constituents() if jc.pt()>ptMIN and abs(jc.eta())<jcEtaMax]
                 fillPV(jet, jcs)
                 jet.p4 = toTLV(jet)
 

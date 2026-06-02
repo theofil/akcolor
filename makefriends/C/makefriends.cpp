@@ -18,9 +18,20 @@
 
 #include "fastjet/ClusterSequence.hh"
 
-static const int    MAXNPART = 10000;
-static const int    NJETMAX  = 2;
-static const double JET_R    = 0.4;
+static const int    MAXNPART          = 10000;
+static const int    NJETMAX           = 2;
+static const double JET_R             = 0.4;
+static const int    NC_MAX            = 80;   // max constituents for pull vector (-1 = all); if >-1, implies pt-ordering
+static const bool   USE_KT_JETS       = false; // if true, use kt algorithm with inclusive_jets() instead of anti-kT
+static const double JC_PT_MIN         = 0.0;   // pt cut on particles before clustering and on jcs for pull vector
+static const double JC_ETA_MAX        = 20.0;  // |eta| cut on particles before clustering
+static const double JET_PT_MIN        = 30.0;  // inclusive jet pt threshold
+static const double JET_ETA_MAX       = 3.0;   // |eta| cut on reconstructed jets
+static const double MJJ_MIN           = 400.0; // dijet invariant mass threshold
+static const double PV_A              = 1.0;   // exponent on z = pt_jc/pt_jet in pull-vector weight
+static const double PV_B              = 1.0;   // exponent on r in pull-vector weight
+static const double PV_C              = 0.0;   // exponent on JET_R in pull-vector weight denominator
+static const bool   SAVE_JCS          = true; // if true, save per-jet constituent 4-vectors in tree
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -144,7 +155,7 @@ int main(int argc, char* argv[]) {
     TH2Poly* jetShape = new TH2Poly("jetShape","jetShape",-0.5,0.5,-0.5,0.5);
     jetShape->Sumw2();
     {
-        const int nArc = 12, nPhi = 64, nRho = 30;
+        const int nArc = 12, nPhi = 128, nRho = 60;
         for (int iPhi = 0; iPhi < nPhi; ++iPhi) {
             double p1 = 2*M_PI * iPhi / nPhi;
             double p2 = 2*M_PI * (iPhi+1) / nPhi;
@@ -171,17 +182,51 @@ int main(int argc, char* argv[]) {
     Float_t o_jetSPVA[NJETMAX], o_jetPVA[NJETMAX], o_jetPVM[NJETMAX];
     Int_t   o_jetNC[NJETMAX];
     Float_t o_kWeight;
+    Int_t   o_leadJetIndex;
+    Float_t o_mjj, o_dYjj, o_dPhijj, o_ptjj;
 
-    otree->Branch("nJets",   &o_nJets,  "nJets/I");
-    otree->Branch("jetPt",   o_jetPt,   "jetPt[nJets]/F");
-    otree->Branch("jetEta",  o_jetEta,  "jetEta[nJets]/F");
-    otree->Branch("jetPhi",  o_jetPhi,  "jetPhi[nJets]/F");
-    otree->Branch("jetM",    o_jetM,    "jetM[nJets]/F");
-    otree->Branch("jetSPVA", o_jetSPVA, "jetSPVA[nJets]/F");
-    otree->Branch("jetPVA",  o_jetPVA,  "jetPVA[nJets]/F");
-    otree->Branch("jetPVM",  o_jetPVM,  "jetPVM[nJets]/F");
-    otree->Branch("jetNC",   o_jetNC,   "jetNC[nJets]/I");
-    otree->Branch("kWeight", &o_kWeight,"kWeight/F");
+    otree->Branch("nJets",    &o_nJets,     "nJets/I");
+    otree->Branch("jetPt0",   &o_jetPt[0],  "jetPt0/F");
+    otree->Branch("jetPt1",   &o_jetPt[1],  "jetPt1/F");
+    otree->Branch("jetEta0",  &o_jetEta[0], "jetEta0/F");
+    otree->Branch("jetEta1",  &o_jetEta[1], "jetEta1/F");
+    otree->Branch("jetPhi0",  &o_jetPhi[0], "jetPhi0/F");
+    otree->Branch("jetPhi1",  &o_jetPhi[1], "jetPhi1/F");
+    otree->Branch("jetM0",    &o_jetM[0],   "jetM0/F");
+    otree->Branch("jetM1",    &o_jetM[1],   "jetM1/F");
+    otree->Branch("jetSPVA0", &o_jetSPVA[0],"jetSPVA0/F");
+    otree->Branch("jetSPVA1", &o_jetSPVA[1],"jetSPVA1/F");
+    otree->Branch("jetPVA0",  &o_jetPVA[0], "jetPVA0/F");
+    otree->Branch("jetPVA1",  &o_jetPVA[1], "jetPVA1/F");
+    otree->Branch("jetPVM0",  &o_jetPVM[0], "jetPVM0/F");
+    otree->Branch("jetPVM1",  &o_jetPVM[1], "jetPVM1/F");
+    otree->Branch("jetNC0",   &o_jetNC[0],  "jetNC0/I");
+    otree->Branch("jetNC1",   &o_jetNC[1],  "jetNC1/I");
+    otree->Branch("kWeight",      &o_kWeight,      "kWeight/F");
+    otree->Branch("leadJetIndex", &o_leadJetIndex, "leadJetIndex/I");
+    otree->Branch("mjj",          &o_mjj,          "mjj/F");
+    otree->Branch("dYjj",         &o_dYjj,         "dYjj/F");
+    otree->Branch("dPhijj",       &o_dPhijj,       "dPhijj/F");
+    otree->Branch("ptjj",         &o_ptjj,         "ptjj/F");
+
+    Float_t o_jcsPt  [NJETMAX][NC_MAX];
+    Float_t o_jcsDEta[NJETMAX][NC_MAX];
+    Float_t o_jcsDPhi[NJETMAX][NC_MAX];
+    Float_t o_jcsM   [NJETMAX][NC_MAX];
+    Float_t o_jcsW   [NJETMAX][NC_MAX];
+    if (SAVE_JCS) {
+        std::string nc = std::to_string(NC_MAX);
+        otree->Branch("jcsPt0",   o_jcsPt[0],   ("jcsPt0["   + nc + "]/F").c_str());
+        otree->Branch("jcsPt1",   o_jcsPt[1],   ("jcsPt1["   + nc + "]/F").c_str());
+        otree->Branch("jcsDEta0", o_jcsDEta[0], ("jcsDEta0[" + nc + "]/F").c_str());
+        otree->Branch("jcsDEta1", o_jcsDEta[1], ("jcsDEta1[" + nc + "]/F").c_str());
+        otree->Branch("jcsDPhi0", o_jcsDPhi[0], ("jcsDPhi0[" + nc + "]/F").c_str());
+        otree->Branch("jcsDPhi1", o_jcsDPhi[1], ("jcsDPhi1[" + nc + "]/F").c_str());
+        otree->Branch("jcsM0",    o_jcsM[0],    ("jcsM0["    + nc + "]/F").c_str());
+        otree->Branch("jcsM1",    o_jcsM[1],    ("jcsM1["    + nc + "]/F").c_str());
+        otree->Branch("jcsW0",    o_jcsW[0],    ("jcsW0["    + nc + "]/F").c_str());
+        otree->Branch("jcsW1",    o_jcsW[1],    ("jcsW1["    + nc + "]/F").c_str());
+    }
 
     // input branches
     Int_t    numparticles;
@@ -193,9 +238,8 @@ int main(int argc, char* argv[]) {
     ttree->SetBranchAddress(args.genWeight.c_str(), &evweight);
 
     // fastjet setup
-    fastjet::JetDefinition jetdef(fastjet::antikt_algorithm, 0.4);
-    const double jcPtMin   = 0.0, jcEtaMax  = 10.0;
-    const double jetPtMin  = 30.0, jetEtaMax =  3.0;
+    fastjet::JetDefinition jetdef(USE_KT_JETS ? fastjet::kt_algorithm
+                                                     : fastjet::antikt_algorithm, JET_R);
 
     long alleve = 0;
     double sumW = 0., sumW2 = 0.;
@@ -207,12 +251,22 @@ int main(int argc, char* argv[]) {
         ttree->GetEntry(iev);
         if (iev % 10000 == 0) std::cout << "event " << iev << "\n";
 
-        // reset output
+        // reset output (zero-pad so unused jet/constituent slots are 0)
         o_nJets = 0;
-        for (int i = 0; i < NJETMAX; ++i) {
-            o_jetPt[i] = o_jetEta[i] = o_jetPhi[i] = o_jetM[i] = -99.9f;
-            o_jetSPVA[i] = o_jetPVA[i] = o_jetPVM[i] = -99.9f;
-            o_jetNC[i] = -99;
+        memset(o_jetPt,   0, sizeof(o_jetPt));
+        memset(o_jetEta,  0, sizeof(o_jetEta));
+        memset(o_jetPhi,  0, sizeof(o_jetPhi));
+        memset(o_jetM,    0, sizeof(o_jetM));
+        memset(o_jetSPVA, 0, sizeof(o_jetSPVA));
+        memset(o_jetPVA,  0, sizeof(o_jetPVA));
+        memset(o_jetPVM,  0, sizeof(o_jetPVM));
+        memset(o_jetNC,   0, sizeof(o_jetNC));
+        if (SAVE_JCS) {
+            memset(o_jcsPt,   0, sizeof(o_jcsPt));
+            memset(o_jcsDEta, 0, sizeof(o_jcsDEta));
+            memset(o_jcsDPhi, 0, sizeof(o_jcsDPhi));
+            memset(o_jcsM,    0, sizeof(o_jcsM));
+            memset(o_jcsW,    0, sizeof(o_jcsW));
         }
         o_kWeight = (Float_t)(evweight * args.xs / sumWtot);
         sumW  += o_kWeight;
@@ -231,28 +285,57 @@ int main(int argc, char* argv[]) {
             if (pid == 25 || std::abs(pid) == 12 || std::abs(pid) == 14 ||
                              std::abs(pid) == 16 || std::abs(pid) == 15) continue;
             fastjet::PseudoJet pj(px, py, pz, E);
-            if (pj.perp() > jcPtMin && std::abs(pj.eta()) < jcEtaMax)
+            if (pj.perp() > JC_PT_MIN && std::abs(pj.eta()) < JC_ETA_MAX)
                 momfj.push_back(pj);
         }
 
         // cluster
         fastjet::ClusterSequence cs(momfj, jetdef);
-        auto all_jets = fastjet::sorted_by_pt(cs.inclusive_jets(jetPtMin));
         std::vector<fastjet::PseudoJet> jets;
-        for (const auto& j : all_jets)
-            if (std::abs(j.eta()) < jetEtaMax) jets.push_back(j);
+        if (USE_KT_JETS) {
+            for (const auto& j : fastjet::sorted_by_pt(cs.inclusive_jets()))
+                if (std::abs(j.eta()) < JET_ETA_MAX) jets.push_back(j);
+        } else {
+            for (const auto& j : fastjet::sorted_by_pt(cs.inclusive_jets(JET_PT_MIN)))
+                if (std::abs(j.eta()) < JET_ETA_MAX) jets.push_back(j);
+        }
 
         // pull vectors for all jets
         std::vector<JetPV> pvs(jets.size());
+        std::vector<std::vector<fastjet::PseudoJet>> all_jcs(jets.size());
         for (int ij = 0; ij < (int)jets.size(); ++ij) {
-            auto jcs = jets[ij].constituents();
-            pvs[ij] = fillPV(jets[ij], jcs);
+            std::vector<fastjet::PseudoJet> jcs;
+            if (USE_KT_JETS) {
+                fastjet::PseudoJet sub1, sub2;
+                if (jets[ij].has_parents(sub1, sub2))
+                    jcs = {sub1, sub2};
+                else
+                    jcs = jets[ij].constituents(); // fallback: single-particle jet has no parents
+            } else {
+                for (const auto& jc : jets[ij].constituents())
+                    if (jc.pt() > JC_PT_MIN) jcs.push_back(jc);
+                if (NC_MAX > -1) {
+                    std::sort(jcs.begin(), jcs.end(),
+                        [](const fastjet::PseudoJet& a, const fastjet::PseudoJet& b){ return a.pt() > b.pt(); });
+                    if ((int)jcs.size() > NC_MAX) jcs.resize(NC_MAX);
+                }
+            }
+            if (SAVE_JCS) all_jcs[ij] = jcs;
+            pvs[ij] = fillPV(jets[ij], jcs, PV_A, PV_B, PV_C);
         }
 
         // dijet selection: mjj>400, opposite-eta leading pair
         if ((int)jets.size() >= 2 &&
-            sumP4(jets, 2).M() > 400. &&
+            sumP4(jets, 2).M() > MJJ_MIN &&
             jets[0].eta() * jets[1].eta() < 0.) {
+
+            TLorentzVector jj = sumP4(jets, 2);
+            o_mjj    = (Float_t)jj.M();
+            o_dYjj   = (Float_t)(jets[0].rapidity() - jets[1].rapidity());
+            o_dPhijj = (Float_t)deltaPhi(jets[0].phi(), jets[1].phi());
+            o_ptjj   = (Float_t)jj.Pt();
+            bool swap = (iev % 2 == 0);  // odd iev → leading at [0], even → leading at [1]
+            o_leadJetIndex = swap ? 1 : 0;
 
             // |SPVA| and PVM for leading and subleading jet — two fills per event
             for (int ij = 0; ij < 2; ++ij) {
@@ -267,28 +350,47 @@ int main(int argc, char* argv[]) {
                 for (const auto& jc : jets[ij].constituents()) {
                     double dY   = jc.rapidity() - jets[ij].rapidity();
                     double dPhi = deltaPhi(jc.phi(), jets[ij].phi());
-                    double z    = jc.pt() / jets[ij].pt();
-                    double w    = z * std::sqrt(dY*dY + dPhi*dPhi);
+                    double r    = std::sqrt(dY*dY + dPhi*dPhi);
+                    double w    = std::pow(jc.pt() / jets[ij].pt(), PV_A) * std::pow(r / std::pow(JET_R, PV_C), PV_B);
                     double dYs  = (jets[ij].rapidity() < 0) ? -dY : dY;
                     jetShape->Fill(dYs, dPhi, w);
                 }
-
-                // fill output tree (once per jet, matching Python behaviour)
-                int nmax = std::min((int)jets.size(), NJETMAX);
-                o_nJets = nmax;
-                for (int i = 0; i < nmax; ++i) {
-                    o_jetPt[i]   = (Float_t)std::round(jets[i].pt()  * 100) / 100.f;
-                    o_jetEta[i]  = (Float_t)std::round(jets[i].eta() * 1000) / 1000.f;
-                    o_jetPhi[i]  = (Float_t)std::round(jets[i].phi() * 1000) / 1000.f;
-                    o_jetM[i]    = (Float_t)std::round(jets[i].m()   * 100) / 100.f;
-                    o_jetSPVA[i] = (Float_t)pvs[i].spva;
-                    o_jetPVA[i]  = (Float_t)pvs[i].pva;
-                    o_jetPVM[i]  = (Float_t)pvs[i].pvm;
-                    o_jetNC[i]   = (Int_t)jets[i].constituents().size();
-                }
-                otree->Fill();
-                ++alleve;
             }
+
+            // fill output tree once per event
+            int nmax = std::min((int)jets.size(), NJETMAX);
+            o_nJets = nmax;
+            for (int i = 0; i < nmax; ++i) {
+                int si = swap ? (1 - i) : i;
+                o_jetPt[si]   = (Float_t)std::round(jets[i].pt()  * 100) / 100.f;
+                o_jetEta[si]  = (Float_t)std::round(jets[i].eta() * 1000) / 1000.f;
+                o_jetPhi[si]  = (Float_t)std::round(jets[i].phi() * 1000) / 1000.f;
+                o_jetM[si]    = (Float_t)std::round(jets[i].m()   * 100) / 100.f;
+                o_jetSPVA[si] = (Float_t)pvs[i].spva;
+                o_jetPVA[si]  = (Float_t)pvs[i].pva;
+                o_jetPVM[si]  = (Float_t)pvs[i].pvm;
+                o_jetNC[si]   = (Int_t)jets[i].constituents().size();
+                if (SAVE_JCS) {
+                    const auto& jcs_i = all_jcs[i];
+                    int nk = (int)jcs_i.size();
+                    for (int k = 0; k < nk; ++k) {
+                        double dEta_raw = jcs_i[k].eta() - jets[i].eta();
+                        double dEtas    = (jets[i].eta() < 0) ? -dEta_raw : dEta_raw;
+                        double dPhi     = deltaPhi(jcs_i[k].phi(), jets[i].phi());
+                        double dY_raw   = jcs_i[k].rapidity() - jets[i].rapidity();
+                        double r        = std::sqrt(dY_raw*dY_raw + dPhi*dPhi);
+                        double w        = std::pow(jcs_i[k].pt() / jets[i].pt(), PV_A)
+                                        * std::pow(r / std::pow(JET_R, PV_C), PV_B);
+                        o_jcsPt  [si][k] = (Float_t)jcs_i[k].pt();
+                        o_jcsDEta[si][k] = (Float_t)dEtas;
+                        o_jcsDPhi[si][k] = (Float_t)dPhi;
+                        o_jcsM   [si][k] = (Float_t)jcs_i[k].m();
+                        o_jcsW   [si][k] = (Float_t)w;
+                    }
+                }
+            }
+            otree->Fill();
+            ++alleve;
         }
     }
 
@@ -304,17 +406,6 @@ int main(int argc, char* argv[]) {
     hLeadJetSPVA->Write();
     hLeadJetSPVM->Write();
     ofile->Write();
-
-    // save hLeadJetSPVM as PDF+PNG in log-y scale
-    {
-        TCanvas c("cSPVM","",800,600);
-        c.SetLogy();
-        hLeadJetSPVM->SetLineWidth(2);
-        hLeadJetSPVM->Draw("HIST E");
-        std::string base = outname.substr(0, outname.size()-5); // strip .root
-        c.SaveAs((base + "_spvm.pdf").c_str());
-        c.SaveAs((base + "_spvm.png").c_str());
-    }
 
     ofile->Close();
     ifile->Close();

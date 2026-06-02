@@ -1,0 +1,9 @@
+NNpull/deps/
+NNkin/deps/
+NNkin/logs/
+NNkin/best_model.pt
+NNkin/scaler.pkl
+NNkin/split_indices.npz
+*.so
+*.so.*
+*.h5
