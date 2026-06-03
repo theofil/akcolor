@@ -1,6 +1,0 @@
-Loading background ...
-  QCD: 64481 events
-Loading signal ...
-  VBF: 116030 events
-Split: train=126357, val=27077, test=27077
-Device: cuda

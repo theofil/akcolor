@@ -166,9 +166,34 @@ jet in the other half — by design.
 python plots.py
 ```
 
-Produces jet shape and ROC comparison PDFs (jetSPVA, jetSPVM, jetNC, 2D jet
-shapes) and saves them to `~/www/files/akcolor/`. View side-by-side against
-the `def/` baseline at:
+**Input**: all `friends/*friend.root` files. The six named samples it specifically
+looks for are:
+
+| File | Sample |
+|------|--------|
+| `friends/QCDHtoInv.friend.root` | QCD H |
+| `friends/QCDZtoInv.friend.root` | QCD Z |
+| `friends/QCDWtoInv.friend.root` | QCD W |
+| `friends/VBFHtoInv.friend.root` | VBF H |
+| `friends/VBFZtoInv.friend.root` | VBF Z |
+| `friends/VBFWtoInv.friend.root` | VBF W |
+
+**Output directory**: `~/www/files/akcolor/`
+
+| Output file | Content |
+|-------------|---------|
+| `{hname}_{stem}.pdf` | One PDF per TH1F / TH2F / TH2Poly histogram found in each friend file (except `hLeadJetSPVA`, `hLeadJetSPVM`, and `jetSPVA_*` which are handled separately below) |
+| `jetSPVA.pdf` | Normalized distributions of the leading-jet `\|θ_s\|` (SPVA angle) for all 6 samples overlaid |
+| `jetSPVA_ratio.pdf` | VBF / QCD ratio of `\|θ_s\|` distributions per process (H, Z, W) with RMS / ⟨S²⟩ / KL stats in legend |
+| `jetSPVM.pdf` | Normalized distributions of the leading-jet PVM magnitude `\|t⃗\|` for all 6 samples (log-y scale) |
+| `jetSPVM_ratio.pdf` | VBF / QCD ratio of `\|t⃗\|` distributions per process |
+| `jetNC.pdf` | Normalized distributions of jet number of constituents N_c |
+| `jetNC_ratio.pdf` | VBF / QCD ratio of N_c distributions per process |
+| `jet_roc.pdf` | ROC curves for 6 variables (`\|θ_s\|`, `\|t⃗\|`, p_T, `\|η\|`, m, N_c) × 3 processes, with AUC in legend |
+| `{hname}_ratio2D_{proc}.pdf` | VBF / QCD ratio TH2Poly map for each 2D poly histogram, per process (H, Z, W), with RMS / ⟨S²⟩ / KL stats |
+| `index.php` | Auto-generated PHP page listing all PDFs in the output directory |
+
+View plots at:
 
 ```
 https://theofil.web.cern.ch/theofil/files/akcolor/summary.php
