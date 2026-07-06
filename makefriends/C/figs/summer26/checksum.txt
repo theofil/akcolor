@@ -1,0 +1,20 @@
+# summer26 cross sections and entry counts
+# xs_static  = static cross section from run.summer26.sh
+# xs_in      = hSumW.Integral(0,N+1) - sum of kWeight before dijet selection
+# xs_out     = sum of kWeight from events TTree (after full dijet selection)
+# eff_w      = xs_out / xs_in  (weighted filter efficiency)
+# ratio +/- sigma = n_entries_out / n_entries_in +/- binomial uncertainty
+#
+sample                     xs_static [pb]      xs_in [pb]     xs_out [pb]     eff_w   ratio +/- sigma    n_entries_in   n_entries_out
+QCDHjj_herwig                      5.0605          5.0605         0.73925    0.1461  0.1461 +/- 0.0004         1000000          146109
+QCDHjj_mg5_pythia                   4.967           4.982          1.2899    0.2589  0.2589 +/- 0.0007          409621          106059
+QCDWjj_herwig                      1733.3          1733.3          257.73    0.1487  0.1489 +/- 0.0004         1000000          148885
+QCDWjj_mg5_pythia                  1646.8          1646.8          329.91    0.2003  0.2003 +/- 0.0004         1000000          200332
+QCDZjj_herwig                       340.2           340.2           51.23    0.1506  0.1508 +/- 0.0004         1000000          150848
+QCDZjj_mg5_pythia                  316.36          316.36          66.459    0.2101  0.2101 +/- 0.0004         1000000          210073
+VBFH_herwig                        2.9719          2.9719         0.75995    0.2557  0.2556 +/- 0.0004         1000000          255574
+VBFH_mg5_pythia                    2.8899          2.8899         0.96821    0.3350  0.3350 +/- 0.0005         1000000          335031
+VBFW_herwig                         7.494           7.494          2.4712    0.3298  0.3306 +/- 0.0005         1000000          330597
+VBFW_mg5_pythia                    7.2033          7.2033          2.6641    0.3698  0.3698 +/- 0.0005         1000000          369846
+VBFZ_herwig                         1.099           1.099         0.41659    0.3791  0.3786 +/- 0.0005         1000000          378566
+VBFZ_mg5_pythia                    1.0858          1.0858         0.45243    0.4167  0.4167 +/- 0.0005         1000000          416673

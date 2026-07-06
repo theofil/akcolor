@@ -1,0 +1,15 @@
+condor_submit summer26/NNkin/train_gpu.sub
+condor_submit summer26/NNPrePro/train_gpu.sub
+condor_submit summer26/NNpull/train_gpu.sub
+condor_submit summer26/NNRaw/train_gpu.sub
+condor_submit summer26/NNFullRaw/train_gpu.sub
+condor_submit summer26/NNFullRaw_H/train_gpu.sub
+condor_submit summer26/NNkin_H/train_gpu.sub
+condor_submit summer26/NNkin_W/train_gpu.sub
+condor_submit summer26/NNPrePro_H/train_gpu.sub
+condor_submit summer26/NNPrePro_W/train_gpu.sub
+condor_submit summer26/NNpull_H/train_gpu.sub
+condor_submit summer26/NNpull_W/train_gpu.sub
+condor_submit summer26/NNRaw_H/train_gpu.sub
+condor_submit summer26/NNRaw_W/train_gpu.sub
+condor_submit summer26/NNFullRaw_W/train_gpu.sub

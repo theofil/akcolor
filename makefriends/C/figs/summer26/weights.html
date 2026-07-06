@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>akcolor — weights</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; overflow: hidden;
+             font-family: sans-serif; background: #f0f0f0; }
+
+.layout { display: flex; height: 100%; }
+
+nav.toc {
+  width: 210px; flex-shrink: 0;
+  background: #1e2a38; color: #c8d8e8;
+  overflow-y: auto; padding: 1em 0.8em;
+}
+nav.toc h2 { font-size: 0.85em; text-transform: uppercase;
+             letter-spacing: .08em; color: #7aa0c0; margin: 1em 0 0.4em; }
+nav.toc h2:first-child { margin-top: 0; }
+nav.toc a {
+  display: block; padding: 0.3em 0.4em; margin-bottom: 0.1em;
+  color: #c8d8e8; text-decoration: none; font-size: 0.80em;
+  border-radius: 3px;
+}
+nav.toc a:hover { background: #2e4260; color: #fff; }
+
+main.content { flex: 1; overflow-y: auto; padding: 0.6em 1.2em; }
+
+.triplet {
+  height: calc(100vh - 2em); min-height: 400px;
+  display: flex; flex-direction: column;
+  background: white; border: 1px solid #d0d8e0;
+  border-radius: 5px; padding: 0 0.6em 0.4em;
+  margin-bottom: 0.6em;
+}
+.triplet-label {
+  font-size: 0.75em; color: #888; text-align: center;
+  padding: 0.2em 0; flex-shrink: 0;
+}
+
+.cols { flex: 1; min-height: 0; display: flex; gap: 3px; }
+
+.cols figure {
+  flex: 1; min-height: 0; margin: 0;
+  display: flex; flex-direction: column;
+}
+.cols figcaption {
+  text-align: center; font-size: 1.6em;
+  flex-shrink: 0; margin-bottom: 0.15em; font-weight: bold;
+}
+.iframe-wrapper { flex: 1; min-height: 0; position: relative; }
+.cols figure iframe { width: 100%; height: 100%; border: none; display: block; }
+.iframe-overlay {
+  position: absolute; inset: 0; z-index: 10; cursor: pointer;
+}
+.cols .missing {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  color: #bbb; font-size: 0.85em; background: #fafafa;
+  border: 1px dashed #ddd; border-radius: 3px;
+}
+</style>
+</head>
+<body>
+<div class="layout">
+  <nav class="toc">
+    <h2>Weights</h2>
+    <a href="#evweight">evweight</a>
+<a href="#kWeight">kWeight</a>
+  </nav>
+  <main class="content">
+    <section class="triplet" id="evweight">
+  <div class="triplet-label">evweight</div>
+  <div class="cols">
+    <figure>
+      <figcaption style="color:#1a6eb5">W</figcaption>
+      <div class="iframe-wrapper">
+        <iframe src="evweight_W.pdf#toolbar=0&amp;view=Fit" title="evweight (W)"></iframe>
+        <a class="iframe-overlay" href="evweight_W.pdf" download title="Download evweight_W.pdf"></a>
+      </div>
+    </figure>
+    <figure>
+      <figcaption style="color:#2e8b57">Z</figcaption>
+      <div class="iframe-wrapper">
+        <iframe src="evweight_Z.pdf#toolbar=0&amp;view=Fit" title="evweight (Z)"></iframe>
+        <a class="iframe-overlay" href="evweight_Z.pdf" download title="Download evweight_Z.pdf"></a>
+      </div>
+    </figure>
+    <figure>
+      <figcaption style="color:#b52020">H</figcaption>
+      <div class="iframe-wrapper">
+        <iframe src="evweight_H.pdf#toolbar=0&amp;view=Fit" title="evweight (H)"></iframe>
+        <a class="iframe-overlay" href="evweight_H.pdf" download title="Download evweight_H.pdf"></a>
+      </div>
+    </figure>
+  </div>
+</section>
+<section class="triplet" id="kWeight">
+  <div class="triplet-label">kWeight</div>
+  <div class="cols">
+    <figure>
+      <figcaption style="color:#1a6eb5">W</figcaption>
+      <div class="iframe-wrapper">
+        <iframe src="kWeight_W.pdf#toolbar=0&amp;view=Fit" title="kWeight (W)"></iframe>
+        <a class="iframe-overlay" href="kWeight_W.pdf" download title="Download kWeight_W.pdf"></a>
+      </div>
+    </figure>
+    <figure>
+      <figcaption style="color:#2e8b57">Z</figcaption>
+      <div class="iframe-wrapper">
+        <iframe src="kWeight_Z.pdf#toolbar=0&amp;view=Fit" title="kWeight (Z)"></iframe>
+        <a class="iframe-overlay" href="kWeight_Z.pdf" download title="Download kWeight_Z.pdf"></a>
+      </div>
+    </figure>
+    <figure>
+      <figcaption style="color:#b52020">H</figcaption>
+      <div class="iframe-wrapper">
+        <iframe src="kWeight_H.pdf#toolbar=0&amp;view=Fit" title="kWeight (H)"></iframe>
+        <a class="iframe-overlay" href="kWeight_H.pdf" download title="Download kWeight_H.pdf"></a>
+      </div>
+    </figure>
+  </div>
+</section>
+  </main>
+</div>
+</body>
+</html>

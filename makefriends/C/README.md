@@ -3,22 +3,28 @@
 Classification of VBF H→invisible signal against QCD dijet background using
 jet pull vectors and constituent information.
 
+For analysis steps (plots, NN training, inference) see
+[summer25.md](summer25.md) and [summer26.md](summer26.md).
+
 ---
 
 ## Environment
 
-One environment covers everything (compilation, ROOT macros, Python training,
-inference, and plotting):
+**Must be sourced before every session** — compilation, production scripts,
+Python training, inference, and plotting all rely on it:
+
+```bash
+source init.txt
+```
+
+which is equivalent to:
 
 ```bash
 source /cvmfs/sft.cern.ch/lcg/views/LCG_106_cuda/x86_64-el9-gcc11-opt/setup.sh
 ```
 
-This is also saved in `init.txt` for convenience:
-
-```bash
-source init.txt
-```
+The entire toolchain (`root-config`, `hadd`, `python3`, `uproot`, `h5py`,
+`pytorch`) is taken from this single LCG view — no mixing with system packages.
 
 ---
 
@@ -28,8 +34,10 @@ source init.txt
 make
 ```
 
-The Makefile detects `root-config` and `fastjet-config` automatically. If
-FastJet is not on `PATH` it falls back to the CMS CVMFS installation at
+The Makefile resolves `root-config` and `fastjet-config` from `PATH` (set by
+`init.txt`), so the binary is compiled and linked against the LCG ROOT and
+FastJet libraries. If `fastjet-config` is not on `PATH` it falls back to the
+CMS CVMFS installation at
 `/cvmfs/cms.cern.ch/el9_amd64_gcc12/external/fastjet/3.4.1-...`.
 
 ---
@@ -40,34 +48,69 @@ FastJet is not on `PATH` it falls back to the CMS CVMFS installation at
 anti-kT (R=0.4) via FastJet, computes the **pull vector** for each jet, and
 writes a "friend" ROOT tree.
 
-### Quick test (100 events per sample, foreground)
+> **Prerequisite**: `source init.txt` must be active — the script uses the
+> LCG `hadd`, `python3`, and `makefriends` (compiled against LCG ROOT) without
+> any internal environment setup.
+
+### summer25 (Herwig 13.6 samples)
+
+#### Quick test (100 events per sample, foreground)
 
 ```bash
-./run_HtoInv.sh --goFast
+./run.summer25.sh --goFast
 # or a custom number of events:
-./run_HtoInv.sh --goFast 500
+./run.summer25.sh --goFast 500
 ```
 
-### Full production (20 parallel jobs × 50k events, then hadd)
+#### Full production (20 parallel jobs × 50k events, then hadd)
 
 ```bash
-./run_HtoInv.sh
+./run.summer25.sh
 ```
 
-The script:
-1. Creates symlinks to the Herwig 13.6 input ROOT files (on apapaefs EOS)
-2. Runs `makefriends` in parallel (20 jobs × 50k events each)
-3. Merges with `hadd`
-4. Moves results to `friends/` and cleans up intermediate files
+**Input files** (symlinked automatically from apapaefs EOS, Herwig 13.6):
 
-**Input files** (symlinked automatically):
+| Symlink | Sample | Cross section |
+|---------|--------|---------------|
+| `VBFHtoInv.root` | VBF H→inv | 3.901 pb |
+| `QCDHtoInv.root` | ggH+jj (QCD background) | 2.26114 pb |
 
-| Symlink | Sample |
-|---------|--------|
-| `VBFHtoInv.root` | VBF H→inv, xs = 3.901 pb |
-| `QCDHtoInv.root` | ggH+jj (QCD background), xs = 2.26114 pb |
+**Output**: `friends/summer25/VBFHtoInv.{friend.root,h5}`, `friends/summer25/QCDHtoInv.{friend.root,h5}`
 
-**Output**: `friends/VBFHtoInv.friend.root`, `friends/QCDHtoInv.friend.root`
+---
+
+### summer26 (MadGraph5+Pythia samples, campaign-00022)
+
+#### Quick test (100 events per sample, foreground)
+
+```bash
+./run.summer26.sh --goFast
+# or a custom number of events:
+./run.summer26.sh --goFast 500
+```
+
+#### Full production (20 parallel jobs × 50k events, then hadd)
+
+```bash
+./run.summer26.sh
+```
+
+**Input files** (symlinked automatically from campaign-00022 EOS):
+
+| File | Sample | Cross section |
+|------|--------|---------------|
+| `VBFH_mg5_pythia.root` | VBF H→inv | 2.889 pb |
+| `QCDHjj_mg5_pythia.root` | QCD H+jj (ggH) | 4.967 pb |
+| `VBFZ_mg5_pythia.root` *(commented out)* | VBF Z→inv | 1.084 pb |
+| `VBFW_mg5_pythia.root` *(commented out)* | VBF W→inv | 7.186 pb |
+| `QCDZjj_mg5_pythia.root` *(commented out)* | QCD Z+jj | 315.3 pb |
+| `QCDWjj_mg5_pythia.root` *(commented out)* | QCD W+jj | 1642 pb |
+
+**Output**: `friends/summer26/VBFH_mg5_pythia.{friend.root,h5}`, `friends/summer26/QCDHjj_mg5_pythia.{friend.root,h5}`
+
+See [summer26.md](summer26.md) for details on enabling Z/W samples.
+
+---
 
 ### Manual single-file invocation
 
@@ -111,21 +154,31 @@ lands in slot 1.  The variable `leadJetIndex` records the true leading slot but
 sees the leading and subleading jet with equal probability and cannot learn
 "leading = signal-like" as a shortcut.
 
-The randomisation is **upstream** in the C++ friend-tree maker; the HDF5 files
-and all downstream Python code already have it baked in.
-
 ---
 
 ## Step 3 — Convert to HDF5 (`root_to_hdf5.py`)
 
+> **Note**: `run.summer25.sh` and `run.summer26.sh` call this
+> automatically at the end of the production run — no manual step needed for
+> the standard workflow.
+
+To run manually on any folder:
+
 ```bash
-python root_to_hdf5.py
+python root_to_hdf5.py <folder>
 ```
 
-Reads `friends/*.friend.root` with `uproot`, stacks jet pairs into `(N, 2)`
-arrays and constituents into `(N, 2, 80)` arrays, and writes compressed HDF5.
+Pass the folder that contains the `*.friend.root` files.  The script searches
+for all matching files in that folder and writes the `.h5` output next to each
+input file.
 
-**Output**: `friends/VBFHtoInv.h5`, `friends/QCDHtoInv.h5`
+```bash
+# summer25
+python root_to_hdf5.py friends/summer25
+
+# summer26
+python root_to_hdf5.py friends/summer26
+```
 
 ### HDF5 dataset layout
 
@@ -152,162 +205,3 @@ Each file contains the following datasets (gzip-compressed, level 4):
 | `dPhijj` | (N,) | float32 | Dijet Δφ |
 | `ptjj` | (N,) | float32 | Dijet pT |
 | `leadJetIndex` | (N,) | int32 | Slot (0 or 1) of the true pT-leading jet |
-
-The slot ordering in axis-1 of the `(N, 2, …)` arrays mirrors the randomised
-slot ordering in the friend ROOT trees.  Training reads only `[:, 0, ...]`
-(slot 0), which is the true leading jet in half the events and the subleading
-jet in the other half — by design.
-
----
-
-## Step 4 — Diagnostic plots (`plots.py`)
-
-```bash
-python plots.py
-```
-
-**Input**: all `friends/*friend.root` files. The six named samples it specifically
-looks for are:
-
-| File | Sample |
-|------|--------|
-| `friends/QCDHtoInv.friend.root` | QCD H |
-| `friends/QCDZtoInv.friend.root` | QCD Z |
-| `friends/QCDWtoInv.friend.root` | QCD W |
-| `friends/VBFHtoInv.friend.root` | VBF H |
-| `friends/VBFZtoInv.friend.root` | VBF Z |
-| `friends/VBFWtoInv.friend.root` | VBF W |
-
-**Output directory**: `~/www/files/akcolor/`
-
-| Output file | Content |
-|-------------|---------|
-| `{hname}_{stem}.pdf` | One PDF per TH1F / TH2F / TH2Poly histogram found in each friend file (except `hLeadJetSPVA`, `hLeadJetSPVM`, and `jetSPVA_*` which are handled separately below) |
-| `jetSPVA.pdf` | Normalized distributions of the leading-jet `\|θ_s\|` (SPVA angle) for all 6 samples overlaid |
-| `jetSPVA_ratio.pdf` | VBF / QCD ratio of `\|θ_s\|` distributions per process (H, Z, W) with RMS / ⟨S²⟩ / KL stats in legend |
-| `jetSPVM.pdf` | Normalized distributions of the leading-jet PVM magnitude `\|t⃗\|` for all 6 samples (log-y scale) |
-| `jetSPVM_ratio.pdf` | VBF / QCD ratio of `\|t⃗\|` distributions per process |
-| `jetNC.pdf` | Normalized distributions of jet number of constituents N_c |
-| `jetNC_ratio.pdf` | VBF / QCD ratio of N_c distributions per process |
-| `jet_roc.pdf` | ROC curves for 6 variables (`\|θ_s\|`, `\|t⃗\|`, p_T, `\|η\|`, m, N_c) × 3 processes, with AUC in legend |
-| `{hname}_ratio2D_{proc}.pdf` | VBF / QCD ratio TH2Poly map for each 2D poly histogram, per process (H, Z, W), with RMS / ⟨S²⟩ / KL stats |
-| `index.php` | Auto-generated PHP page listing all PDFs in the output directory |
-
-View plots at:
-
-```
-https://theofil.web.cern.ch/theofil/files/akcolor/summary.php
-```
-
----
-
-## Step 5 — Train the neural networks
-
-Both NNs use the same LCG environment. Training was submitted to a GPU node
-via HTCondor (`train_gpu.sub`). To re-run on a GPU node:
-
-```bash
-condor_submit NNkin/train_gpu.sub
-condor_submit NNpull/train_gpu.sub
-```
-
-Or run interactively (falls back to CPU):
-
-```bash
-cd NNkin  && python train.py
-cd NNpull && python train.py
-```
-
-### NNkin (`NNkin/`)
-
-Kinematic-only MLP. 12 input features: `dPhijj, dYjj, mjj, ptjj` plus
-`|eta|, m, phi, pt` for each of the two leading jets.
-Architecture: 12 → 128 → 64 → 32 → 1 (BatchNorm + Dropout at each layer).
-
-### NNpull (`NNpull/`)
-
-DeepSets-style constituent network. Per-jet scalars (6 features: `|eta|, m,
-NC, |t⃗|, pt, θ_s`) plus up to 80 constituents × 5 features each
-(`dEta, dPhi, m, pt, w`). A shared MLP `phi` processes each constituent;
-masked-sum pooling aggregates them; a second MLP `rho` combines with jet
-scalars to produce the logit.
-
-**Outputs saved by training** (both NNs):
-
-| File | Contents |
-|------|----------|
-| `best_model.pt` | Model weights at best validation loss |
-| `scaler.pkl` | Fitted `StandardScaler` (or dict of two scalers for NNpull) |
-| `split_indices.npz` | `train_idx`, `val_idx`, `test_idx` |
-| `loss_curve.pdf` | Train/val loss vs epoch |
-
----
-
-## Step 6 — Run inference
-
-```bash
-source init.txt
-
-cd NNpull && python inference.py   # → roc_nn.pdf
-cd NNkin  && python inference.py   # → roc_nnkin.pdf
-```
-
-Each script loads `best_model.pt` and `split_indices.npz`, runs the model on
-the held-out test set, and plots the NN ROC curve overlaid with
-single-variable baselines.
-
----
-
-## Step 7 — Head-to-head comparison
-
-```bash
-cd NNkin && python compare_roc.py   # → compare_roc.pdf
-```
-
-Loads both trained models, evaluates on their respective test partitions, and
-plots NNpull vs NNkin vs mjj vs dYjj on a single ROC canvas.
-
----
-
-## Step 8 — Publish plots
-
-Copy output PDFs to the web folder and view via `summary.php`:
-
-```bash
-cp NNpull/roc_nn.pdf NNkin/roc_nnkin.pdf NNkin/compare_roc.pdf ~/www/files/akcolor/
-```
-
-Then open:
-```
-https://theofil.web.cern.ch/theofil/files/akcolor/summary.php
-```
-
----
-
-## File map
-
-```
-makefriends/C/
-├── init.txt              # source this to set up the environment
-├── Makefile              # builds makefriends binary
-├── makefriends.cpp       # event reconstruction + pull vector (ROOT + FastJet)
-├── run_HtoInv.sh         # full production script (parallel jobs + hadd)
-├── root_to_hdf5.py       # ROOT → HDF5 converter
-├── plots.py              # diagnostic plots → ~/www/files/akcolor/
-├── friends/              # friend ROOT files and HDF5 datasets
-├── NNkin/
-│   ├── dataset.py        # loads HDF5, builds 12-feature kinematic matrix
-│   ├── model.py          # KinNN: 4-layer MLP
-│   ├── train.py          # training loop, early stopping, loss curve
-│   ├── inference.py      # ROC on test set vs single-variable baselines
-│   ├── compare_roc.py    # NNkin vs NNpull head-to-head ROC
-│   ├── style.py          # matplotlib style helpers
-│   └── train_gpu.sub     # HTCondor submission file
-└── NNpull/
-    ├── dataset.py        # loads HDF5, builds jet scalars + constituent arrays
-    ├── model.py          # JetNN: DeepSets (phi MLP + masked pool + rho MLP)
-    ├── train.py          # training loop
-    ├── inference.py      # ROC on test set vs single-variable baselines
-    ├── style.py          # matplotlib style helpers
-    └── train_gpu.sub     # HTCondor submission file
-```

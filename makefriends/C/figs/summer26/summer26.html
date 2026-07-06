@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>summer26 analysis</title>
+<style>
+:root{--bg:#ffffff;--bg2:#f8fafc;--bg3:#f1f5f9;--border:#e2e8f0;--fg:#1e293b;--fg-dim:#64748b;--h1:#92400e;--h2:#1e40af;--h3:#0e7490;--code-fg:#be185d;--pre-fg:#334155;--link:#1d4ed8;}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--fg);font-family:'JetBrains Mono','Fira Code','Cascadia Code','Menlo','Consolas',monospace;font-size:13.5px;line-height:1.75;display:flex;}
+nav{width:220px;min-width:220px;background:var(--bg2);border-right:1px solid var(--border);height:100vh;position:sticky;top:0;overflow-y:auto;padding:1.4rem 0;font-size:11.5px;}
+nav .nav-title{color:var(--h1);font-size:11px;letter-spacing:.1em;text-transform:uppercase;padding:0 1rem .8rem;border-bottom:1px solid var(--border);margin-bottom:.6rem;}
+nav a{display:block;padding:.2rem 1rem;color:var(--fg-dim);text-decoration:none;border-left:2px solid transparent;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+nav a.h2{padding-left:1rem;}nav a.h3{padding-left:1.7rem;font-size:11px;}
+nav a:hover{color:var(--h2);border-left-color:var(--h2);}
+main{flex:1;min-width:0;padding:2.5rem 3rem 4rem;max-width:900px;}
+h1{color:var(--h1);font-size:1.45rem;margin:0 0 .6rem;padding-bottom:.4rem;border-bottom:1px solid var(--border);line-height:1.3;}
+h2{color:var(--h2);font-size:1.05rem;margin:2rem 0 .5rem;padding-bottom:.25rem;border-bottom:1px solid var(--border);}
+h3{color:var(--h3);font-size:.95rem;margin:1.3rem 0 .3rem;}
+h4{color:var(--fg);font-size:.9rem;margin:1rem 0 .2rem;}
+p{margin:.45rem 0;}hr{border:none;border-top:1px solid var(--border);margin:1.8rem 0;}
+a{color:var(--link);text-decoration:none;}a:hover{text-decoration:underline;}
+code{background:var(--bg3);color:var(--code-fg);padding:.1em .35em;border-radius:3px;font-size:.88em;border:1px solid var(--border);}
+pre{background:var(--bg2);border:1px solid var(--border);border-left:3px solid var(--h2);border-radius:4px;padding:.9rem 1.1rem;margin:.7rem 0;overflow-x:auto;}
+pre code{background:none;border:none;color:var(--pre-fg);font-size:.84em;padding:0;}
+.tbl-wrap{overflow-x:auto;margin:.7rem 0;}
+table{border-collapse:collapse;width:100%;font-size:.82em;white-space:nowrap;}
+th{background:var(--bg3);color:var(--h3);text-align:left;padding:.35rem .65rem;border:1px solid var(--border);font-weight:normal;}
+td{padding:.28rem .65rem;border:1px solid var(--border);color:var(--fg);}
+tr:nth-child(even) td{background:var(--bg2);}tr:hover td{background:var(--bg3);}
+ul,ol{padding-left:1.6rem;margin:.4rem 0;}li{margin:.2rem 0;}
+blockquote{border-left:3px solid var(--border);padding:.3rem .9rem;color:var(--fg-dim);margin:.5rem 0;font-style:italic;}
+strong{color:#0f172a;font-weight:600;}
+::-webkit-scrollbar{width:6px;height:6px;}::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+</style>
+</head>
+<body>
+<nav>
+<div class="nav-title">summer26</div>
+<a class="h2" href="#campaign-details">Campaign details</a>
+<a class="h2" href="#step-2-run-event-reconstruction">Step 2 — Reconstruction</a>
+<a class="h2" href="#step-4-diagnostic-plots">Step 4 — Plots</a>
+<a class="h2" href="#step-5-train-the-neural-networks">Step 5 — Train NNs</a>
+<a class="h3" href="#nnkin-summer26-nnkin">NNkin</a>
+<a class="h3" href="#nnprepro-summer26-nnprepro">NNPrePro</a>
+<a class="h3" href="#nnpull-summer26-nnpull">NNpull</a>
+<a class="h3" href="#nnraw-summer26-nnraw">NNRaw</a>
+<a class="h3" href="#nnfullraw-summer26-nnfullraw">NNFullRaw</a>
+<a class="h2" href="#step-6-run-inference">Step 6 — Inference</a>
+<a class="h2" href="#step-7-head-to-head-comparison">Step 7 — Comparison</a>
+<a class="h2" href="#step-8-publish-plots">Step 8 — Publish</a>
+<a class="h2" href="#kweight-factors-and-run-3-statistical-uncertainty">kWeight &amp; Run 3</a>
+<a class="h3" href="#where-evweight-lives">evweight source</a>
+<a class="h3" href="#kweight-formula">kWeight formula</a>
+<a class="h3" href="#per-sample-values">Per-sample values</a>
+<a class="h3" href="#character-of-the-weights-by-generator">Generator weights</a>
+<a class="h3" href="#expected-events-at-run-3-l-300-fb-and-poisson-uncertainty">Run 3 uncertainty</a>
+<a class="h2" href="#input-files">Input files</a>
+<a class="h2" href="#file-map">File map</a>
+</nav>
+<main>
+<h1 id="summer26-analysis-vbf-h-inv-vs-qcd-dijet">summer26 analysis — VBF H→inv vs QCD dijet</h1>
+<p>Analysis code for the summer26 campaign (MadGraph5+Pythia samples, campaign-00022).</p>
+<p>Prerequisite: complete Steps 1–3 from <a href="README.md">README.md</a> to build <code>makefriends</code></p>
+<p>and produce <code>friends/summer26/*.{friend.root,h5}</code>.</p>
+<hr>
+<h2 id="campaign-details">Campaign details</h2>
+<p><strong>Sources</strong>:</p>
+<ul>
+<li>campaign-00023: <code>/eos/user/a/apapaefs/Projects/Pull/summer2026-hwsim-campaign-runner/campaigns/campaign-00023/merged/</code></li>
+<li>campaign-00030: <code>/eos/user/a/apapaefs/Projects/Pull/summer2026-hwsim-campaign-runner/campaigns/campaign-00030/merged/</code> (QCDHjj Herwig only)</li>
+<li>campaign-00031: <code>/eos/user/a/apapaefs/Projects/Pull/summer2026-hwsim-campaign-runner/campaigns/campaign-00031/merged/</code> (QCDHjj MG5+Pythia only)</li>
+</ul>
+<div class="tbl-wrap"><table>
+<tr><th>Process</th><th>σ Herwig (pb)</th><th>σ MG5+Pythia (pb)</th><th>Herwig file</th><th>MG5+Pythia file</th></tr>
+<tr><td>VBF H→inv</td><td>2.97189 ± 0.00325</td><td>2.88990 ± 0.00083</td><td><code>VBFH_herwig.root</code> (camp-00023)</td><td><code>VBFH_mg5_pythia.root</code> (camp-00023)</td></tr>
+<tr><td>VBF W→inv</td><td>7.494 ± 0.00632</td><td>7.20333 ± 0.00198</td><td><code>VBFW_herwig.root</code> (camp-00023)</td><td><code>VBFW_mg5_pythia.root</code> (camp-00023)</td></tr>
+<tr><td>VBF Z→inv</td><td>1.099 ± 0.00126</td><td>1.08581 ± 0.00030</td><td><code>VBFZ_herwig.root</code> (camp-00023)</td><td><code>VBFZ_mg5_pythia.root</code> (camp-00023)</td></tr>
+<tr><td>QCD H+jj</td><td>5.06051 ± 0.06030</td><td>4.982 ± 0.0008692</td><td><code>QCDHjj_herwig.root</code> (camp-00030)</td><td><code>QCDHjj_mg5_pythia.root</code> (camp-00031)</td></tr>
+<tr><td>QCD W+jj</td><td>1733.3 ± 1.84</td><td>1646.805 ± 0.510</td><td><code>QCDWjj_herwig.root</code> (camp-00023)</td><td><code>QCDWjj_mg5_pythia.root</code> (camp-00023)</td></tr>
+<tr><td>QCD Z+jj</td><td>340.2 ± 0.316</td><td>316.363 ± 0.098</td><td><code>QCDZjj_herwig.root</code> (camp-00023)</td><td><code>QCDZjj_mg5_pythia.root</code> (camp-00023)</td></tr>
+</table></div>
+<p>All 12 files available. <code>QCDHjj_mg5_pythia</code> comes from campaign-00031 (xs = 4.982 ± 0.0008692 pb).</p>
+<hr>
+<h2 id="step-2-run-event-reconstruction">Step 2 — Run event reconstruction</h2>
+<h3 id="quick-test-100-events-per-sample-foreground">Quick test (100 events per sample, foreground)</h3>
+<pre><code>./run.summer26.sh --goFast
+# or a custom number of events:
+./run.summer26.sh --goFast 500</code></pre>
+<h3 id="full-production-20-parallel-jobs-50k-events-then-hadd">Full production (20 parallel jobs × 50k events, then hadd)</h3>
+<pre><code>./run.summer26.sh</code></pre>
+<p><strong>Output</strong> (all 12 files):</p>
+<div class="tbl-wrap"><table>
+<tr><th>File</th><th>Description</th></tr>
+<tr><td><code>friends/summer26/VBFH_herwig.friend.root</code></td><td>VBF H Herwig friend tree</td></tr>
+<tr><td><code>friends/summer26/VBFH_herwig.h5</code></td><td>VBF H Herwig HDF5</td></tr>
+<tr><td><code>friends/summer26/VBFH_mg5_pythia.friend.root</code></td><td>VBF H MG5+Pythia friend tree</td></tr>
+<tr><td><code>friends/summer26/VBFH_mg5_pythia.h5</code></td><td>VBF H MG5+Pythia HDF5</td></tr>
+<tr><td><code>friends/summer26/VBFW_herwig.friend.root</code></td><td>VBF W Herwig friend tree</td></tr>
+<tr><td><code>friends/summer26/VBFW_herwig.h5</code></td><td>VBF W Herwig HDF5</td></tr>
+<tr><td><code>friends/summer26/VBFW_mg5_pythia.friend.root</code></td><td>VBF W MG5+Pythia friend tree</td></tr>
+<tr><td><code>friends/summer26/VBFW_mg5_pythia.h5</code></td><td>VBF W MG5+Pythia HDF5</td></tr>
+<tr><td><code>friends/summer26/VBFZ_herwig.friend.root</code></td><td>VBF Z Herwig friend tree</td></tr>
+<tr><td><code>friends/summer26/VBFZ_herwig.h5</code></td><td>VBF Z Herwig HDF5</td></tr>
+<tr><td><code>friends/summer26/VBFZ_mg5_pythia.friend.root</code></td><td>VBF Z MG5+Pythia friend tree</td></tr>
+<tr><td><code>friends/summer26/VBFZ_mg5_pythia.h5</code></td><td>VBF Z MG5+Pythia HDF5</td></tr>
+<tr><td><code>friends/summer26/QCDHjj_herwig.friend.root</code></td><td>QCD H+jj Herwig friend tree</td></tr>
+<tr><td><code>friends/summer26/QCDHjj_herwig.h5</code></td><td>QCD H+jj Herwig HDF5</td></tr>
+<tr><td><code>friends/summer26/QCDHjj_mg5_pythia.friend.root</code></td><td>QCD H+jj MG5+Pythia friend tree (from camp-00031, xs=4.982 ± 0.0008692 pb)</td></tr>
+<tr><td><code>friends/summer26/QCDHjj_mg5_pythia.h5</code></td><td>QCD H+jj MG5+Pythia HDF5 (from camp-00031)</td></tr>
+<tr><td><code>friends/summer26/QCDWjj_herwig.friend.root</code></td><td>QCD W+jj Herwig friend tree</td></tr>
+<tr><td><code>friends/summer26/QCDWjj_herwig.h5</code></td><td>QCD W+jj Herwig HDF5</td></tr>
+<tr><td><code>friends/summer26/QCDWjj_mg5_pythia.friend.root</code></td><td>QCD W+jj MG5+Pythia friend tree</td></tr>
+<tr><td><code>friends/summer26/QCDWjj_mg5_pythia.h5</code></td><td>QCD W+jj MG5+Pythia HDF5</td></tr>
+<tr><td><code>friends/summer26/QCDZjj_herwig.friend.root</code></td><td>QCD Z+jj Herwig friend tree</td></tr>
+<tr><td><code>friends/summer26/QCDZjj_herwig.h5</code></td><td>QCD Z+jj Herwig HDF5</td></tr>
+<tr><td><code>friends/summer26/QCDZjj_mg5_pythia.friend.root</code></td><td>QCD Z+jj MG5+Pythia friend tree</td></tr>
+<tr><td><code>friends/summer26/QCDZjj_mg5_pythia.h5</code></td><td>QCD Z+jj MG5+Pythia HDF5</td></tr>
+</table></div>
+<hr>
+<h2 id="step-5-train-the-neural-networks">Step 5 — Train the neural networks</h2>
+<p>All three NNs use the LCG_106_cuda environment. Training is submitted to a GPU node</p>
+<p>via HTCondor. To submit:</p>
+<pre><code>condor_submit summer26/NNkin/train_gpu.sub
+condor_submit summer26/NNPrePro/train_gpu.sub
+condor_submit summer26/NNpull/train_gpu.sub
+condor_submit summer26/NNRaw/train_gpu.sub
+condor_submit summer26/NNFullRaw/train_gpu.sub
+condor_submit summer26/NNFullRaw_H/train_gpu.sub</code></pre>
+<p>Or run interactively (falls back to CPU):</p>
+<pre><code>cd summer26/NNkin      &amp;&amp; python train.py
+cd summer26/NNPrePro   &amp;&amp; python train.py
+cd summer26/NNpull     &amp;&amp; python train.py
+cd summer26/NNRaw      &amp;&amp; python train.py
+cd summer26/NNFullRaw  &amp;&amp; python train.py
+cd summer26/NNFullRaw_H &amp;&amp; python train.py</code></pre>
+<h3 id="nnkin-summer26-nnkin">NNkin (<code>summer26/NNkin/</code>)</h3>
+<p>Kinematic-only MLP. 12 input features: <code>dPhijj, dYjj, mjj, ptjj</code> plus</p>
+<p><code>eta, m, phi, pt</code> for each of the two leading jets.</p>
+<p>Architecture: <strong>12 → 128 → 64 → 32 → 1</strong> (BatchNorm + ReLU + Dropout(0.3) at each hidden layer).</p>
+<p>Trained on <strong>QCDZjj_herwig + VBFZ_herwig</strong>.</p>
+<h3 id="nnprepro-summer26-nnprepro">NNPrePro (<code>summer26/NNPrePro/</code>)</h3>
+<p>DeepSets over constituents using only low-level features — no pull-vector jet</p>
+<p>scalars (NC, |t⃗|, θ_s removed) and no constituent weight (w removed).</p>
+<p><strong>Jet scalars</strong> (3, leading jet): |η|, m, pT<br></p>
+<p><strong>Constituent features</strong> (80 max × 3): Δη, ΔΦ, pT/pT_jet</p>
+<p>Architecture:</p>
+<ul>
+<li><strong>phi MLP</strong>: 3 → 64 → 64 (ReLU, shared across constituents)</li>
+<li>masked-sum pooling → (B, 64)</li>
+<li><strong>rho MLP</strong>: 67 → 128 → 64 → 1 (BatchNorm + ReLU + Dropout(0.3))</li>
+</ul>
+<p>Trained on <strong>QCDZjj_herwig + VBFZ_herwig</strong>.</p>
+<h3 id="nnpull-summer26-nnpull">NNpull (<code>summer26/NNpull/</code>)</h3>
+<p>DeepSets over constituents with full pull-vector information; NC removed from</p>
+<p>jet scalars.</p>
+<p><strong>Jet scalars</strong> (5, leading jet): |η|, m, |t|, pT, θ_s<br></p>
+<p><strong>Constituent features</strong> (80 max × 4): Δη, ΔΦ, pT/pT_jet, w</p>
+<p>Architecture:</p>
+<ul>
+<li><strong>phi MLP</strong>: 4 → 64 → 64 (ReLU, shared across constituents)</li>
+<li>masked-sum pooling → (B, 64)</li>
+<li><strong>rho MLP</strong>: 69 → 128 → 64 → 1 (BatchNorm + ReLU + Dropout(0.3))</li>
+</ul>
+<p>Trained on <strong>QCDZjj_herwig + VBFZ_herwig</strong>.</p>
+<h3 id="nnraw-summer26-nnraw">NNRaw (<code>summer26/NNRaw/</code>)</h3>
+<p>DeepSets over constituents of the <strong>leading jet</strong> using only raw low-level features —</p>
+<p>no pull-vector scalars (NC, |t⃗|, θ_s removed), no constituent weight (w removed),</p>
+<p>and signed η (not |η|) kept as a jet scalar.</p>
+<p><strong>Jet scalars</strong> (3, leading jet): η (signed), m, pT<br></p>
+<p><strong>Constituent features</strong> (80 max × 3): Δη_raw, ΔΦ, pT/pT_jet</p>
+<p>Architecture:</p>
+<ul>
+<li><strong>phi MLP</strong>: 3 → 64 → 64 (ReLU, shared across constituents)</li>
+<li>masked-sum pooling → (B, 64)</li>
+<li><strong>rho MLP</strong>: 67 → 128 → 64 → 1 (BatchNorm + ReLU + Dropout(0.3))</li>
+</ul>
+<p>Trained on <strong>QCDZjj_herwig + VBFZ_herwig</strong>.</p>
+<h3 id="nnfullraw-summer26-nnfullraw">NNFullRaw (<code>summer26/NNFullRaw/</code>)</h3>
+<p>Extension of NNRaw that uses the same low-level features for <strong>both</strong> the leading</p>
+<p>(index 0) and sub-leading (index 1) jets. The phi MLP is shared across all</p>
+<p>constituents from both jets.</p>
+<p><strong>Jet scalars</strong> (3 per jet × 2 jets = 6 total): η (signed), m, pT<br></p>
+<p><strong>Constituent features</strong> (80 max × 3 per jet): Δη_raw, ΔΦ, pT/pT_jet</p>
+<p>Architecture:</p>
+<ul>
+<li><strong>phi MLP</strong> (shared): 3 → 64 → 64 (ReLU, applied independently per jet)</li>
+<li>masked-sum pooling per jet → pool₀ (B, 64), pool₁ (B, 64)</li>
+<li>concat [pool₀, pool₁, jet₀ scalars, jet₁ scalars] → (B, 134)</li>
+<li><strong>rho MLP</strong>: 134 → 128 → 64 → 1 (BatchNorm + ReLU + Dropout(0.3))</li>
+</ul>
+<p>Trained on <strong>QCDZjj_herwig + VBFZ_herwig</strong>.</p>
+<p><strong>Outputs saved by training</strong> (all NNs use <code>_{W/Z/H}</code> suffix matching <code>PROCESS</code>):</p>
+<div class="tbl-wrap"><table>
+<tr><th>File</th><th>Contents</th></tr>
+<tr><td><code>best_model_{Z/H}.pt</code></td><td>Model weights at best validation loss</td></tr>
+<tr><td><code>scaler_{Z/H}.pkl</code></td><td>Fitted <code>StandardScaler</code> dict</td></tr>
+<tr><td><code>split_indices_{Z/H}.npz</code></td><td><code>train_idx</code>, <code>val_idx</code>, <code>test_idx</code></td></tr>
+<tr><td><code>figs/summer26/{NN}_{Z/H}_loss_curve.pdf</code></td><td>Train/val loss vs epoch</td></tr>
+</table></div>
+<hr>
+<h2 id="step-6-run-inference">Step 6 — Run inference</h2>
+<p>Submit all inference jobs to HTCondor (commands are in <code>infer.txt</code>):</p>
+<pre><code>condor_submit summer26/NNkin/infer_gpu.sub
+condor_submit summer26/NNPrePro/infer_gpu.sub
+condor_submit summer26/NNpull/infer_gpu.sub
+condor_submit summer26/NNRaw/infer_gpu.sub
+condor_submit summer26/NNFullRaw/infer_gpu.sub
+condor_submit summer26/NNFullRaw_H/infer_gpu.sub
+condor_submit summer26/NNkin_H/infer_gpu.sub
+condor_submit summer26/NNkin_W/infer_gpu.sub
+condor_submit summer26/NNPrePro_H/infer_gpu.sub
+condor_submit summer26/NNPrePro_W/infer_gpu.sub
+condor_submit summer26/NNpull_H/infer_gpu.sub
+condor_submit summer26/NNpull_W/infer_gpu.sub
+condor_submit summer26/NNRaw_H/infer_gpu.sub
+condor_submit summer26/NNRaw_W/infer_gpu.sub
+condor_submit summer26/NNFullRaw_W/infer_gpu.sub</code></pre>
+<p>Each job requests 2 CPUs, 8 GB RAM, 1 GPU (<code>microcentury</code> flavour). Each <code>inference.py</code></p>
+<p>evaluates on the Herwig test split (training domain) and the full MG5+Pythia dataset</p>
+<p>(generator transfer test), producing <code>figs/summer26/roc_&lt;nn&gt;_{W,Z,H}.pdf</code>.</p>
+<hr>
+<h2 id="kweight-factors-and-run-3-statistical-uncertainty">kWeight factors and Run 3 statistical uncertainty</h2>
+<h3 id="where-evweight-lives">Where <code>evweight</code> lives</h3>
+<p>The <code>evweight</code> branch is stored in the <strong>original campaign ROOT files on EOS</strong> — not in the friend trees. The TTree in these files is named <strong><code>Data</code></strong>. The exact file paths per sample are:</p>
+<div class="tbl-wrap"><table>
+<tr><th>Sample</th><th>EOS file</th></tr>
+<tr><td><code>VBFH_herwig</code></td><td><code>campaign-00023/merged/VBFH_herwig.root</code></td></tr>
+<tr><td><code>VBFH_mg5_pythia</code></td><td><code>campaign-00023/merged/VBFH_mg5_pythia.root</code></td></tr>
+<tr><td><code>VBFW_herwig</code></td><td><code>campaign-00023/merged/VBFW_herwig.root</code></td></tr>
+<tr><td><code>VBFW_mg5_pythia</code></td><td><code>campaign-00023/merged/VBFW_mg5_pythia.root</code></td></tr>
+<tr><td><code>VBFZ_herwig</code></td><td><code>campaign-00023/merged/VBFZ_herwig.root</code></td></tr>
+<tr><td><code>VBFZ_mg5_pythia</code></td><td><code>campaign-00023/merged/VBFZ_mg5_pythia.root</code></td></tr>
+<tr><td><code>QCDWjj_herwig</code></td><td><code>campaign-00023/merged/QCDWjj_herwig.root</code></td></tr>
+<tr><td><code>QCDWjj_mg5_pythia</code></td><td><code>campaign-00023/merged/QCDWjj_mg5_pythia.root</code></td></tr>
+<tr><td><code>QCDZjj_herwig</code></td><td><code>campaign-00023/merged/QCDZjj_herwig.root</code></td></tr>
+<tr><td><code>QCDZjj_mg5_pythia</code></td><td><code>campaign-00023/merged/QCDZjj_mg5_pythia.root</code></td></tr>
+<tr><td><code>QCDHjj_herwig</code></td><td><code>campaign-00030/merged/QCDHjj_herwig.root</code></td></tr>
+<tr><td><code>QCDHjj_mg5_pythia</code></td><td><code>campaign-00031/merged/QCDHjj_mg5_pythia.root</code></td></tr>
+</table></div>
+<p>where <code>campaign-00023</code>, <code>campaign-00030</code>, <code>campaign-00031</code> are all under</p>
+<p><code>/eos/user/a/apapaefs/Projects/Pull/summer2026-hwsim-campaign-runner/campaigns/</code>.</p>
+<h3 id="kweight-formula">kWeight formula</h3>
+<p><code>makefriends</code> computes <code>kWeight</code> for each event (line 308 of <code>makefriends.cpp</code>):</p>
+<pre><code>kWeight_i = evweight_i × σ / sumWtot</code></pre>
+<p>where:</p>
+<ul>
+<li><strong><code>evweight_i</code></strong> — per-event generator weight read from branch <code>evweight</code> in TTree <code>Data</code></li>
+</ul>
+<p>  (passed as <code>--genWeight evweight</code> for all 12 samples in <code>run.summer26.sh</code>)</p>
+<ul>
+<li><strong><code>σ</code></strong> — process cross-section in pb, passed via <code>--xs</code> (exact values in the table below)</li>
+<li><strong><code>sumWtot</code></strong> — sum of <code>evweight</code> over <strong>all</strong> events in the input file <strong>before any selection</strong>,</li>
+</ul>
+<p>  computed at startup in <code>makefriends.cpp</code> line 129 via</p>
+<p>  <code>ROOT::RDataFrame::Sum&lt;double&gt;(&quot;evweight&quot;).GetValue()</code></p>
+<h3 id="per-sample-values">Per-sample values</h3>
+<p>Exact <code>σ</code> values (from <code>run.summer26.sh</code>) and measured <code>evweight</code> statistics (from reading all</p>
+<p>original EOS files; histograms in <code>figs/summer26/evweight_{W,Z,H}.pdf</code>).</p>
+<p><code>kWeight</code> statistics are from the <strong>post-selection</strong> <code>events</code> tree in the friend ROOT files</p>
+<p>(<code>friends/summer26/*.friend.root</code>); histograms in <code>figs/summer26/kWeight_{W,Z,H}.pdf</code>.</p>
+<p>Run <code>python summer26/weights.py</code> to regenerate both sets of PDFs and reprint this table.</p>
+<div class="tbl-wrap"><table>
+<tr><th>Sample</th><th>N events</th><th>σ `--xs` (pb)</th><th>evweight min</th><th>evweight max</th><th>evweight mean</th><th>evweight std</th><th>N sel.</th><th>kWeight mean</th><th>kWeight std</th></tr>
+<tr><td><code>VBFH_herwig</code></td><td>1 000 000</td><td>2.97189</td><td>1.000</td><td>424.94</td><td>1.0056</td><td>0.622</td><td>255 574</td><td>2.9735e-06</td><td>1.4187e-06</td></tr>
+<tr><td><code>VBFH_mg5_pythia</code></td><td>1 000 000</td><td>2.88990</td><td>2.8870</td><td>2.8920</td><td>2.8900</td><td>0.0015</td><td>335 031</td><td>2.8899e-06</td><td>1.4679e-09</td></tr>
+<tr><td><code>VBFW_herwig</code></td><td>1 000 000</td><td>7.494</td><td>1.000</td><td>91.604</td><td>1.0060</td><td>0.192</td><td>330 597</td><td>7.475e-06</td><td>9.7132e-07</td></tr>
+<tr><td><code>VBFW_mg5_pythia</code></td><td>1 000 000</td><td>7.20333</td><td>7.1962</td><td>7.2120</td><td>7.2033</td><td>0.0051</td><td>369 846</td><td>7.2033e-06</td><td>5.0482e-09</td></tr>
+<tr><td><code>VBFZ_herwig</code></td><td>1 000 000</td><td>1.099</td><td>1.000</td><td>46.794</td><td>1.0183</td><td>0.194</td><td>378 566</td><td>1.1004e-06</td><td>2.0376e-07</td></tr>
+<tr><td><code>VBFZ_mg5_pythia</code></td><td>1 000 000</td><td>1.08581</td><td>1.0846</td><td>1.0868</td><td>1.0856</td><td>0.00058</td><td>416 673</td><td>1.0858e-06</td><td>5.7907e-10</td></tr>
+<tr><td><code>QCDHjj_herwig</code></td><td>1 000 000</td><td>5.06051</td><td>1.000</td><td>12.842</td><td>1.0002</td><td>0.026</td><td>146 109</td><td>5.0596e-06</td><td>2.083e-09</td></tr>
+<tr><td><code>QCDHjj_mg5_pythia</code></td><td>409 621</td><td>4.982</td><td>4.9818</td><td>4.9818</td><td>4.9818</td><td>~0</td><td>106 059</td><td>1.2162e-05</td><td>0</td></tr>
+<tr><td><code>QCDWjj_herwig</code></td><td>1 000 000</td><td>1733.3</td><td>0.00146</td><td>6.3698</td><td>0.11363</td><td>0.011</td><td>148 885</td><td>0.0017311</td><td>0.00010734</td></tr>
+<tr><td><code>QCDWjj_mg5_pythia</code></td><td>1 000 000</td><td>1646.805</td><td>1644.5</td><td>1649.8</td><td>1646.8</td><td>1.73</td><td>200 332</td><td>0.0016468</td><td>1.7313e-06</td></tr>
+<tr><td><code>QCDZjj_herwig</code></td><td>1 000 000</td><td>340.2</td><td>0.06666</td><td>19.326</td><td>0.06679</td><td>0.025</td><td>150 848</td><td>0.00033961</td><td>6.1153e-06</td></tr>
+<tr><td><code>QCDZjj_mg5_pythia</code></td><td>1 000 000</td><td>316.363</td><td>316.00</td><td>316.72</td><td>316.37</td><td>0.232</td><td>210 073</td><td>0.00031636</td><td>2.3246e-07</td></tr>
+</table></div>
+<h3 id="character-of-the-weights-by-generator">Character of the weights by generator</h3>
+<p><strong>MG5+Pythia</strong>: <code>evweight</code> is essentially constant across events and equals the process</p>
+<p>cross-section σ (std ≈ 0). This means <code>sumWtot ≈ N × σ</code> and therefore</p>
+<p><code>kWeight_i ≈ σ/N</code> — all events contribute equally to the absolute normalization.</p>
+<p><strong>Herwig VBF</strong> (<code>VBFH</code>, <code>VBFW</code>, <code>VBFZ</code>, <code>QCDHjj</code>): <code>evweight</code> has a minimum of 1 but a wide</p>
+<p>upward tail (up to 425 for <code>VBFH_herwig</code>). These are per-event parton-shower importance</p>
+<p>weights. The mean is close to 1 so <code>sumWtot ≈ N</code>, and <code>kWeight_i = evweight_i × σ / N</code>.</p>
+<p><strong>Herwig QCD</strong> (<code>QCDWjj</code>, <code>QCDZjj</code>): <code>evweight</code> mean is well below 1 (0.114 for</p>
+<p><code>QCDWjj_herwig</code>, 0.067 for <code>QCDZjj_herwig</code>), reflecting Herwig&#x27;s inclusive QCD sampling</p>
+<p>strategy where most generated events carry low weight.</p>
+<h3 id="dijet-selection-applied-in-makefriends-cpp">Dijet selection applied in <code>makefriends.cpp</code></h3>
+<p>Only events passing all three cuts enter the output <code>events</code> TTree (and thus contribute to histograms):</p>
+<ol>
+<li>≥ 2 anti-kT (R=0.4) jets with pT &gt; 30 GeV and |η| &lt; 3.0</li>
+<li>Two leading jets with opposite-sign pseudorapidity: η₀ × η₁ &lt; 0</li>
+<li>Dijet invariant mass: mjj &gt; 0</li>
+</ol>
+<p>Summing <code>kWeight</code> over all selected events gives <code>σ_eff</code> (effective cross-section after selection, in pb).</p>
+<h3 id="expected-events-at-run-3-l-300-fb-and-poisson-uncertainty">Expected events at Run 3 (L = 300 fb⁻¹) and Poisson uncertainty</h3>
+<p>For a histogram bin of width Δm (e.g. 10 GeV in mjj):</p>
+<pre><code>N_bin = L × Σ_{i ∈ bin} kWeight_i</code></pre>
+<p>with L = 300 000 pb⁻¹ = 300 fb⁻¹. The Poisson statistical uncertainty is:</p>
+<pre><code>δN_bin = √N_bin = √( L × Σ_{i ∈ bin} kWeight_i )</code></pre>
+<p>These error bars are shown in <code>figs/summer26/mjj_{W,Z,H}_Run3.pdf</code>, produced by</p>
+<p><code>summer26/plots.py</code>.</p>
+<hr>
+<h2 id="nnprepro-purity-study-optimal-cut-on-jet-0-score">NNPrePro purity study — optimal cut on jet-0 score</h2>
+<p>Script: <code>summer26/plots.py</code> (section starting at line 971).<br></p>
+<p>Selection: SR defined by <code>|ΔY_jj| &gt; 3</code>, weights scaled to L = 300 fb⁻¹ (Run 3).<br></p>
+<p>Generators averaged (Herwig + MG5+Pythia weighted equally per class).</p>
+<p>Scanning NNPrePro_jet0 &gt; threshold to maximise S/(S+B), requiring at least</p>
+<p>10 expected signal and 10 expected background events (to avoid the MC-statistics</p>
+<p>floor where B drops to zero in the tail).</p>
+<div class="tbl-wrap"><table>
+<tr><th>Channel</th><th>Selection</th><th>S</th><th>B</th><th>S/(S+B)</th><th>S/√B</th></tr>
+<tr><td><strong>H</strong></td><td>SR only (`\</td><td>dYjj\</td><td>&gt;3`)</td><td>174 000</td><td>85 000</td><td>0.672</td><td>597</td></tr>
+<tr><td><strong>H</strong></td><td><strong>optimal NNPrePro_jet0 &gt; 0.936</strong></td><td><strong>1 095</strong></td><td><strong>40</strong></td><td><strong>0.965</strong></td><td><strong>174</strong></td></tr>
+<tr><td><strong>H</strong></td><td><strong>optimal mjj &gt; 1988 GeV</strong></td><td><strong>2 130</strong></td><td><strong>199</strong></td><td><strong>0.915</strong></td><td><strong>151</strong></td></tr>
+<tr><td><strong>W</strong></td><td>SR only</td><td>415 000</td><td>24 700 000</td><td>0.017</td><td>83</td></tr>
+<tr><td><strong>W</strong></td><td><strong>optimal NNPrePro_jet0 &gt; 0.974</strong></td><td><strong>221</strong></td><td><strong>247</strong></td><td><strong>0.472</strong></td><td><strong>14</strong></td></tr>
+<tr><td><strong>W</strong></td><td><strong>optimal mjj &gt; 1997 GeV</strong></td><td><strong>23 118</strong></td><td><strong>102 334</strong></td><td><strong>0.184</strong></td><td><strong>72</strong></td></tr>
+<tr><td><strong>Z</strong></td><td>SR only</td><td>67 500</td><td>4 800 000</td><td>0.014</td><td>31</td></tr>
+<tr><td><strong>Z</strong></td><td><strong>optimal NNPrePro_jet0 &gt; 0.975</strong></td><td><strong>33</strong></td><td><strong>51</strong></td><td><strong>0.392</strong></td><td><strong>4.6</strong></td></tr>
+<tr><td><strong>Z</strong></td><td><strong>optimal mjj &gt; 1999 GeV</strong></td><td><strong>4 056</strong></td><td><strong>18 449</strong></td><td><strong>0.180</strong></td><td><strong>30</strong></td></tr>
+</table></div>
+<p><strong>Key observations:</strong></p>
+<ul>
+<li><strong>H channel</strong> starts at S/(S+B) = 0.67 already (QCD H+jj cross-section is small).</li>
+</ul>
+<p>  With score &gt; 0.936 it reaches <strong>0.965</strong>, keeping 0.6% of signal and 0.05% of</p>
+<p>  background. S/√B peaks at moderate cuts (score &gt; 0.5, S/√B = 642) rather than</p>
+<p>  at the purity-optimal threshold.</p>
+<ul>
+<li><strong>W and Z channels</strong> start background-dominated (purity ~1–2%). The NN can push</li>
+</ul>
+<p>  purity to <strong>0.47</strong> (W) and <strong>0.39</strong> (Z), but only by retaining a tiny signal tail</p>
+<p>  (~0.05% of background remains). S/√B peaks at moderate cuts (score &gt; 0.7) rather</p>
+<p>  than at the purity-optimal threshold.</p>
+<ul>
+<li>The optimal thresholds for W/Z (~0.974–0.975) sit near the MC-statistics floor;</li>
+</ul>
+<p>  the few tens of background events surviving there carry large MC uncertainties.</p>
+<hr>
+<h2 id="sr-run3-optimization-per-channel-mjj-yjj-nnprepro-jet0-cuts">SR_Run3 optimization — per-channel (mjj, |ΔYjj|, NNPrePro_jet0) cuts</h2>
+<p>Script: <code>summer26/plots.py</code> (SR optimization section, just before the</p>
+<p><code>jetSPVA_SR_Run3</code> plots). Scan performed on <strong>Herwig samples only</strong> at</p>
+<p>L = 300 fb⁻¹; the resulting cuts are also applied to the MG5+Pythia figures.</p>
+<p>Grid: mjj threshold 0–4000 GeV in 10 GeV steps, |ΔYjj| threshold 0–6 in 0.1</p>
+<p>steps, NNPrePro_jet0 threshold 0–1 in 0.01 steps.</p>
+<p>Objective: maximize S/(S+B), subject to <strong>S &gt; 1000</strong> expected signal events and</p>
+<p><strong>≥ 10 raw MC background events</strong> (guard against the B→0 MC-statistics floor).</p>
+<p>The table is regenerated on every <code>plots.py</code> run and written to</p>
+<p><code>figs/summer26/SR_optimization.txt</code>.</p>
+<div class="tbl-wrap"><table>
+<tr><th>Channel</th><th>mjj cut (GeV)</th><th>\</th><th>ΔYjj\</th><th>cut</th><th>NN cut</th><th>S</th><th>B</th><th>S/(S+B)</th><th>raw S</th><th>raw B</th></tr>
+<tr><td><strong>H</strong></td><td>&gt; 1250</td><td>&gt; 4.9</td><td>&gt; 0.90</td><td>1 471</td><td>15</td><td><strong>0.990</strong></td><td>1 659</td><td>10</td></tr>
+<tr><td><strong>W</strong></td><td>&gt; 2050</td><td>&gt; 5.0</td><td>&gt; 0.86</td><td>4 632</td><td>5 192</td><td><strong>0.472</strong></td><td>2 059</td><td>10</td></tr>
+<tr><td><strong>Z</strong></td><td>&gt; 1320</td><td>&gt; 4.2</td><td>&gt; 0.92</td><td>1 275</td><td>3 158</td><td><strong>0.288</strong></td><td>3 799</td><td>31</td></tr>
+</table></div>
+<p>For reference (Herwig): the previous common SR (<code>|ΔYjj| &gt; 3</code>, <code>mjj &gt; 2</code> TeV)</p>
+<p>gave H 0.937, W 0.194, Z 0.172; the 2-variable (mjj, |ΔYjj|) optimum gave</p>
+<p>H 0.975, W 0.449, Z 0.239. Adding the NN cut both raises purity and relaxes</p>
+<p>the mjj cut (more signal kept).</p>
+<p><strong>Note:</strong> the H and W optima sit exactly at the raw-B ≥ 10 guard — the surviving</p>
+<p>background estimates rest on only 10 MC events each and carry a ~30%</p>
+<p>MC-statistical uncertainty.</p>
+<p>The <code>figs/summer26/jetSPVA_SR_Run3_{H,W,Z}_{Herwig,MG5Pythia}.pdf</code> figures use</p>
+<p>these per-channel optimized cuts (shown in each figure title). The companion</p>
+<p><code>jetSPVA_jet1_SR_Run3_*.pdf</code> figures show |θs| of the <strong>sub-leading</strong> jet in the</p>
+<p>same SR — largely uncorrelated with the jet-0 |θs| (the NNPrePro cut acts on</p>
+<p>jet 0 only).</p>
+<hr>
+<h2 id="input-files">Input files</h2>
+<div class="tbl-wrap"><table>
+<tr><th>Full path</th><th>Size (MB)</th></tr>
+<tr><td><code>/eos/user/a/apapaefs/Projects/Pull/summer2026-hwsim-campaign-runner/campaigns/campaign-00023/merged/VBFH_herwig.root</code></td><td>14869</td></tr>
+<tr><td><code>/eos/user/a/apapaefs/Projects/Pull/summer2026-hwsim-campaign-runner/campaigns/campaign-00023/merged/VBFH_mg5_pythia.root</code></td><td>15912</td></tr>
+<tr><td><code>/eos/user/a/apapaefs/Projects/Pull/summer2026-hwsim-campaign-runner/campaigns/campaign-00023/merged/VBFW_herwig.root</code></td><td>15304</td></tr>
+<tr><td><code>/eos/user/a/apapaefs/Projects/Pull/summer2026-hwsim-campaign-runner/campaigns/campaign-00023/merged/VBFW_mg5_pythia.root</code></td><td>15981</td></tr>
+<tr><td><code>/eos/user/a/apapaefs/Projects/Pull/summer2026-hwsim-campaign-runner/campaigns/campaign-00023/merged/VBFZ_herwig.root</code></td><td>15371</td></tr>
+<tr><td><code>/eos/user/a/apapaefs/Projects/Pull/summer2026-hwsim-campaign-runner/campaigns/campaign-00023/merged/VBFZ_mg5_pythia.root</code></td><td>16027</td></tr>
+<tr><td><code>/eos/user/a/apapaefs/Projects/Pull/summer2026-hwsim-campaign-runner/campaigns/campaign-00023/merged/QCDWjj_herwig.root</code></td><td>16220</td></tr>
+<tr><td><code>/eos/user/a/apapaefs/Projects/Pull/summer2026-hwsim-campaign-runner/campaigns/campaign-00023/merged/QCDWjj_mg5_pythia.root</code></td><td>16774</td></tr>
+<tr><td><code>/eos/user/a/apapaefs/Projects/Pull/summer2026-hwsim-campaign-runner/campaigns/campaign-00023/merged/QCDZjj_herwig.root</code></td><td>16198</td></tr>
+<tr><td><code>/eos/user/a/apapaefs/Projects/Pull/summer2026-hwsim-campaign-runner/campaigns/campaign-00023/merged/QCDZjj_mg5_pythia.root</code></td><td>16776</td></tr>
+<tr><td><code>/eos/user/a/apapaefs/Projects/Pull/summer2026-hwsim-campaign-runner/campaigns/campaign-00030/merged/QCDHjj_herwig.root</code></td><td>17538</td></tr>
+<tr><td><code>/eos/user/a/apapaefs/Projects/Pull/summer2026-hwsim-campaign-runner/campaigns/campaign-00031/merged/QCDHjj_mg5_pythia.root</code></td><td>7380</td></tr>
+</table></div>
+<p>Total: ~178 GB across 12 files.</p>
+<hr>
+<h2 id="file-map">File map</h2>
+<pre><code>makefriends/C/
+├── run.summer26.sh         # full production script for summer26
+├── friends/summer26/       # 12x {_herwig,_mg5_pythia}.{friend.root,h5}
+├── figs/summer26/          # diagnostic PDFs
+└── summer26/               # analysis code
+    ├── plots.py            # diagnostic plots (adapt from summer25/plots.py)
+    ├── NNkin/
+    │   ├── dataset.py      # loads VBFZ_herwig + QCDZjj_herwig h5; 12-feature kinematic matrix
+    │   ├── model.py        # KinNN: 4-layer MLP (12→128→64→32→1)
+    │   ├── train.py        # training loop, early stopping, loss curve
+    │   ├── inference.py    # ROC on Herwig test + MG5 transfer test
+    │   ├── style.py        # matplotlib style helpers
+    │   ├── train_gpu.sh    # LCG_106_cuda wrapper
+    │   └── train_gpu.sub   # HTCondor submission
+    ├── NNPrePro/
+    │   ├── dataset.py      # jet scalars (3: |η|,m,pT) + constituents (3: Δη,ΔΦ,pT/pT_jet)
+    │   ├── model.py        # JetNN: phi(3→64→64) + masked pool + rho(67→128→64→1)
+    │   ├── train.py        # training loop
+    │   ├── inference.py    # ROC on Herwig test + MG5 transfer test
+    │   ├── style.py        # matplotlib style helpers
+    │   ├── train_gpu.sh    # LCG_106_cuda wrapper
+    │   └── train_gpu.sub   # HTCondor submission
+    ├── NNpull/
+    │   ├── dataset.py      # jet scalars (5: |η|,m,|t|,pT,θ_s) + constituents (4: Δη,ΔΦ,pT/pT_jet,w)
+    │   ├── model.py        # JetNN: phi(4→64→64) + masked pool + rho(69→128→64→1)
+    │   ├── train.py        # training loop
+    │   ├── inference.py    # ROC on Herwig test + MG5 transfer test
+    │   ├── style.py        # matplotlib style helpers
+    │   ├── train_gpu.sh    # LCG_106_cuda wrapper
+    │   └── train_gpu.sub   # HTCondor submission
+    ├── NNRaw/
+    │   ├── dataset.py      # jet scalars (3: η,m,pT) + constituents (3: Δη_raw,ΔΦ,pT/pT_jet), leading jet only
+    │   ├── model.py        # JetNN: phi(3→64→64) + masked pool + rho(67→128→64→1)
+    │   ├── train.py        # training loop
+    │   ├── inference.py    # ROC on Herwig test + MG5 transfer test
+    │   ├── style.py        # matplotlib style helpers
+    │   ├── train_gpu.sh    # LCG_106_cuda wrapper
+    │   └── train_gpu.sub   # HTCondor submission
+    ├── NNFullRaw/
+    │   ├── dataset.py      # jet scalars (3 per jet × 2 jets) + constituents (3 per constituent × 2 jets)
+    │   ├── model.py        # JetNN: shared phi(3→64→64) + masked pool per jet + rho(134→128→64→1)
+    │   ├── train.py        # training loop; outputs best_model_Z.pt, scaler_Z.pkl, split_indices_Z.npz
+    │   ├── inference.py    # ROC on Herwig test + MG5 transfer test
+    │   ├── style.py        # matplotlib style helpers
+    │   ├── train_gpu.sh    # LCG_106_cuda wrapper
+    │   └── train_gpu.sub   # HTCondor submission
+    └── NNFullRaw_H/
+        ├── dataset.py      # same as NNFullRaw but uses QCDHjj_herwig + VBFH_herwig
+        ├── model.py        # identical architecture to NNFullRaw
+        ├── train.py        # PROCESS=&quot;H&quot;; outputs best_model_H.pt, scaler_H.pkl, split_indices_H.npz
+        ├── inference.py    # ROC on Herwig H test + MG5 H transfer test
+        ├── style.py        # matplotlib style helpers
+        ├── train_gpu.sh    # LCG_106_cuda wrapper
+        └── train_gpu.sub   # HTCondor submission</code></pre>
+</main>
+</body>
+</html>

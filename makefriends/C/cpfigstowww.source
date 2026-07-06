@@ -1,0 +1,5 @@
+# rm ~/www/files/akcolor/def/*pdf
+python summer26/make_html.py
+rm ~/www/files/akcolor/*.pdf
+# cp figs/summer25/* ~/www/files/akcolor/def/
+cp figs/summer26/* ~/www/files/akcolor/

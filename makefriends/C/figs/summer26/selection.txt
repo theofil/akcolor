@@ -1,0 +1,109 @@
+Event Selection Summary -- summer26
+===================================
+Source: makefriends.cpp (C++ producer) and summer26/plots.py (Python analysis)
+
+All selections below are applied inside makefriends.cpp. plots.py reads the
+already-filtered friend ROOT files and applies no additional event-level cuts.
+
+-----------------------------------------------------------------------------
+GROUP A  Base dijet selection
+         Applied to ALL output: events tree + all histograms
+-----------------------------------------------------------------------------
+
+Particle-level (before clustering):
+  Excluded:  Higgs boson (|pid|=25), neutrinos (|pid| in {12,14,16}),
+             tau leptons (|pid|=15)
+  pT cut:    pT_particle > 0 GeV   [JC_PT_MIN = 0.0]
+  eta cut:   |eta_particle| < 20   [JC_ETA_MAX = 20.0]  <-- effectively no cut
+
+Jet reconstruction (anti-kT, R = 0.4):
+  pT threshold:  pT_jet > 30 GeV   [JET_PT_MIN = 30.0]
+  eta acceptance:|eta_jet| < 3.0   [JET_ETA_MAX = 3.0]
+  Constituents:  <= 80 per jet, pT-ordered  [NC_MAX = 80]
+
+Dijet gate (events failing ANY of these are NOT saved at all):
+  1. >= 2 jets passing the above thresholds
+  2. m_jj > 0 GeV  [MJJ_MIN = 0.0]  <-- no explicit mjj cut applied
+  3. Opposite-eta requirement: eta_j1 * eta_j2 < 0
+     (the two leading jets must lie in opposite rapidity hemispheres)
+
+Weighting:
+  kWeight = genWeight * xs / sumWtot     [units: pb^-1 per event]
+
+Note on jet0/jet1 index assignment:
+  In the output tree, the leading (highest-pT) jet is randomly placed at
+  index 0 or index 1 with 50% probability per event (controlled by iev%2).
+  The branch 'leadJetIndex' records which slot holds the true leading jet.
+  This randomisation decorrelates pull-vector direction from jet ordering.
+
+-----------------------------------------------------------------------------
+GROUP B  Histograms: hLeadJetSPVA, hLeadJetSPVM
+         Plots: jetSPVA_{proc}.pdf
+                jetSPVA_ratio_{proc}.pdf
+                jetSPVM_{proc}.pdf
+                jetSPVM_ratio_{proc}.pdf
+                jet_roc_{proc}.pdf  (|theta_s| and |t| ROC curves)
+-----------------------------------------------------------------------------
+
+  Selection: Group A
+  Fill rate: both leading jets contribute per event (2 fills per event)
+  Guard:     entry skipped if pull-vector magnitude is undefined (value <= -90)
+  Weight:    kWeight
+
+-----------------------------------------------------------------------------
+GROUP C  Histograms: jetShape, jetShapeRaw  (TH2Poly, 128*phi x 60*rho bins)
+         Plots: jetShape_{stem}.pdf
+                jetShapeRaw_{stem}.pdf
+-----------------------------------------------------------------------------
+
+  Selection: Group A
+  Fill rate: all constituents of both leading jets (all particles used)
+  Frame:     (DeltaY, Deltaphi) relative to jet axis; for backward jets (y_jet < 0)
+             dY is sign-flipped so the frame always points toward +Y
+  Weights:
+    jetShape    w = (pT_i / pT_jet) * r         [PV_A=1, PV_B=1, PV_C=0]
+    jetShapeRaw w = pT_i / pT_jet               (no radial factor)
+
+-----------------------------------------------------------------------------
+GROUP D  Dijet kinematics from tree: mjj, dYjj, dPhijj, ptjj
+         Plots: mjj_{proc}.pdf
+                dYjj_{proc}.pdf
+                dPhijj_{proc}.pdf
+                Ptjj_{proc}.pdf
+-----------------------------------------------------------------------------
+
+  Selection:    Group A (events already filtered in friend tree)
+  Entries:      1 per event
+  Normalisation: absolute -- weighted by kWeight [events / pb^-1]
+
+-----------------------------------------------------------------------------
+GROUP E  Jet pT and eta from tree: jetPt0+jetPt1, jetEta0+jetEta1
+         Plots: jetPt_{proc}.pdf
+                jetEta_{proc}.pdf
+-----------------------------------------------------------------------------
+
+  Selection:    Group A
+  Entries:      both jets concatenated -- 2 entries per event
+  Normalisation: absolute -- weighted by kWeight
+
+-----------------------------------------------------------------------------
+GROUP F  Number of constituents from tree: jetNC0
+         Plots: jetNC_{proc}.pdf
+                jetNC_ratio_{proc}.pdf
+-----------------------------------------------------------------------------
+
+  Selection:    Group A
+  Entries:      one randomly-assigned jet per event (index 0)
+  Normalisation: shape (unit-area)
+
+-----------------------------------------------------------------------------
+GROUP G  ROC curves summary
+         Plots: jet_roc_{proc}.pdf
+-----------------------------------------------------------------------------
+
+  Signal = VBF sample, Background = QCD sample (matched by boson flavour)
+  Variable sources:
+    |theta_s|  (signed pull angle)  -> hLeadJetSPVA  [Group B -- 2 jets/event]
+    |t|        (pull magnitude)     -> hLeadJetSPVM  [Group B -- 2 jets/event]
+    m_jj       (dijet mass)         -> mjj            [Group D -- 1 entry/event]
+    DeltaY_jj  (dijet rapidity gap) -> dYjj           [Group D -- 1 entry/event]

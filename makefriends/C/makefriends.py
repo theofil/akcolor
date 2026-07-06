@@ -233,6 +233,13 @@ if __name__ == "__main__":
             _yv_arr = array('d', _yv.tolist())
             jetShape.AddBin(len(_xv), _xv_arr, _yv_arr)
 
+    hNJets      = ROOT.TH1D("hNJets",     "hNJets;N_{jets};Events",             11, -0.5, 10.5)
+    hNJets.Sumw2()
+    hLeadJetPt  = ROOT.TH1D("hLeadJetPt", "hLeadJetPt;Leading jet p_{T} [GeV];Events", 100, 0, 500)
+    hLeadJetPt.Sumw2()
+    hLeadJetEta = ROOT.TH1D("hLeadJetEta","hLeadJetEta;Leading jet #eta;Events",  60, -3.0, 3.0)
+    hLeadJetEta.Sumw2()
+
     # ttree variables
     nJetsMax = 2
     tvars = []
@@ -410,6 +417,11 @@ if __name__ == "__main__":
             # alias to jets for code combatibility
             genjs = jets
 
+            hNJets.Fill(len(jets), t_kWeight[0])
+            if len(jets) >= 1:
+                hLeadJetPt.Fill(jets[0].pt(),   t_kWeight[0])
+                hLeadJetEta.Fill(jets[0].eta(), t_kWeight[0])
+
             # fill jetShape for mjj>400 events with forward leading jet
             if len(jets) >= 2 and sumP4(jets[0:2]).M() > 400 and jets[0].eta()*jets[1].eta() < 0:
                 for jet in jets[0:2]:
@@ -439,5 +451,8 @@ if __name__ == "__main__":
     otree.Write()
     hSumW.Write()
     jetShape.Write()
+    hNJets.Write()
+    hLeadJetPt.Write()
+    hLeadJetEta.Write()
     ofile.Write()
     ofile.Close()
