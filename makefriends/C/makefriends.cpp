@@ -19,7 +19,7 @@
 #include "fastjet/ClusterSequence.hh"
 
 static const int    MAXNPART          = 10000;
-static const int    NJETMAX           = 2;
+static const int    NJETMAX           = 3;
 static const double JET_R             = 0.4;
 static const int    NC_MAX            = 80;   // max constituents for pull vector (-1 = all); if >-1, implies pt-ordering
 static const bool   USE_KT_JETS       = false; // if true, use kt algorithm with inclusive_jets() instead of anti-kT
@@ -27,7 +27,7 @@ static const double JC_PT_MIN         = 0.0;   // pt cut on particles before clu
 static const double JC_ETA_MAX        = 20.0;  // |eta| cut on particles before clustering
 static const double JET_PT_MIN        = 30.0;  // inclusive jet pt threshold
 static const double JET_ETA_MAX       = 3.0;   // |eta| cut on reconstructed jets
-static const double MJJ_MIN           = 400.0; // dijet invariant mass threshold
+static const double MJJ_MIN           = 0.0;   // dijet invariant mass threshold
 static const double PV_A              = 1.0;   // exponent on z = pt_jc/pt_jet in pull-vector weight
 static const double PV_B              = 1.0;   // exponent on r in pull-vector weight
 static const double PV_C              = 0.0;   // exponent on JET_R in pull-vector weight denominator
@@ -77,7 +77,7 @@ TLorentzVector sumP4(const std::vector<fastjet::PseudoJet>& jets, int n) {
 // ── argument parsing ─────────────────────────────────────────────────────────
 
 struct Args {
-    std::string inputfile, genWeight = "genWeight", output = "";
+    std::string inputfile, genWeight = "genWeight", output = "", boson = "";
     double xs = 1.0;
     long   totEve = -1, skip = 0, jobId = -1;
     int    debug  = 0;
@@ -87,7 +87,7 @@ Args parseArgs(int argc, char* argv[]) {
     if (argc < 2) {
         std::cerr << "Usage: " << argv[0]
                   << " file.root [--genWeight W] [--xs X] [--totEve N]"
-                     " [--skip N] [--jobId N] [--output out.root] [--debug N]\n";
+                     " [--skip N] [--jobId N] [--output out.root] [--boson H|W|Z] [--debug N]\n";
         exit(1);
     }
     Args a; a.inputfile = argv[1];
@@ -99,7 +99,12 @@ Args parseArgs(int argc, char* argv[]) {
         else if (f == "--skip"     ) a.skip      = std::stol(argv[++i]);
         else if (f == "--jobId"    ) a.jobId     = std::stol(argv[++i]);
         else if (f == "--output"   ) a.output    = argv[++i];
+        else if (f == "--boson"    ) a.boson     = argv[++i];
         else if (f == "--debug"    ) a.debug     = std::stoi(argv[++i]);
+    }
+    if (!a.boson.empty() && a.boson != "H" && a.boson != "W" && a.boson != "Z") {
+        std::cerr << "--boson must be H, W or Z (got " << a.boson << ")\n";
+        exit(1);
     }
     return a;
 }
@@ -142,7 +147,7 @@ int main(int argc, char* argv[]) {
     TTree* otree = new TTree("events", "events");
     TH1D*  hSumW = new TH1D("hSumW","hSumW",1,0,1); hSumW->Sumw2();
 
-    // leading-jet |SPVA| (20 bins, 0–π), filled after mjj>400 + opposite-eta selection
+    // leading-jet |SPVA| (20 bins, 0–π), filled after mjj>MJJ_MIN + opposite-eta selection
     TH1F* hLeadJetSPVA = new TH1F("hLeadJetSPVA","hLeadJetSPVA", 20, 0., M_PI);
     hLeadJetSPVA->Sumw2();
 
@@ -150,6 +155,14 @@ int main(int argc, char* argv[]) {
     TH1F* hLeadJetSPVM = new TH1F("hLeadJetSPVM","hLeadJetSPVM", 20, 0., 0.06);
     hLeadJetSPVM->Sumw2();
     hLeadJetSPVM->GetXaxis()->SetTitle("|#vec{t}|");
+
+    TH1D* hNJets = new TH1D("hNJets","hNJets", 10, 0, 10);
+    hNJets->Sumw2();
+    hNJets->GetXaxis()->SetTitle("N_{jets}");
+
+    TH1F* hJetPt1 = new TH1F("hJetPt1","hJetPt1", 100, 0., 500.);
+    hJetPt1->Sumw2();
+    hJetPt1->GetXaxis()->SetTitle("leading jet p_{T} [GeV]");
 
     // TH2Poly jetShape — 64 phi × 30 rho annular sectors
     TH2Poly* jetShape = new TH2Poly("jetShape","jetShape",-0.5,0.5,-0.5,0.5);
@@ -176,6 +189,31 @@ int main(int argc, char* argv[]) {
         }
     }
 
+    // TH2Poly jetShapeRaw — same binning as jetShape, weight = pt_i/pt_jet (no radial factor)
+    TH2Poly* jetShapeRaw = new TH2Poly("jetShapeRaw","jetShapeRaw",-0.5,0.5,-0.5,0.5);
+    jetShapeRaw->Sumw2();
+    {
+        const int nArc = 12, nPhi = 128, nRho = 60;
+        for (int iPhi = 0; iPhi < nPhi; ++iPhi) {
+            double p1 = 2*M_PI * iPhi / nPhi;
+            double p2 = 2*M_PI * (iPhi+1) / nPhi;
+            for (int iRho = 0; iRho < nRho; ++iRho) {
+                double r1 = 0.5 * iRho / nRho;
+                double r2 = 0.5 * (iRho+1) / nRho;
+                std::vector<double> xv, yv;
+                for (int k = 0; k < nArc; ++k) {
+                    double phi = p1 + (p2-p1)*k/(nArc-1);
+                    xv.push_back(r2*std::cos(phi)); yv.push_back(r2*std::sin(phi));
+                }
+                for (int k = nArc-1; k >= 0; --k) {
+                    double phi = p1 + (p2-p1)*k/(nArc-1);
+                    xv.push_back(r1*std::cos(phi)); yv.push_back(r1*std::sin(phi));
+                }
+                jetShapeRaw->AddBin((int)xv.size(), xv.data(), yv.data());
+            }
+        }
+    }
+
     // output branches
     Int_t   o_nJets;
     Float_t o_jetPt[NJETMAX], o_jetEta[NJETMAX], o_jetPhi[NJETMAX], o_jetM[NJETMAX];
@@ -184,6 +222,7 @@ int main(int argc, char* argv[]) {
     Float_t o_kWeight;
     Int_t   o_leadJetIndex;
     Float_t o_mjj, o_dYjj, o_dPhijj, o_ptjj;
+    Float_t o_bosonM, o_bosonY, o_bosonEta, o_bosonPt, o_bosonPhi;
 
     otree->Branch("nJets",    &o_nJets,     "nJets/I");
     otree->Branch("jetPt0",   &o_jetPt[0],  "jetPt0/F");
@@ -202,30 +241,52 @@ int main(int argc, char* argv[]) {
     otree->Branch("jetPVM1",  &o_jetPVM[1], "jetPVM1/F");
     otree->Branch("jetNC0",   &o_jetNC[0],  "jetNC0/I");
     otree->Branch("jetNC1",   &o_jetNC[1],  "jetNC1/I");
+    otree->Branch("jetPt2",   &o_jetPt[2],  "jetPt2/F");
+    otree->Branch("jetEta2",  &o_jetEta[2], "jetEta2/F");
+    otree->Branch("jetPhi2",  &o_jetPhi[2], "jetPhi2/F");
+    otree->Branch("jetM2",    &o_jetM[2],   "jetM2/F");
+    otree->Branch("jetSPVA2", &o_jetSPVA[2],"jetSPVA2/F");
+    otree->Branch("jetPVA2",  &o_jetPVA[2], "jetPVA2/F");
+    otree->Branch("jetPVM2",  &o_jetPVM[2], "jetPVM2/F");
+    otree->Branch("jetNC2",   &o_jetNC[2],  "jetNC2/I");
     otree->Branch("kWeight",      &o_kWeight,      "kWeight/F");
     otree->Branch("leadJetIndex", &o_leadJetIndex, "leadJetIndex/I");
     otree->Branch("mjj",          &o_mjj,          "mjj/F");
     otree->Branch("dYjj",         &o_dYjj,         "dYjj/F");
     otree->Branch("dPhijj",       &o_dPhijj,       "dPhijj/F");
     otree->Branch("ptjj",         &o_ptjj,         "ptjj/F");
+    otree->Branch("bosonM",       &o_bosonM,       "bosonM/F");
+    otree->Branch("bosonY",       &o_bosonY,       "bosonY/F");
+    otree->Branch("bosonEta",     &o_bosonEta,     "bosonEta/F");
+    otree->Branch("bosonPt",      &o_bosonPt,      "bosonPt/F");
+    otree->Branch("bosonPhi",     &o_bosonPhi,     "bosonPhi/F");
 
-    Float_t o_jcsPt  [NJETMAX][NC_MAX];
-    Float_t o_jcsDEta[NJETMAX][NC_MAX];
-    Float_t o_jcsDPhi[NJETMAX][NC_MAX];
+    Float_t o_jcsPt     [NJETMAX][NC_MAX];
+    Float_t o_jcsDEta   [NJETMAX][NC_MAX];
+    Float_t o_jcsDEtaRaw[NJETMAX][NC_MAX];
+    Float_t o_jcsDPhi   [NJETMAX][NC_MAX];
     Float_t o_jcsM   [NJETMAX][NC_MAX];
     Float_t o_jcsW   [NJETMAX][NC_MAX];
     if (SAVE_JCS) {
         std::string nc = std::to_string(NC_MAX);
         otree->Branch("jcsPt0",   o_jcsPt[0],   ("jcsPt0["   + nc + "]/F").c_str());
         otree->Branch("jcsPt1",   o_jcsPt[1],   ("jcsPt1["   + nc + "]/F").c_str());
-        otree->Branch("jcsDEta0", o_jcsDEta[0], ("jcsDEta0[" + nc + "]/F").c_str());
-        otree->Branch("jcsDEta1", o_jcsDEta[1], ("jcsDEta1[" + nc + "]/F").c_str());
-        otree->Branch("jcsDPhi0", o_jcsDPhi[0], ("jcsDPhi0[" + nc + "]/F").c_str());
+        otree->Branch("jcsDEta0",    o_jcsDEta[0],    ("jcsDEta0["    + nc + "]/F").c_str());
+        otree->Branch("jcsDEta1",    o_jcsDEta[1],    ("jcsDEta1["    + nc + "]/F").c_str());
+        otree->Branch("jcsDEtaRaw0", o_jcsDEtaRaw[0], ("jcsDEtaRaw0[" + nc + "]/F").c_str());
+        otree->Branch("jcsDEtaRaw1", o_jcsDEtaRaw[1], ("jcsDEtaRaw1[" + nc + "]/F").c_str());
+        otree->Branch("jcsDPhi0",    o_jcsDPhi[0],    ("jcsDPhi0["    + nc + "]/F").c_str());
         otree->Branch("jcsDPhi1", o_jcsDPhi[1], ("jcsDPhi1[" + nc + "]/F").c_str());
         otree->Branch("jcsM0",    o_jcsM[0],    ("jcsM0["    + nc + "]/F").c_str());
         otree->Branch("jcsM1",    o_jcsM[1],    ("jcsM1["    + nc + "]/F").c_str());
         otree->Branch("jcsW0",    o_jcsW[0],    ("jcsW0["    + nc + "]/F").c_str());
         otree->Branch("jcsW1",    o_jcsW[1],    ("jcsW1["    + nc + "]/F").c_str());
+        otree->Branch("jcsPt2",      o_jcsPt[2],      ("jcsPt2["      + nc + "]/F").c_str());
+        otree->Branch("jcsDEta2",    o_jcsDEta[2],    ("jcsDEta2["    + nc + "]/F").c_str());
+        otree->Branch("jcsDEtaRaw2", o_jcsDEtaRaw[2], ("jcsDEtaRaw2[" + nc + "]/F").c_str());
+        otree->Branch("jcsDPhi2",    o_jcsDPhi[2],    ("jcsDPhi2["    + nc + "]/F").c_str());
+        otree->Branch("jcsM2",       o_jcsM[2],       ("jcsM2["       + nc + "]/F").c_str());
+        otree->Branch("jcsW2",       o_jcsW[2],       ("jcsW2["       + nc + "]/F").c_str());
     }
 
     // input branches
@@ -263,8 +324,9 @@ int main(int argc, char* argv[]) {
         memset(o_jetNC,   0, sizeof(o_jetNC));
         if (SAVE_JCS) {
             memset(o_jcsPt,   0, sizeof(o_jcsPt));
-            memset(o_jcsDEta, 0, sizeof(o_jcsDEta));
-            memset(o_jcsDPhi, 0, sizeof(o_jcsDPhi));
+            memset(o_jcsDEta,    0, sizeof(o_jcsDEta));
+            memset(o_jcsDEtaRaw, 0, sizeof(o_jcsDEtaRaw));
+            memset(o_jcsDPhi,    0, sizeof(o_jcsDPhi));
             memset(o_jcsM,    0, sizeof(o_jcsM));
             memset(o_jcsW,    0, sizeof(o_jcsW));
         }
@@ -273,20 +335,62 @@ int main(int argc, char* argv[]) {
         sumW2 += o_kWeight * o_kWeight;
         hSumW->Fill(0., o_kWeight);
 
-        // particle loop → build momtocluster
+        // particle loop → build momtocluster (+ collect boson decay candidates)
         std::vector<fastjet::PseudoJet> momfj;
         momfj.reserve(numparticles);
+        std::vector<TLorentzVector> b_higgs, b_tauM, b_tauP, b_nuTau, b_nuTauBar, b_nuE, b_nuEBar;
         for (int mm = 0; mm < numparticles; ++mm) {
             double E  = objects_arr[0][mm];
             double px = objects_arr[1][mm];
             double py = objects_arr[2][mm];
             double pz = objects_arr[3][mm];
             int    pid = (int)objects_arr[4][mm];
+            if (!args.boson.empty()) {
+                if      (pid ==  25) b_higgs.emplace_back(px, py, pz, E);
+                else if (pid ==  15) b_tauM.emplace_back(px, py, pz, E);
+                else if (pid == -15) b_tauP.emplace_back(px, py, pz, E);
+                else if (pid ==  16) b_nuTau.emplace_back(px, py, pz, E);
+                else if (pid == -16) b_nuTauBar.emplace_back(px, py, pz, E);
+                else if (pid ==  12) b_nuE.emplace_back(px, py, pz, E);
+                else if (pid == -12) b_nuEBar.emplace_back(px, py, pz, E);
+            }
             if (pid == 25 || std::abs(pid) == 12 || std::abs(pid) == 14 ||
                              std::abs(pid) == 16 || std::abs(pid) == 15) continue;
             fastjet::PseudoJet pj(px, py, pz, E);
             if (pj.perp() > JC_PT_MIN && std::abs(pj.eta()) < JC_ETA_MAX)
                 momfj.push_back(pj);
+        }
+
+        // boson 4-vector: H = stable pid 25; W = flavor-matched (τ,ν_τ) pair,
+        // Z = (ν_e,ν̄_e) pair — each with mass closest to the pole
+        o_bosonM = o_bosonY = o_bosonEta = o_bosonPt = o_bosonPhi = -99.f;
+        if (!args.boson.empty()) {
+            TLorentzVector bp4;
+            bool  found = false;
+            double bestDiff = 1e18;
+            auto tryPairs = [&](const std::vector<TLorentzVector>& A,
+                                const std::vector<TLorentzVector>& B, double pole) {
+                for (const auto& a : A) for (const auto& b : B) {
+                    TLorentzVector s = a + b;
+                    double d = std::abs(s.M() - pole);
+                    if (d < bestDiff) { bestDiff = d; bp4 = s; found = true; }
+                }
+            };
+            if (args.boson == "H") {
+                if (!b_higgs.empty()) { bp4 = b_higgs[0]; found = true; }
+            } else if (args.boson == "W") {
+                tryPairs(b_tauM, b_nuTauBar, 80.379);   // W⁻ → τ⁻ ν̄_τ
+                tryPairs(b_tauP, b_nuTau,    80.379);   // W⁺ → τ⁺ ν_τ
+            } else if (args.boson == "Z") {
+                tryPairs(b_nuE, b_nuEBar, 91.1876);     // Z → ν_e ν̄_e
+            }
+            if (found) {
+                o_bosonM   = (Float_t)std::round(bp4.M()        * 100) / 100.f;
+                o_bosonY   = (Float_t)std::round(bp4.Rapidity() * 1000) / 1000.f;
+                o_bosonEta = (Float_t)std::round(bp4.Eta()      * 1000) / 1000.f;
+                o_bosonPt  = (Float_t)std::round(bp4.Pt()       * 100) / 100.f;
+                o_bosonPhi = (Float_t)std::round(bp4.Phi()      * 1000) / 1000.f;
+            }
         }
 
         // cluster
@@ -324,7 +428,11 @@ int main(int argc, char* argv[]) {
             pvs[ij] = fillPV(jets[ij], jcs, PV_A, PV_B, PV_C);
         }
 
-        // dijet selection: mjj>400, opposite-eta leading pair
+        // per-event inclusive histograms (no dijet selection)
+        hNJets->Fill((float)jets.size(), o_kWeight);
+        if (!jets.empty()) hJetPt1->Fill(jets[0].pt(), o_kWeight);
+
+        // dijet selection: mjj>MJJ_MIN, opposite-eta leading pair
         if ((int)jets.size() >= 2 &&
             sumP4(jets, 2).M() > MJJ_MIN &&
             jets[0].eta() * jets[1].eta() < 0.) {
@@ -352,8 +460,10 @@ int main(int argc, char* argv[]) {
                     double dPhi = deltaPhi(jc.phi(), jets[ij].phi());
                     double r    = std::sqrt(dY*dY + dPhi*dPhi);
                     double w    = std::pow(jc.pt() / jets[ij].pt(), PV_A) * std::pow(r / std::pow(JET_R, PV_C), PV_B);
+                    double wRaw = jc.pt() / jets[ij].pt();
                     double dYs  = (jets[ij].rapidity() < 0) ? -dY : dY;
                     jetShape->Fill(dYs, dPhi, w);
+                    jetShapeRaw->Fill(dYs, dPhi, wRaw);
                 }
             }
 
@@ -361,7 +471,8 @@ int main(int argc, char* argv[]) {
             int nmax = std::min((int)jets.size(), NJETMAX);
             o_nJets = nmax;
             for (int i = 0; i < nmax; ++i) {
-                int si = swap ? (1 - i) : i;
+                // randomization confined to jets 0/1; jet2 stays pt-ordered 3rd jet
+                int si = (i < 2) ? (swap ? 1 - i : i) : i;
                 o_jetPt[si]   = (Float_t)std::round(jets[i].pt()  * 100) / 100.f;
                 o_jetEta[si]  = (Float_t)std::round(jets[i].eta() * 1000) / 1000.f;
                 o_jetPhi[si]  = (Float_t)std::round(jets[i].phi() * 1000) / 1000.f;
@@ -382,7 +493,8 @@ int main(int argc, char* argv[]) {
                         double w        = std::pow(jcs_i[k].pt() / jets[i].pt(), PV_A)
                                         * std::pow(r / std::pow(JET_R, PV_C), PV_B);
                         o_jcsPt  [si][k] = (Float_t)jcs_i[k].pt();
-                        o_jcsDEta[si][k] = (Float_t)dEtas;
+                        o_jcsDEta   [si][k] = (Float_t)dEtas;
+                        o_jcsDEtaRaw[si][k] = (Float_t)dEta_raw;
                         o_jcsDPhi[si][k] = (Float_t)dPhi;
                         o_jcsM   [si][k] = (Float_t)jcs_i[k].m();
                         o_jcsW   [si][k] = (Float_t)w;
@@ -403,6 +515,7 @@ int main(int argc, char* argv[]) {
     otree->Write();
     hSumW->Write();
     jetShape->Write();
+    jetShapeRaw->Write();
     hLeadJetSPVA->Write();
     hLeadJetSPVM->Write();
     ofile->Write();
