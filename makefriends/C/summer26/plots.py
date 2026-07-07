@@ -864,7 +864,7 @@ for group in ['VBF', 'QCD']:
         print('Saved', outpath)
         plt.close(fig)
 
-# ── NNPrePro score jet0 (inclusive, same selection as mjj) ───────────────────
+# ── NNj score jet0 (inclusive, same selection as mjj) ───────────────────
 score_bins        = np.linspace(0, 1, 51)
 score_bin_centers = (score_bins[:-1] + score_bins[1:]) / 2
 score_bin_width   = score_bins[1] - score_bins[0]
@@ -877,10 +877,10 @@ for proc, samples in SAMPLES_BY_PROC.items():
             print(f'  Skipping {fpath} (not found)')
             continue
         with h5py.File(fpath, 'r') as f:
-            if 'NNPrePro_jet0' not in f:
-                print(f'  NNPrePro_jet0 not found in {fpath}')
+            if 'NNj_jet0' not in f:
+                print(f'  NNj_jet0 not found in {fpath}')
                 continue
-            score = f['NNPrePro_jet0'][:].astype(float)
+            score = f['NNj_jet0'][:].astype(float)
             kw    = f['kWeight'][:].astype(float)
         counts, _ = np.histogram(score, bins=score_bins, weights=kw)
         norm = counts.sum() * score_bin_width
@@ -891,18 +891,18 @@ for proc, samples in SAMPLES_BY_PROC.items():
                 linewidth=3, color=group_colors[s['group']], linestyle=gen_styles[s['gen']],
                 label=s['label'])
     apply_style(ax,
-                xlabel='NNPrePro score (jet 0)',
+                xlabel='NNj score (jet 0)',
                 ylabel='Normalized density',
                 title='',
                 xlim=(0, 1),
                 legend_loc='upper center')
     plt.tight_layout()
-    outpath = str(FIGS / f'NNPrePro_jet0_{proc}.pdf')
+    outpath = str(FIGS / f'NNj_jet0_{proc}.pdf')
     fig.savefig(outpath, bbox_inches='tight')
     print('Saved', outpath)
     plt.close(fig)
 
-# ── NNPrePro score jet0 in SR (|dYjj| > 3, same selection as mjj_Run3) ───────
+# ── NNj score jet0 in SR (|dYjj| > 3, same selection as mjj_Run3) ───────
 for proc, samples in SAMPLES_BY_PROC.items():
     fig, ax = plt.subplots(figsize=FIG_SIZE)
     for s in samples:
@@ -911,10 +911,10 @@ for proc, samples in SAMPLES_BY_PROC.items():
             print(f'  Skipping {fpath} (not found)')
             continue
         with h5py.File(fpath, 'r') as f:
-            if 'NNPrePro_jet0' not in f:
-                print(f'  NNPrePro_jet0 not found in {fpath}')
+            if 'NNj_jet0' not in f:
+                print(f'  NNj_jet0 not found in {fpath}')
                 continue
-            score = f['NNPrePro_jet0'][:].astype(float)
+            score = f['NNj_jet0'][:].astype(float)
             kw    = f['kWeight'][:].astype(float)
             dYjj  = f['dYjj'][:].astype(float)
         sr = np.abs(dYjj) > 3.0
@@ -928,18 +928,18 @@ for proc, samples in SAMPLES_BY_PROC.items():
                 linewidth=3, color=group_colors[s['group']], linestyle=gen_styles[s['gen']],
                 label=s['label'])
     apply_style(ax,
-                xlabel='NNPrePro score (jet 0)',
+                xlabel='NNj score (jet 0)',
                 ylabel='Normalized density',
                 title=r'SR: $|\Delta Y_{jj}| > 3$',
                 xlim=(0, 1),
                 legend_loc='upper center')
     plt.tight_layout()
-    outpath = str(FIGS / f'NNPrePro_jet0_{proc}_Run3.pdf')
+    outpath = str(FIGS / f'NNj_jet0_{proc}_Run3.pdf')
     fig.savefig(outpath, bbox_inches='tight')
     print('Saved', outpath)
     plt.close(fig)
 
-# ── NNPrePro score jet0 inclusive, absolute norm, log-y (same as mjj) ────────
+# ── NNj score jet0 inclusive, absolute norm, log-y (same as mjj) ────────
 for proc, samples in SAMPLES_BY_PROC.items():
     fig, ax = plt.subplots(figsize=FIG_SIZE)
     for s in samples:
@@ -948,29 +948,29 @@ for proc, samples in SAMPLES_BY_PROC.items():
             print(f'  Skipping {fpath} (not found)')
             continue
         with h5py.File(fpath, 'r') as f:
-            if 'NNPrePro_jet0' not in f:
-                print(f'  NNPrePro_jet0 not found in {fpath}')
+            if 'NNj_jet0' not in f:
+                print(f'  NNj_jet0 not found in {fpath}')
                 continue
-            score = f['NNPrePro_jet0'][:].astype(float)
+            score = f['NNj_jet0'][:].astype(float)
             kw    = f['kWeight'][:].astype(float)
         counts, _ = np.histogram(score, bins=score_bins, weights=kw)
         ax.hist(score_bin_centers, bins=score_bins, weights=counts, histtype='step',
                 linewidth=3, color=group_colors[s['group']], linestyle=gen_styles[s['gen']],
                 label=s['label'])
     apply_style(ax,
-                xlabel='NNPrePro score (jet 0)',
+                xlabel='NNj score (jet 0)',
                 ylabel=f'events / {score_bin_width:.2f} / pb$^{{-1}}$',
                 title='',
                 xlim=(0, 1),
                 log_y=True,
                 legend_loc='upper center')
     plt.tight_layout()
-    outpath = str(FIGS / f'NNPrePro_jet0_{proc}_abs.pdf')
+    outpath = str(FIGS / f'NNj_jet0_{proc}_abs.pdf')
     fig.savefig(outpath, bbox_inches='tight')
     print('Saved', outpath)
     plt.close(fig)
 
-# ── NNPrePro score jet0 SR, absolute norm × L_RUN3, log-y (same as mjj_Run3) ─
+# ── NNj score jet0 SR, absolute norm × L_RUN3, log-y (same as mjj_Run3) ─
 for proc, samples in SAMPLES_BY_PROC.items():
     fig, ax = plt.subplots(figsize=FIG_SIZE)
     for s in samples:
@@ -979,10 +979,10 @@ for proc, samples in SAMPLES_BY_PROC.items():
             print(f'  Skipping {fpath} (not found)')
             continue
         with h5py.File(fpath, 'r') as f:
-            if 'NNPrePro_jet0' not in f:
-                print(f'  NNPrePro_jet0 not found in {fpath}')
+            if 'NNj_jet0' not in f:
+                print(f'  NNj_jet0 not found in {fpath}')
                 continue
-            score = f['NNPrePro_jet0'][:].astype(float)
+            score = f['NNj_jet0'][:].astype(float)
             kw    = f['kWeight'][:].astype(float)
             dYjj  = f['dYjj'][:].astype(float)
         sr = np.abs(dYjj) > 3.0
@@ -1000,19 +1000,19 @@ for proc, samples in SAMPLES_BY_PROC.items():
                     yerr=[yerr_lo, yerr],
                     fmt='none', ecolor=color, elinewidth=1, capsize=2, alpha=0.6)
     apply_style(ax,
-                xlabel='NNPrePro score (jet 0)',
+                xlabel='NNj score (jet 0)',
                 ylabel=f'events / {score_bin_width:.2f} / 300 fb$^{{-1}}$',
                 title=r'SR: $|\Delta Y_{jj}| > 3$',
                 xlim=(0, 1),
                 log_y=True,
                 legend_loc='upper center')
     plt.tight_layout()
-    outpath = str(FIGS / f'NNPrePro_jet0_{proc}_Run3_abs.pdf')
+    outpath = str(FIGS / f'NNj_jet0_{proc}_Run3_abs.pdf')
     fig.savefig(outpath, bbox_inches='tight')
     print('Saved', outpath)
     plt.close(fig)
 
-# ── SR_Run3 optimization: per-channel (mjj, |dYjj|, NNPrePro_jet0) cuts ───────
+# ── SR_Run3 optimization: per-channel (mjj, |dYjj|, NNj_jet0) cuts ───────
 # maximizing S/(S+B). Scan on Herwig samples only, L = 300 fb⁻¹, subject to
 # S > 1000 expected signal events and ≥ 10 raw MC background events (guard
 # against the B→0 MC-stat floor).
@@ -1022,11 +1022,11 @@ sr_score_edges = np.arange(0, 1.01, 0.01)
 
 def _sr_cumulative_yields(name):
     """Reverse-cumulative (kWeight×L, raw count) grids over
-    (mjj, |dYjj|, NNPrePro_jet0) cuts."""
+    (mjj, |dYjj|, NNj_jet0) cuts."""
     with h5py.File(DATA_DIR / f'{name}.h5', 'r') as f:
         mjj   = f['mjj'][:].astype(float)
         dY    = np.abs(f['dYjj'][:].astype(float))
-        score = f['NNPrePro_jet0'][:].astype(float)
+        score = f['NNj_jet0'][:].astype(float)
         kw    = f['kWeight'][:].astype(float)
     edges  = [sr_mjj_edges, sr_dyjj_edges, sr_score_edges]
     sample = np.stack([np.clip(v, e[0], e[-1] - 1e-9)
@@ -1086,7 +1086,7 @@ def _spva_hist(name, jet, mjj_cut, dyjj_cut, score_cut):
         kw    = f['kWeight'][:].astype(float)
         dYjj  = f['dYjj'][:].astype(float)
         mjj   = f['mjj'][:].astype(float)
-        score = f['NNPrePro_jet0'][:].astype(float)
+        score = f['NNj_jet0'][:].astype(float)
     sr  = (np.abs(dYjj) > dyjj_cut) & (mjj > mjj_cut) & (score > score_cut)
     w   = kw[sr] * L_RUN3
     h,  _ = np.histogram(spva[sr], bins=spva_bins, weights=w)

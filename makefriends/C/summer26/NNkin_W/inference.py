@@ -132,7 +132,7 @@ def main():
     ax.plot(fpr_hw,  tpr_hw,  linewidth=3, color='black',
             label=f'NNkin Herwig W  AUC={auc_hw:.3f}')
     ax.plot(fpr_mg5, tpr_mg5, linewidth=3, color='#1f77b4', linestyle='--',
-            label=f'NNkin MG5+Py Z  AUC={auc_mg5:.3f}')
+            label=f'NNkin MG5+Py W  AUC={auc_mg5:.3f}')
 
     for i, (label, bins, col_idx) in enumerate(ROC_VARS):
         fpr_v, tpr_v, auc_v = roc_from_histograms(

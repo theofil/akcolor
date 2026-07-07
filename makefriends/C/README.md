@@ -9,6 +9,27 @@ are preserved in [studies/](studies/).
 
 ---
 
+## Available networks
+
+All networks live in `summer26/<name>/` (Z training), with `_H`/`_W` variant
+directories for the H and W processes. All are trained on Herwig samples
+(`QCD{Z,W,H}jj_herwig + VBF{Z,W,H}_herwig`); the MG5+Pythia samples are used
+only as a generator-transfer test at inference.
+
+| Network | Input features |
+|---------|----------------|
+| **NNkin** | 12 kinematic scalars: `dPhijj, dYjj, mjj, ptjj` + `eta, m, phi, pt` for each of the two leading jets |
+| **NNj** | Leading jet: \|η\|, m, pT + up to 80 constituents × (Δη, ΔΦ, pT/pT_jet) |
+| **NNZj** | NNj inputs + generator-boson 4-vector (`bosonPt, bosonEta, bosonPhi, bosonM`) |
+| **NNjj** | Both jets: η (signed), m, pT + up to 80 constituents × (Δη_raw, ΔΦ, pT/pT_jet) per jet |
+| **NNjjZ** | NNjj inputs + generator-boson 4-vector (`bosonPt, bosonEta, bosonPhi, bosonM`) |
+
+NNkin is a plain MLP; the others are DeepSets over jet constituents. See
+[summer26.md](summer26.md) (Step 5) for the exact architectures, training
+recipe, and per-process condor submission (`train.txt`, `infer.txt`).
+
+---
+
 ## Environment
 
 **Must be sourced before every session** — compilation, production scripts,

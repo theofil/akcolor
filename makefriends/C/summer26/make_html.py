@@ -45,10 +45,10 @@ _NAV = '''
 <a class="h2" href="#step-4-diagnostic-plots">Step 4 — Plots</a>
 <a class="h2" href="#step-5-train-the-neural-networks">Step 5 — Train NNs</a>
 <a class="h3" href="#nnkin-summer26-nnkin">NNkin</a>
-<a class="h3" href="#nnprepro-summer26-nnprepro">NNPrePro</a>
-<a class="h3" href="#nnpull-summer26-nnpull">NNpull</a>
-<a class="h3" href="#nnraw-summer26-nnraw">NNRaw</a>
-<a class="h3" href="#nnfullraw-summer26-nnfullraw">NNFullRaw</a>
+<a class="h3" href="#nnj-summer26-nnj">NNj</a>
+<a class="h3" href="#nnzj-summer26-nnzj">NNZj</a>
+<a class="h3" href="#nnjj-summer26-nnjj">NNjj</a>
+<a class="h3" href="#nnjjz-summer26-nnjjz">NNjjZ</a>
 <a class="h2" href="#step-6-run-inference">Step 6 — Inference</a>
 <a class="h2" href="#step-7-head-to-head-comparison">Step 7 — Comparison</a>
 <a class="h2" href="#step-8-publish-plots">Step 8 — Publish</a>

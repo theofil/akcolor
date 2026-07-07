@@ -9,19 +9,23 @@ from pathlib import Path
 BASE = Path(__file__).parent
 
 VARIANTS = [
-    ('NNFullRaw', 'NNFullRaw_W', 'W'),
-    ('NNkin',     'NNkin_H',     'H'),
-    ('NNkin',     'NNkin_W',     'W'),
-    ('NNPrePro',  'NNPrePro_H',  'H'),
-    ('NNPrePro',  'NNPrePro_W',  'W'),
-    ('NNpull',    'NNpull_H',    'H'),
-    ('NNpull',    'NNpull_W',    'W'),
-    ('NNRaw',     'NNRaw_H',     'H'),
-    ('NNRaw',     'NNRaw_W',     'W'),
+    ('NNj',    'NNj_H',    'H'),
+    ('NNj',    'NNj_W',    'W'),
+    ('NNZj',   'NNZj_H',   'H'),
+    ('NNZj',   'NNZj_W',   'W'),
+    ('NNjj',   'NNjj_H',   'H'),
+    ('NNjj',   'NNjj_W',   'W'),
+    ('NNjjZ',  'NNjjZ_H',  'H'),
+    ('NNjjZ',  'NNjjZ_W',  'W'),
+    ('NNkin',  'NNkin_H',  'H'),
+    ('NNkin',  'NNkin_W',  'W'),
 ]
 
 SKIP_DIRS = {'logs', '__pycache__'}
 SKIP_EXTS = {'.pt', '.pkl', '.npz', '.pdf'}
+# save_scores runs once from the base (Z) dir and writes the NNj_jet0/jet1
+# h5 columns — variants must not get a copy (they would clobber those columns)
+SKIP_PREFIXES = ('save_scores',)
 
 
 def apply_subs(text, source, dest, proc):
@@ -38,6 +42,7 @@ def apply_subs(text, source, dest, proc):
     text = text.replace('MG5_Pythia Z ',  f'MG5_Pythia {proc} ')
     text = text.replace('MG5_Pythia Z\n', f'MG5_Pythia {proc}\n')
     text = text.replace('MG5_Pythia Z.', f'MG5_Pythia {proc}.')
+    text = text.replace('MG5+Py Z ',     f'MG5+Py {proc} ')
     text = text.replace('VBF Z ',        f'VBF {proc} ')
     text = text.replace('VBF Z\n',       f'VBF {proc}\n')
     text = text.replace('VBF Z.',        f'VBF {proc}.')
@@ -56,7 +61,8 @@ for source, dest, proc in VARIANTS:
         existing = {f.name for f in dst_dir.iterdir() if f.is_file()}
         source_files = {f.name for f in src_dir.iterdir()
                         if f.is_file() and f.name not in SKIP_DIRS
-                        and f.suffix not in SKIP_EXTS}
+                        and f.suffix not in SKIP_EXTS
+                        and not f.name.startswith(SKIP_PREFIXES)}
         missing = source_files - existing
         if not missing:
             print(f'SKIP {dest} — already complete')
@@ -69,6 +75,8 @@ for source, dest, proc in VARIANTS:
 
     for item in sorted(src_dir.iterdir()):
         if item.name in SKIP_DIRS or item.suffix in SKIP_EXTS:
+            continue
+        if item.name.startswith(SKIP_PREFIXES):
             continue
         if not item.is_file():
             continue

@@ -43,10 +43,10 @@ strong{color:#0f172a;font-weight:600;}
 <a class="h2" href="#step-4-diagnostic-plots">Step 4 — Plots</a>
 <a class="h2" href="#step-5-train-the-neural-networks">Step 5 — Train NNs</a>
 <a class="h3" href="#nnkin-summer26-nnkin">NNkin</a>
-<a class="h3" href="#nnprepro-summer26-nnprepro">NNPrePro</a>
-<a class="h3" href="#nnpull-summer26-nnpull">NNpull</a>
-<a class="h3" href="#nnraw-summer26-nnraw">NNRaw</a>
-<a class="h3" href="#nnfullraw-summer26-nnfullraw">NNFullRaw</a>
+<a class="h3" href="#nnj-summer26-nnj">NNj</a>
+<a class="h3" href="#nnzj-summer26-nnzj">NNZj</a>
+<a class="h3" href="#nnjj-summer26-nnjj">NNjj</a>
+<a class="h3" href="#nnjjz-summer26-nnjjz">NNjjZ</a>
 <a class="h2" href="#step-6-run-inference">Step 6 — Inference</a>
 <a class="h2" href="#step-7-head-to-head-comparison">Step 7 — Comparison</a>
 <a class="h2" href="#step-8-publish-plots">Step 8 — Publish</a>
@@ -82,6 +82,47 @@ strong{color:#0f172a;font-weight:600;}
 <tr><td>QCD Z+jj</td><td>340.2 ± 0.316</td><td>316.363 ± 0.098</td><td><code>QCDZjj_herwig.root</code> (camp-00023)</td><td><code>QCDZjj_mg5_pythia.root</code> (camp-00023)</td></tr>
 </table></div>
 <p>All 12 files available. <code>QCDHjj_mg5_pythia</code> comes from campaign-00031 (xs = 4.982 ± 0.0008692 pb).</p>
+<hr>
+<h2 id="jet2-boson-4-vector-branches-added-2026-07-06">jet2 + boson 4-vector branches (added 2026-07-06)</h2>
+<p>The friend trees and h5 files were extended with the 3rd pt-ordered jet (&quot;jet2&quot;) and the</p>
+<p>generator-level boson 4-vector. **Friends/h5 produced before this change lack these branches</p>
+<p>and must be regenerated** (<code>./run.summer26.sh</code> + h5 conversion).</p>
+<h3 id="jet2-branches">jet2 branches</h3>
+<p><code>NJETMAX</code> is now 3. New branches, same conventions as jet0/jet1:</p>
+<p><code>jetPt2, jetEta2, jetPhi2, jetM2, jetSPVA2, jetPVA2, jetPVM2, jetNC2</code> and the constituent</p>
+<p>arrays <code>jcsPt2, jcsDEta2, jcsDEtaRaw2, jcsDPhi2, jcsM2, jcsW2</code> (each <code>[80]</code>).</p>
+<ul>
+<li>jet2 is the <strong>pt-ordered 3rd jet</strong> passing the same jet cuts (pt &gt; 30 GeV, |η| &lt; 3);</li>
+</ul>
+<p>  it is <strong>never randomized</strong> — the leading/subleading swap (<code>leadJetIndex</code>) stays confined</p>
+<p>  to jets 0/1 — so jet2 is always softer than both leading jets.</p>
+<ul>
+<li>When only 2 jets pass the cuts, all jet2 slots are zero (validity mask: <code>jcsPt2 &gt; 0</code>,</li>
+</ul>
+<p>  <code>jetPt2 &gt; 0</code>), and <code>nJets</code> = 2; otherwise <code>nJets</code> = 3.</p>
+<ul>
+<li>The dijet event selection is unchanged (two leading jets only).</li>
+<li>h5 per-jet/per-constituent datasets now have shapes <strong>(N, 3)</strong> and <strong>(N, 3, 80)</strong></li>
+</ul>
+<p>  (was (N, 2) / (N, 2, 80)). Backward compatible: all <code>summer26/NN*/dataset.py</code> index</p>
+<p>  <code>[:, 0]</code> / <code>[:, 1]</code> only.</p>
+<h3 id="boson-4-vector-branches">Boson 4-vector branches</h3>
+<p>New scalar event branches <code>bosonM, bosonY, bosonEta, bosonPt, bosonPhi</code> (M/pT 2dp, Y/Eta/Phi 3dp;</p>
+<p>−99 sentinel when absent). The boson type is passed explicitly per sample via</p>
+<p><code>makefriends --boson H|W|Z</code> (no auto-detect); without <code>--boson</code> the branches are −99.</p>
+<p>The <code>Data</code> tree stores <strong>final-state particles only</strong> (no status codes, no intermediate</p>
+<p>resonances), so the boson is reconstructed as:</p>
+<div class="tbl-wrap"><table>
+<tr><th>Channel</th><th>What&#x27;s in the record</th><th>Recipe</th></tr>
+<tr><td><strong>H</strong> (VBFH, QCDHjj)</td><td>Higgs kept stable (models H→inv): exactly one pid 25/event, m = 125.00 exactly</td><td>Take the pid 25 particle directly</td></tr>
+<tr><td><strong>W</strong> (VBFW, QCDWjj)</td><td>No pid ±24; W→τν_τ with the τ kept stable</td><td>p4(τ) + p4(ν_τ), flavor-matched: pid 15 ↔ −16, pid −15 ↔ 16</td></tr>
+<tr><td><strong>Z</strong> (VBFZ, QCDZjj)</td><td>No pid 23; Z→ν_e ν̄_e, always electron flavor (pid ±12)</td><td>p4(ν_e) + p4(ν̄_e), i.e. a (12, −12) pair</td></tr>
+</table></div>
+<p>Ambiguity resolution (extra ν&#x27;s from hadron decays in ~13% of Z events; a rare 2nd shower τ</p>
+<p>in W events): among flavor-consistent candidates, pick the pair with invariant mass **closest</p>
+<p>to the pole mass** (m_W = 80.379, m_Z = 91.1876 GeV). Expected peaks: H = 125 exactly;</p>
+<p>W median ≈ 80.4 GeV; Z median ≈ 91.2 GeV. Do <strong>not</strong> use the <code>theETmiss[4]</code> branch — its</p>
+<p>components do not match the ν system.</p>
 <hr>
 <h2 id="step-2-run-event-reconstruction">Step 2 — Run event reconstruction</h2>
 <h3 id="quick-test-100-events-per-sample-foreground">Quick test (100 events per sample, foreground)</h3>
@@ -120,29 +161,31 @@ strong{color:#0f172a;font-weight:600;}
 </table></div>
 <hr>
 <h2 id="step-5-train-the-neural-networks">Step 5 — Train the neural networks</h2>
-<p>All three NNs use the LCG_106_cuda environment. Training is submitted to a GPU node</p>
-<p>via HTCondor. To submit:</p>
+<p>All NNs use the LCG_106_cuda environment. Training is submitted to a GPU node</p>
+<p>via HTCondor; the full submission list (all networks × Z/H/W) is in <code>train.txt</code>.</p>
+<p>To submit the base (Z) trainings:</p>
 <pre><code>condor_submit summer26/NNkin/train_gpu.sub
-condor_submit summer26/NNPrePro/train_gpu.sub
-condor_submit summer26/NNpull/train_gpu.sub
-condor_submit summer26/NNRaw/train_gpu.sub
-condor_submit summer26/NNFullRaw/train_gpu.sub
-condor_submit summer26/NNFullRaw_H/train_gpu.sub</code></pre>
+condor_submit summer26/NNj/train_gpu.sub
+condor_submit summer26/NNZj/train_gpu.sub
+condor_submit summer26/NNjj/train_gpu.sub
+condor_submit summer26/NNjjZ/train_gpu.sub</code></pre>
 <p>Or run interactively (falls back to CPU):</p>
-<pre><code>cd summer26/NNkin      &amp;&amp; python train.py
-cd summer26/NNPrePro   &amp;&amp; python train.py
-cd summer26/NNpull     &amp;&amp; python train.py
-cd summer26/NNRaw      &amp;&amp; python train.py
-cd summer26/NNFullRaw  &amp;&amp; python train.py
-cd summer26/NNFullRaw_H &amp;&amp; python train.py</code></pre>
+<pre><code>cd summer26/NNkin  &amp;&amp; python train.py
+cd summer26/NNj    &amp;&amp; python train.py
+cd summer26/NNZj   &amp;&amp; python train.py
+cd summer26/NNjj   &amp;&amp; python train.py
+cd summer26/NNjjZ  &amp;&amp; python train.py</code></pre>
+<p>The <code>_H</code> / <code>_W</code> variant directories (generated by <code>summer26/make_variants.py</code>)</p>
+<p>train the same architectures on the H and W samples.</p>
 <h3 id="nnkin-summer26-nnkin">NNkin (<code>summer26/NNkin/</code>)</h3>
 <p>Kinematic-only MLP. 12 input features: <code>dPhijj, dYjj, mjj, ptjj</code> plus</p>
 <p><code>eta, m, phi, pt</code> for each of the two leading jets.</p>
 <p>Architecture: <strong>12 → 128 → 64 → 32 → 1</strong> (BatchNorm + ReLU + Dropout(0.3) at each hidden layer).</p>
 <p>Trained on <strong>QCDZjj_herwig + VBFZ_herwig</strong>.</p>
-<h3 id="nnprepro-summer26-nnprepro">NNPrePro (<code>summer26/NNPrePro/</code>)</h3>
-<p>DeepSets over constituents using only low-level features — no pull-vector jet</p>
-<p>scalars (NC, |t⃗|, θ_s removed) and no constituent weight (w removed).</p>
+<h3 id="nnj-summer26-nnj">NNj (<code>summer26/NNj/</code>)</h3>
+<p>DeepSets over the leading-jet constituents using only low-level features — no</p>
+<p>pull-vector jet scalars (NC, |t⃗|, θ_s removed) and no constituent weight (w</p>
+<p>removed).</p>
 <p><strong>Jet scalars</strong> (3, leading jet): |η|, m, pT<br></p>
 <p><strong>Constituent features</strong> (80 max × 3): Δη, ΔΦ, pT/pT_jet</p>
 <p>Architecture:</p>
@@ -152,34 +195,22 @@ cd summer26/NNFullRaw_H &amp;&amp; python train.py</code></pre>
 <li><strong>rho MLP</strong>: 67 → 128 → 64 → 1 (BatchNorm + ReLU + Dropout(0.3))</li>
 </ul>
 <p>Trained on <strong>QCDZjj_herwig + VBFZ_herwig</strong>.</p>
-<h3 id="nnpull-summer26-nnpull">NNpull (<code>summer26/NNpull/</code>)</h3>
-<p>DeepSets over constituents with full pull-vector information; NC removed from</p>
-<p>jet scalars.</p>
-<p><strong>Jet scalars</strong> (5, leading jet): |η|, m, |t|, pT, θ_s<br></p>
-<p><strong>Constituent features</strong> (80 max × 4): Δη, ΔΦ, pT/pT_jet, w</p>
-<p>Architecture:</p>
-<ul>
-<li><strong>phi MLP</strong>: 4 → 64 → 64 (ReLU, shared across constituents)</li>
-<li>masked-sum pooling → (B, 64)</li>
-<li><strong>rho MLP</strong>: 69 → 128 → 64 → 1 (BatchNorm + ReLU + Dropout(0.3))</li>
-</ul>
-<p>Trained on <strong>QCDZjj_herwig + VBFZ_herwig</strong>.</p>
-<h3 id="nnraw-summer26-nnraw">NNRaw (<code>summer26/NNRaw/</code>)</h3>
-<p>DeepSets over constituents of the <strong>leading jet</strong> using only raw low-level features —</p>
-<p>no pull-vector scalars (NC, |t⃗|, θ_s removed), no constituent weight (w removed),</p>
-<p>and signed η (not |η|) kept as a jet scalar.</p>
-<p><strong>Jet scalars</strong> (3, leading jet): η (signed), m, pT<br></p>
-<p><strong>Constituent features</strong> (80 max × 3): Δη_raw, ΔΦ, pT/pT_jet</p>
+<h3 id="nnzj-summer26-nnzj">NNZj (<code>summer26/NNZj/</code>)</h3>
+<p>Identical inputs to NNj plus the generator-boson 4-vector as additional</p>
+<p>jet-level scalars.</p>
+<p><strong>Jet-level scalars</strong> (7 = 3 jet + 4 boson): |η|, m, pT, boson pT, boson η, boson φ, boson M<br></p>
+<p><strong>Constituent features</strong> (80 max × 3): Δη, ΔΦ, pT/pT_jet</p>
 <p>Architecture:</p>
 <ul>
 <li><strong>phi MLP</strong>: 3 → 64 → 64 (ReLU, shared across constituents)</li>
 <li>masked-sum pooling → (B, 64)</li>
-<li><strong>rho MLP</strong>: 67 → 128 → 64 → 1 (BatchNorm + ReLU + Dropout(0.3))</li>
+<li><strong>rho MLP</strong>: 71 → 128 → 64 → 1 (BatchNorm + ReLU + Dropout(0.3))</li>
 </ul>
 <p>Trained on <strong>QCDZjj_herwig + VBFZ_herwig</strong>.</p>
-<h3 id="nnfullraw-summer26-nnfullraw">NNFullRaw (<code>summer26/NNFullRaw/</code>)</h3>
-<p>Extension of NNRaw that uses the same low-level features for <strong>both</strong> the leading</p>
-<p>(index 0) and sub-leading (index 1) jets. The phi MLP is shared across all</p>
+<h3 id="nnjj-summer26-nnjj">NNjj (<code>summer26/NNjj/</code>)</h3>
+<p>DeepSets over the constituents of <strong>both</strong> the leading (index 0) and sub-leading</p>
+<p>(index 1) jets, using only raw low-level features — no pull-vector scalars, no</p>
+<p>constituent weight, and signed η (not |η|). The phi MLP is shared across all</p>
 <p>constituents from both jets.</p>
 <p><strong>Jet scalars</strong> (3 per jet × 2 jets = 6 total): η (signed), m, pT<br></p>
 <p><strong>Constituent features</strong> (80 max × 3 per jet): Δη_raw, ΔΦ, pT/pT_jet</p>
@@ -189,6 +220,19 @@ cd summer26/NNFullRaw_H &amp;&amp; python train.py</code></pre>
 <li>masked-sum pooling per jet → pool₀ (B, 64), pool₁ (B, 64)</li>
 <li>concat [pool₀, pool₁, jet₀ scalars, jet₁ scalars] → (B, 134)</li>
 <li><strong>rho MLP</strong>: 134 → 128 → 64 → 1 (BatchNorm + ReLU + Dropout(0.3))</li>
+</ul>
+<p>Trained on <strong>QCDZjj_herwig + VBFZ_herwig</strong>.</p>
+<h3 id="nnjjz-summer26-nnjjz">NNjjZ (<code>summer26/NNjjZ/</code>)</h3>
+<p>Extension of NNjj that adds the generator-boson 4-vector as event-level scalars.</p>
+<p><strong>Jet scalars</strong> (3 per jet × 2 jets = 6 total): η (signed), m, pT<br></p>
+<p><strong>Boson scalars</strong> (4, event-level): boson pT, η, φ, M<br></p>
+<p><strong>Constituent features</strong> (80 max × 3 per jet): Δη_raw, ΔΦ, pT/pT_jet</p>
+<p>Architecture:</p>
+<ul>
+<li><strong>phi MLP</strong> (shared): 3 → 64 → 64 (ReLU, applied independently per jet)</li>
+<li>masked-sum pooling per jet → pool₀ (B, 64), pool₁ (B, 64)</li>
+<li>concat [pool₀, pool₁, jet₀ scalars, jet₁ scalars, boson scalars] → (B, 138)</li>
+<li><strong>rho MLP</strong>: 138 → 128 → 64 → 1 (BatchNorm + ReLU + Dropout(0.3))</li>
 </ul>
 <p>Trained on <strong>QCDZjj_herwig + VBFZ_herwig</strong>.</p>
 <p><strong>Outputs saved by training</strong> (all NNs use <code>_{W/Z/H}</code> suffix matching <code>PROCESS</code>):</p>
@@ -203,20 +247,21 @@ cd summer26/NNFullRaw_H &amp;&amp; python train.py</code></pre>
 <h2 id="step-6-run-inference">Step 6 — Run inference</h2>
 <p>Submit all inference jobs to HTCondor (commands are in <code>infer.txt</code>):</p>
 <pre><code>condor_submit summer26/NNkin/infer_gpu.sub
-condor_submit summer26/NNPrePro/infer_gpu.sub
-condor_submit summer26/NNpull/infer_gpu.sub
-condor_submit summer26/NNRaw/infer_gpu.sub
-condor_submit summer26/NNFullRaw/infer_gpu.sub
-condor_submit summer26/NNFullRaw_H/infer_gpu.sub
 condor_submit summer26/NNkin_H/infer_gpu.sub
 condor_submit summer26/NNkin_W/infer_gpu.sub
-condor_submit summer26/NNPrePro_H/infer_gpu.sub
-condor_submit summer26/NNPrePro_W/infer_gpu.sub
-condor_submit summer26/NNpull_H/infer_gpu.sub
-condor_submit summer26/NNpull_W/infer_gpu.sub
-condor_submit summer26/NNRaw_H/infer_gpu.sub
-condor_submit summer26/NNRaw_W/infer_gpu.sub
-condor_submit summer26/NNFullRaw_W/infer_gpu.sub</code></pre>
+condor_submit summer26/NNj/infer_gpu.sub
+condor_submit summer26/NNj/save_scores.sub
+condor_submit summer26/NNj_H/infer_gpu.sub
+condor_submit summer26/NNj_W/infer_gpu.sub
+condor_submit summer26/NNZj/infer_gpu.sub
+condor_submit summer26/NNZj_H/infer_gpu.sub
+condor_submit summer26/NNZj_W/infer_gpu.sub
+condor_submit summer26/NNjj/infer_gpu.sub
+condor_submit summer26/NNjj_H/infer_gpu.sub
+condor_submit summer26/NNjj_W/infer_gpu.sub
+condor_submit summer26/NNjjZ/infer_gpu.sub
+condor_submit summer26/NNjjZ_H/infer_gpu.sub
+condor_submit summer26/NNjjZ_W/infer_gpu.sub</code></pre>
 <p>Each job requests 2 CPUs, 8 GB RAM, 1 GPU (<code>microcentury</code> flavour). Each <code>inference.py</code></p>
 <p>evaluates on the Herwig test split (training domain) and the full MG5+Pythia dataset</p>
 <p>(generator transfer test), producing <code>figs/summer26/roc_&lt;nn&gt;_{W,Z,H}.pdf</code>.</p>
@@ -302,23 +347,23 @@ condor_submit summer26/NNFullRaw_W/infer_gpu.sub</code></pre>
 <p>These error bars are shown in <code>figs/summer26/mjj_{W,Z,H}_Run3.pdf</code>, produced by</p>
 <p><code>summer26/plots.py</code>.</p>
 <hr>
-<h2 id="nnprepro-purity-study-optimal-cut-on-jet-0-score">NNPrePro purity study — optimal cut on jet-0 score</h2>
+<h2 id="nnj-purity-study-optimal-cut-on-jet-0-score">NNj purity study — optimal cut on jet-0 score</h2>
 <p>Script: <code>summer26/plots.py</code> (section starting at line 971).<br></p>
 <p>Selection: SR defined by <code>|ΔY_jj| &gt; 3</code>, weights scaled to L = 300 fb⁻¹ (Run 3).<br></p>
 <p>Generators averaged (Herwig + MG5+Pythia weighted equally per class).</p>
-<p>Scanning NNPrePro_jet0 &gt; threshold to maximise S/(S+B), requiring at least</p>
+<p>Scanning NNj_jet0 &gt; threshold to maximise S/(S+B), requiring at least</p>
 <p>10 expected signal and 10 expected background events (to avoid the MC-statistics</p>
 <p>floor where B drops to zero in the tail).</p>
 <div class="tbl-wrap"><table>
 <tr><th>Channel</th><th>Selection</th><th>S</th><th>B</th><th>S/(S+B)</th><th>S/√B</th></tr>
 <tr><td><strong>H</strong></td><td>SR only (`\</td><td>dYjj\</td><td>&gt;3`)</td><td>174 000</td><td>85 000</td><td>0.672</td><td>597</td></tr>
-<tr><td><strong>H</strong></td><td><strong>optimal NNPrePro_jet0 &gt; 0.936</strong></td><td><strong>1 095</strong></td><td><strong>40</strong></td><td><strong>0.965</strong></td><td><strong>174</strong></td></tr>
+<tr><td><strong>H</strong></td><td><strong>optimal NNj_jet0 &gt; 0.936</strong></td><td><strong>1 095</strong></td><td><strong>40</strong></td><td><strong>0.965</strong></td><td><strong>174</strong></td></tr>
 <tr><td><strong>H</strong></td><td><strong>optimal mjj &gt; 1988 GeV</strong></td><td><strong>2 130</strong></td><td><strong>199</strong></td><td><strong>0.915</strong></td><td><strong>151</strong></td></tr>
 <tr><td><strong>W</strong></td><td>SR only</td><td>415 000</td><td>24 700 000</td><td>0.017</td><td>83</td></tr>
-<tr><td><strong>W</strong></td><td><strong>optimal NNPrePro_jet0 &gt; 0.974</strong></td><td><strong>221</strong></td><td><strong>247</strong></td><td><strong>0.472</strong></td><td><strong>14</strong></td></tr>
+<tr><td><strong>W</strong></td><td><strong>optimal NNj_jet0 &gt; 0.974</strong></td><td><strong>221</strong></td><td><strong>247</strong></td><td><strong>0.472</strong></td><td><strong>14</strong></td></tr>
 <tr><td><strong>W</strong></td><td><strong>optimal mjj &gt; 1997 GeV</strong></td><td><strong>23 118</strong></td><td><strong>102 334</strong></td><td><strong>0.184</strong></td><td><strong>72</strong></td></tr>
 <tr><td><strong>Z</strong></td><td>SR only</td><td>67 500</td><td>4 800 000</td><td>0.014</td><td>31</td></tr>
-<tr><td><strong>Z</strong></td><td><strong>optimal NNPrePro_jet0 &gt; 0.975</strong></td><td><strong>33</strong></td><td><strong>51</strong></td><td><strong>0.392</strong></td><td><strong>4.6</strong></td></tr>
+<tr><td><strong>Z</strong></td><td><strong>optimal NNj_jet0 &gt; 0.975</strong></td><td><strong>33</strong></td><td><strong>51</strong></td><td><strong>0.392</strong></td><td><strong>4.6</strong></td></tr>
 <tr><td><strong>Z</strong></td><td><strong>optimal mjj &gt; 1999 GeV</strong></td><td><strong>4 056</strong></td><td><strong>18 449</strong></td><td><strong>0.180</strong></td><td><strong>30</strong></td></tr>
 </table></div>
 <p><strong>Key observations:</strong></p>
@@ -339,12 +384,12 @@ condor_submit summer26/NNFullRaw_W/infer_gpu.sub</code></pre>
 </ul>
 <p>  the few tens of background events surviving there carry large MC uncertainties.</p>
 <hr>
-<h2 id="sr-run3-optimization-per-channel-mjj-yjj-nnprepro-jet0-cuts">SR_Run3 optimization — per-channel (mjj, |ΔYjj|, NNPrePro_jet0) cuts</h2>
+<h2 id="sr-run3-optimization-per-channel-mjj-yjj-nnj-jet0-cuts">SR_Run3 optimization — per-channel (mjj, |ΔYjj|, NNj_jet0) cuts</h2>
 <p>Script: <code>summer26/plots.py</code> (SR optimization section, just before the</p>
 <p><code>jetSPVA_SR_Run3</code> plots). Scan performed on <strong>Herwig samples only</strong> at</p>
 <p>L = 300 fb⁻¹; the resulting cuts are also applied to the MG5+Pythia figures.</p>
 <p>Grid: mjj threshold 0–4000 GeV in 10 GeV steps, |ΔYjj| threshold 0–6 in 0.1</p>
-<p>steps, NNPrePro_jet0 threshold 0–1 in 0.01 steps.</p>
+<p>steps, NNj_jet0 threshold 0–1 in 0.01 steps.</p>
 <p>Objective: maximize S/(S+B), subject to <strong>S &gt; 1000</strong> expected signal events and</p>
 <p><strong>≥ 10 raw MC background events</strong> (guard against the B→0 MC-statistics floor).</p>
 <p>The table is regenerated on every <code>plots.py</code> run and written to</p>
@@ -365,7 +410,7 @@ condor_submit summer26/NNFullRaw_W/infer_gpu.sub</code></pre>
 <p>The <code>figs/summer26/jetSPVA_SR_Run3_{H,W,Z}_{Herwig,MG5Pythia}.pdf</code> figures use</p>
 <p>these per-channel optimized cuts (shown in each figure title). The companion</p>
 <p><code>jetSPVA_jet1_SR_Run3_*.pdf</code> figures show |θs| of the <strong>sub-leading</strong> jet in the</p>
-<p>same SR — largely uncorrelated with the jet-0 |θs| (the NNPrePro cut acts on</p>
+<p>same SR — largely uncorrelated with the jet-0 |θs| (the NNj cut acts on</p>
 <p>jet 0 only).</p>
 <hr>
 <h2 id="input-files">Input files</h2>
@@ -401,31 +446,24 @@ condor_submit summer26/NNFullRaw_W/infer_gpu.sub</code></pre>
     │   ├── style.py        # matplotlib style helpers
     │   ├── train_gpu.sh    # LCG_106_cuda wrapper
     │   └── train_gpu.sub   # HTCondor submission
-    ├── NNPrePro/
+    ├── NNj/
     │   ├── dataset.py      # jet scalars (3: |η|,m,pT) + constituents (3: Δη,ΔΦ,pT/pT_jet)
     │   ├── model.py        # JetNN: phi(3→64→64) + masked pool + rho(67→128→64→1)
     │   ├── train.py        # training loop
     │   ├── inference.py    # ROC on Herwig test + MG5 transfer test
+    │   ├── save_scores.py  # writes NNj_jet0/NNj_jet1 sigmoid scores into all 12 h5 files
     │   ├── style.py        # matplotlib style helpers
     │   ├── train_gpu.sh    # LCG_106_cuda wrapper
     │   └── train_gpu.sub   # HTCondor submission
-    ├── NNpull/
-    │   ├── dataset.py      # jet scalars (5: |η|,m,|t|,pT,θ_s) + constituents (4: Δη,ΔΦ,pT/pT_jet,w)
-    │   ├── model.py        # JetNN: phi(4→64→64) + masked pool + rho(69→128→64→1)
+    ├── NNZj/
+    │   ├── dataset.py      # jet-level scalars (7: |η|,m,pT + boson pT,η,φ,M) + constituents (3: Δη,ΔΦ,pT/pT_jet)
+    │   ├── model.py        # JetNN: phi(3→64→64) + masked pool + rho(71→128→64→1)
     │   ├── train.py        # training loop
     │   ├── inference.py    # ROC on Herwig test + MG5 transfer test
     │   ├── style.py        # matplotlib style helpers
     │   ├── train_gpu.sh    # LCG_106_cuda wrapper
     │   └── train_gpu.sub   # HTCondor submission
-    ├── NNRaw/
-    │   ├── dataset.py      # jet scalars (3: η,m,pT) + constituents (3: Δη_raw,ΔΦ,pT/pT_jet), leading jet only
-    │   ├── model.py        # JetNN: phi(3→64→64) + masked pool + rho(67→128→64→1)
-    │   ├── train.py        # training loop
-    │   ├── inference.py    # ROC on Herwig test + MG5 transfer test
-    │   ├── style.py        # matplotlib style helpers
-    │   ├── train_gpu.sh    # LCG_106_cuda wrapper
-    │   └── train_gpu.sub   # HTCondor submission
-    ├── NNFullRaw/
+    ├── NNjj/
     │   ├── dataset.py      # jet scalars (3 per jet × 2 jets) + constituents (3 per constituent × 2 jets)
     │   ├── model.py        # JetNN: shared phi(3→64→64) + masked pool per jet + rho(134→128→64→1)
     │   ├── train.py        # training loop; outputs best_model_Z.pt, scaler_Z.pkl, split_indices_Z.npz
@@ -433,14 +471,16 @@ condor_submit summer26/NNFullRaw_W/infer_gpu.sub</code></pre>
     │   ├── style.py        # matplotlib style helpers
     │   ├── train_gpu.sh    # LCG_106_cuda wrapper
     │   └── train_gpu.sub   # HTCondor submission
-    └── NNFullRaw_H/
-        ├── dataset.py      # same as NNFullRaw but uses QCDHjj_herwig + VBFH_herwig
-        ├── model.py        # identical architecture to NNFullRaw
-        ├── train.py        # PROCESS=&quot;H&quot;; outputs best_model_H.pt, scaler_H.pkl, split_indices_H.npz
-        ├── inference.py    # ROC on Herwig H test + MG5 H transfer test
-        ├── style.py        # matplotlib style helpers
-        ├── train_gpu.sh    # LCG_106_cuda wrapper
-        └── train_gpu.sub   # HTCondor submission</code></pre>
+    ├── NNjjZ/
+    │   ├── dataset.py      # NNjj inputs + boson 4-vector (4: pT,η,φ,M) as event-level scalars
+    │   ├── model.py        # JetNN: shared phi(3→64→64) + masked pool per jet + rho(138→128→64→1)
+    │   ├── train.py        # training loop
+    │   ├── inference.py    # ROC on Herwig test + MG5 transfer test
+    │   ├── style.py        # matplotlib style helpers
+    │   ├── train_gpu.sh    # LCG_106_cuda wrapper
+    │   └── train_gpu.sub   # HTCondor submission
+    └── &lt;NN&gt;_H/, &lt;NN&gt;_W/    # per-process variants generated by make_variants.py
+                            # (PROCESS=&quot;H&quot;/&quot;W&quot;, QCD{H,W}jj + VBF{H,W} samples)</code></pre>
 </main>
 </body>
 </html>
