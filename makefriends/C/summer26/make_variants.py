@@ -4,22 +4,48 @@ Run once from the summer26/ directory or with python summer26/make_variants.py.
 """
 import os
 import re
+import sys
 from pathlib import Path
 
 BASE = Path(__file__).parent
 
+# NNZj_H and NNjjZ_H are deliberately NOT in VARIANTS: they keep bosonM,
+# which the base (Z) and _W dirs dropped as a Herwig Z/W generation artifact
+# (see tuesday.md). Regenerating them from base would silently drop the
+# feature and desync them from the trained best_model_H.pt (input dim).
+# They are maintained manually; check_boson_invariant() below enforces this.
 VARIANTS = [
     ('NNj',    'NNj_H',    'H'),
     ('NNj',    'NNj_W',    'W'),
-    ('NNZj',   'NNZj_H',   'H'),
     ('NNZj',   'NNZj_W',   'W'),
     ('NNjj',   'NNjj_H',   'H'),
     ('NNjj',   'NNjj_W',   'W'),
-    ('NNjjZ',  'NNjjZ_H',  'H'),
     ('NNjjZ',  'NNjjZ_W',  'W'),
     ('NNkin',  'NNkin_H',  'H'),
     ('NNkin',  'NNkin_W',  'W'),
 ]
+
+
+def check_boson_invariant(base=BASE):
+    """bosonM must stay in the _H boson nets and out of the base/W ones."""
+    must_have    = ['NNZj_H/dataset.py', 'NNjjZ_H/dataset.py']
+    must_not_have = ['NNZj/dataset.py',  'NNZj_W/dataset.py',
+                     'NNjjZ/dataset.py', 'NNjjZ_W/dataset.py']
+    errors = []
+    for rel in must_have:
+        if "'bosonM'" not in (base / rel).read_text():
+            errors.append(f"{rel}: bosonM MISSING — was it regenerated from the "
+                          f"bosonM-less base dir? Restore it from git.")
+    for rel in must_not_have:
+        if "'bosonM'" in (base / rel).read_text():
+            errors.append(f"{rel}: bosonM present — it must stay excluded "
+                          f"(Herwig Z/W on-shell generation artifact).")
+    if errors:
+        print('\nbosonM invariant VIOLATED:', file=sys.stderr)
+        for e in errors:
+            print(f'  {e}', file=sys.stderr)
+        sys.exit(1)
+    print('bosonM invariant OK (kept in NNZj_H/NNjjZ_H, excluded from base/W).')
 
 SKIP_DIRS = {'logs', '__pycache__'}
 SKIP_EXTS = {'.pt', '.pkl', '.npz', '.pdf'}
@@ -95,4 +121,5 @@ for source, dest, proc in VARIANTS:
         if os.access(item, os.X_OK):
             dst_file.chmod(dst_file.stat().st_mode | 0o111)
 
+check_boson_invariant()
 print('\nAll done.')

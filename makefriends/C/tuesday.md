@@ -149,6 +149,10 @@ boson pT/η/φ adds a genuine gain:
 Herwig QCD samples with off-shell bosons — remains open if bosonM is ever
 wanted as a feature.)
 
+`make_variants.py` no longer generates `NNZj_H`/`NNjjZ_H` (they would lose
+bosonM if regenerated from the bosonM-less base dirs) and now checks on every
+run that bosonM stays in those two dirs and out of the base/W ones.
+
 ## 4. Optional follow-ups
 
 - Re-run `python3 summer26/plots.py` once `NNj_jet0` is back in the h5 files
