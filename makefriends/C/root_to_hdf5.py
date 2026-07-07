@@ -5,7 +5,7 @@ CONSTIT_VARS = ['jcsPt', 'jcsDEta', 'jcsDEtaRaw', 'jcsDPhi', 'jcsM', 'jcsW']
 SCALAR_EVT   = ['kWeight', 'mjj', 'dYjj', 'dPhijj', 'ptjj',
                 'bosonM', 'bosonY', 'bosonEta', 'bosonPt', 'bosonPhi']
 
-folder = sys.argv[1] if len(sys.argv) > 1 else 'friends/summer25'
+folder = sys.argv[1] if len(sys.argv) > 1 else 'friends/summer26'
 pattern = os.path.join(folder, '*.friend.root')
 
 for root_path in sorted(glob.glob(pattern)):
