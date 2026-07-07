@@ -20,9 +20,9 @@ only as a generator-transfer test at inference.
 |---------|----------------|
 | **NNkin** | 12 kinematic scalars: `dPhijj, dYjj, mjj, ptjj` + `eta, m, phi, pt` for each of the two leading jets |
 | **NNj** | Leading jet: \|η\|, m, pT + up to 80 constituents × (Δη, ΔΦ, pT/pT_jet) |
-| **NNjZ** | NNj inputs + generator boson `bosonPt, bosonEta, bosonPhi` (`bosonM` only in the `_H` variant) |
+| **NNjB** | NNj inputs + generator boson `bosonPt, bosonEta, bosonPhi` (`bosonM` only in the `_H` variant) |
 | **NNjj** | Both jets: η (signed), m, pT + up to 80 constituents × (Δη_raw, ΔΦ, pT/pT_jet) per jet |
-| **NNjjZ** | NNjj inputs + generator boson `bosonPt, bosonEta, bosonPhi` (`bosonM` only in the `_H` variant) |
+| **NNjjB** | NNjj inputs + generator boson `bosonPt, bosonEta, bosonPhi` (`bosonM` only in the `_H` variant) |
 
 NNkin is a plain MLP; the others are DeepSets over jet constituents. `bosonM`
 is excluded from the Z/W boson nets because it is an on-shell generation

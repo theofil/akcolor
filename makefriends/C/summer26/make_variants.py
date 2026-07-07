@@ -9,7 +9,7 @@ from pathlib import Path
 
 BASE = Path(__file__).parent
 
-# NNjZ_H and NNjjZ_H are deliberately NOT in VARIANTS: they keep bosonM,
+# NNjB_H and NNjjB_H are deliberately NOT in VARIANTS: they keep bosonM,
 # which the base (Z) and _W dirs dropped as a Herwig Z/W generation artifact
 # (see commit 9ce67b6). Regenerating them from base would silently drop the
 # feature and desync them from the trained best_model_H.pt (input dim).
@@ -17,10 +17,10 @@ BASE = Path(__file__).parent
 VARIANTS = [
     ('NNj',    'NNj_H',    'H'),
     ('NNj',    'NNj_W',    'W'),
-    ('NNjZ',   'NNjZ_W',   'W'),
+    ('NNjB',   'NNjB_W',   'W'),
     ('NNjj',   'NNjj_H',   'H'),
     ('NNjj',   'NNjj_W',   'W'),
-    ('NNjjZ',  'NNjjZ_W',  'W'),
+    ('NNjjB',  'NNjjB_W',  'W'),
     ('NNkin',  'NNkin_H',  'H'),
     ('NNkin',  'NNkin_W',  'W'),
 ]
@@ -28,9 +28,9 @@ VARIANTS = [
 
 def check_boson_invariant(base=BASE):
     """bosonM must stay in the _H boson nets and out of the base/W ones."""
-    must_have    = ['NNjZ_H/dataset.py', 'NNjjZ_H/dataset.py']
-    must_not_have = ['NNjZ/dataset.py',  'NNjZ_W/dataset.py',
-                     'NNjjZ/dataset.py', 'NNjjZ_W/dataset.py']
+    must_have    = ['NNjB_H/dataset.py', 'NNjjB_H/dataset.py']
+    must_not_have = ['NNjB/dataset.py',  'NNjB_W/dataset.py',
+                     'NNjjB/dataset.py', 'NNjjB_W/dataset.py']
     errors = []
     for rel in must_have:
         if "'bosonM'" not in (base / rel).read_text():
@@ -45,7 +45,7 @@ def check_boson_invariant(base=BASE):
         for e in errors:
             print(f'  {e}', file=sys.stderr)
         sys.exit(1)
-    print('bosonM invariant OK (kept in NNjZ_H/NNjjZ_H, excluded from base/W).')
+    print('bosonM invariant OK (kept in NNjB_H/NNjjB_H, excluded from base/W).')
 
 SKIP_DIRS = {'logs', '__pycache__'}
 SKIP_EXTS = {'.pt', '.pkl', '.npz', '.pdf'}
