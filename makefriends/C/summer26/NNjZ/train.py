@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """
-Training script for NNZj: VBF H vs QCD H+jj classification.
+Training script for NNjZ: VBF Z vs QCD Z+jj classification.
 DeepSets over constituents using only low-level features (no NC, |t|, θ_s, w),
-plus the generator-boson 4-vector (pT, η, φ, M) as jet-level scalars.
-Trained on summer26 Herwig H samples.
+plus the generator-boson pT, η, φ as jet-level scalars
+(no bosonM: on-shell generation artifact in the Herwig QCD samples).
+Trained on summer26 Herwig Z samples.
 
-Outputs saved to NNZj/ (directory of this script):
+Outputs saved to NNjZ/ (directory of this script):
   best_model.pt      — state dict at best validation loss
   scaler.pkl         — dict {'jet': StandardScaler, 'jcs': StandardScaler}
   split_indices.npz  — train_idx, val_idx, test_idx into the full concatenated array
@@ -45,7 +46,7 @@ SCHED_PAT  = 5
 SCHED_FAC  = 0.5
 VAL_FRAC   = 0.15
 TEST_FRAC  = 0.15
-PROCESS = "H"
+PROCESS    = "Z"
 
 
 def scale_jcs(x_jcs, scaler):
@@ -61,11 +62,11 @@ def main():
     # ── Load data ────────────────────────────────────────────────────────────
     print('Loading background ...')
     x_jet_bkg, x_jcs_bkg, _ = load_features(HERE / BKG_FILE)
-    print(f'  QCD H+jj Herwig: {len(x_jet_bkg)} events')
+    print(f'  QCD Z+jj Herwig: {len(x_jet_bkg)} events')
 
     print('Loading signal ...')
     x_jet_sig, x_jcs_sig, _ = load_features(HERE / SIG_FILE)
-    print(f'  VBF H Herwig: {len(x_jet_sig)} events')
+    print(f'  VBF Z Herwig: {len(x_jet_sig)} events')
 
     x_jet_all = np.concatenate([x_jet_bkg, x_jet_sig], axis=0)   # (N, 7)
     x_jcs_all = np.concatenate([x_jcs_bkg, x_jcs_sig], axis=0)   # (N, 80, 3)
@@ -189,9 +190,9 @@ def main():
     apply_style(ax, xlabel='Epoch', ylabel='Loss', title='', legend_loc='upper right')
     plt.tight_layout()
     FIG_DIR.mkdir(parents=True, exist_ok=True)
-    fig.savefig(FIG_DIR / f'NNZj_{PROCESS}_loss_curve.pdf', bbox_inches='tight')
+    fig.savefig(FIG_DIR / f'NNjZ_{PROCESS}_loss_curve.pdf', bbox_inches='tight')
     plt.close(fig)
-    print(f'Saved {FIG_DIR / f"NNZj_{PROCESS}_loss_curve.pdf"}')
+    print(f'Saved {FIG_DIR / f"NNjZ_{PROCESS}_loss_curve.pdf"}')
 
 
 if __name__ == '__main__':

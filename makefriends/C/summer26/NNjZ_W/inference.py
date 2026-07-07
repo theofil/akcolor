@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Inference script for NNZj (summer26, Herwig Z): ROC curves comparing performance
+Inference script for NNjZ (summer26, Herwig Z): ROC curves comparing performance
 on the Herwig W test split (training domain) and MG5_Pythia W (transfer test).
 
 Inputs are identical to NNj plus the generator-boson pT, η, φ
@@ -8,7 +8,7 @@ Inputs are identical to NNj plus the generator-boson pT, η, φ
 Both generator ROC curves plus single-variable baselines are overlaid on one plot.
 
 Output:
-  ../../figs/summer26/roc_nnzj.pdf
+  ../../figs/summer26/roc_nnjz.pdf
 """
 
 import os
@@ -146,8 +146,8 @@ def main():
 
     fpr_hw,  tpr_hw,  auc_hw  = roc_from_scores(y_test_hw,  scores_hw)
     fpr_mg5, tpr_mg5, auc_mg5 = roc_from_scores(y_all_mg5,  scores_mg5)
-    print(f'NNZj Herwig    AUC = {auc_hw:.4f}')
-    print(f'NNZj MG5+Py    AUC = {auc_mg5:.4f}')
+    print(f'NNjZ Herwig    AUC = {auc_hw:.4f}')
+    print(f'NNjZ MG5+Py    AUC = {auc_mg5:.4f}')
 
     # ── Single-variable ROCs (Herwig test set, jet scalars only) ─────────────
     x_jet_bkg_test = x_jet_test_raw[y_test_hw == 0]
@@ -157,9 +157,9 @@ def main():
     fig, ax = plt.subplots(figsize=FIG_SIZE)
 
     ax.plot(fpr_hw,  tpr_hw,  linewidth=3, color='black',
-            label=f'NNZj Herwig W  AUC={auc_hw:.3f}')
+            label=f'NNjZ Herwig W  AUC={auc_hw:.3f}')
     ax.plot(fpr_mg5, tpr_mg5, linewidth=3, color='#1f77b4', linestyle='--',
-            label=f'NNZj MG5+Py W  AUC={auc_mg5:.3f}')
+            label=f'NNjZ MG5+Py W  AUC={auc_mg5:.3f}')
 
     for i, (label, bins, col_idx) in enumerate(ROC_VARS):
         fpr_v, tpr_v, auc_v = roc_from_histograms(
@@ -175,7 +175,7 @@ def main():
                 title='', xlim=(0, 1), ylim=(0, 1), legend_loc='lower right')
     plt.tight_layout()
     FIG_DIR.mkdir(parents=True, exist_ok=True)
-    out = FIG_DIR / f'roc_nnzj_{PROCESS}.pdf'
+    out = FIG_DIR / f'roc_nnjz_{PROCESS}.pdf'
     fig.savefig(out, bbox_inches='tight')
     plt.close(fig)
     print(f'Saved {out}')

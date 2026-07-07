@@ -46,7 +46,7 @@ _NAV = '''
 <a class="h2" href="#step-5-train-the-neural-networks">Step 5 — Train NNs</a>
 <a class="h3" href="#nnkin-summer26-nnkin">NNkin</a>
 <a class="h3" href="#nnj-summer26-nnj">NNj</a>
-<a class="h3" href="#nnzj-summer26-nnzj">NNZj</a>
+<a class="h3" href="#nnjz-summer26-nnjz">NNjZ</a>
 <a class="h3" href="#nnjj-summer26-nnjj">NNjj</a>
 <a class="h3" href="#nnjjz-summer26-nnjjz">NNjjZ</a>
 <a class="h2" href="#step-6-run-inference">Step 6 — Inference</a>

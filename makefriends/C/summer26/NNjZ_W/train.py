@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-Training script for NNZj: VBF W vs QCD W+jj classification.
+Training script for NNjZ: VBF W vs QCD W+jj classification.
 DeepSets over constituents using only low-level features (no NC, |t|, θ_s, w),
 plus the generator-boson pT, η, φ as jet-level scalars
 (no bosonM: on-shell generation artifact in the Herwig QCD samples).
 Trained on summer26 Herwig W samples.
 
-Outputs saved to NNZj/ (directory of this script):
+Outputs saved to NNjZ/ (directory of this script):
   best_model.pt      — state dict at best validation loss
   scaler.pkl         — dict {'jet': StandardScaler, 'jcs': StandardScaler}
   split_indices.npz  — train_idx, val_idx, test_idx into the full concatenated array
@@ -190,9 +190,9 @@ def main():
     apply_style(ax, xlabel='Epoch', ylabel='Loss', title='', legend_loc='upper right')
     plt.tight_layout()
     FIG_DIR.mkdir(parents=True, exist_ok=True)
-    fig.savefig(FIG_DIR / f'NNZj_{PROCESS}_loss_curve.pdf', bbox_inches='tight')
+    fig.savefig(FIG_DIR / f'NNjZ_{PROCESS}_loss_curve.pdf', bbox_inches='tight')
     plt.close(fig)
-    print(f'Saved {FIG_DIR / f"NNZj_{PROCESS}_loss_curve.pdf"}')
+    print(f'Saved {FIG_DIR / f"NNjZ_{PROCESS}_loss_curve.pdf"}')
 
 
 if __name__ == '__main__':

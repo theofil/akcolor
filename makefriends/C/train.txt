@@ -4,9 +4,9 @@ condor_submit summer26/NNkin_W/train_gpu.sub
 condor_submit summer26/NNj/train_gpu.sub
 condor_submit summer26/NNj_H/train_gpu.sub
 condor_submit summer26/NNj_W/train_gpu.sub
-condor_submit summer26/NNZj/train_gpu.sub
-condor_submit summer26/NNZj_H/train_gpu.sub
-condor_submit summer26/NNZj_W/train_gpu.sub
+condor_submit summer26/NNjZ/train_gpu.sub
+condor_submit summer26/NNjZ_H/train_gpu.sub
+condor_submit summer26/NNjZ_W/train_gpu.sub
 condor_submit summer26/NNjj/train_gpu.sub
 condor_submit summer26/NNjj_H/train_gpu.sub
 condor_submit summer26/NNjj_W/train_gpu.sub

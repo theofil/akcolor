@@ -5,7 +5,7 @@ from dataset import N_JET_FEAT, N_CONSTIT_FEAT
 
 class JetNN(nn.Module):
     """
-    DeepSets-style network for VBF vs QCD classification (NNZj variant).
+    DeepSets-style network for VBF vs QCD classification (NNjZ variant).
     Identical to NNj plus the generator-boson 4-vector as extra jet-level scalars.
     No high-level pull-vector jet scalars (no NC, |t|, θ_s); no constituent weight.
 

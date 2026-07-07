@@ -1,5 +1,5 @@
 """
-DijetDataset for NNZj: loads QCDZjj_herwig.h5 + VBFZ_herwig.h5.
+DijetDataset for NNjZ: loads QCDWjj_herwig.h5 + VBFW_herwig.h5.
 Identical inputs to NNj plus the generator-boson pT, η, φ
 (no bosonM: on-shell generation artifact in the Herwig QCD samples).
 No high-level pull-vector jet features (no NC, no |t|, no θ_s).
@@ -34,8 +34,8 @@ N_JET_FEAT     = len(JET_FEATURES) + len(BOSON_FEATURES)  # 6
 N_CONSTIT_FEAT = len(CONSTIT_FEATURES)                    # 3
 NC_MAX         = 80
 
-BKG_FILE = '../../friends/summer26/QCDZjj_herwig.h5'
-SIG_FILE = '../../friends/summer26/VBFZ_herwig.h5'
+BKG_FILE = '../../friends/summer26/QCDWjj_herwig.h5'
+SIG_FILE = '../../friends/summer26/VBFW_herwig.h5'
 
 
 def load_features(h5path):
