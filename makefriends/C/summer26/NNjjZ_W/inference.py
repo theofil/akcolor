@@ -3,7 +3,8 @@
 Inference script for NNjjZ (summer26, Herwig Z): ROC curves comparing performance
 on the Herwig W test split (training domain) and MG5_Pythia W (transfer test).
 
-Inputs are identical to NNjj plus the generator-boson 4-vector (pT, η, φ, M).
+Inputs are identical to NNjj plus the generator-boson pT, η, φ
+(no bosonM: on-shell generation artifact in the Herwig QCD samples).
 Both generator ROC curves plus single-variable baselines are overlaid on one plot.
 
 Output:

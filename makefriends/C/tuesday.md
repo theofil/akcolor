@@ -127,8 +127,27 @@ learned the artifact, not physics. H is immune (M ≡ 125 everywhere), which is
 why NNZj_H / NNjjZ_H show consistent genuine gains (~+0.01 on both
 generators) from boson pT/η.
 
-**Next step:** drop `bosonM` from `BOSON_FEATURES` (keep pT, η, φ) and retrain
-the 4 Z/W nets — or regenerate the Herwig QCD samples with off-shell bosons.
+### Fix: Z/W nets retrained without `bosonM` (same evening)
+
+Dropped `bosonM` from `BOSON_FEATURES` in NNZj{,_W} and NNjjZ{,_W} (keep pT,
+η, φ; H variants untouched — bosonM is a harmless constant there). Retrained
+(clusters 934090–934093) and re-ran inference (934111–934114). Also re-ran
+inference for NNj{,_H,_W} / NNjj{,_H,_W} (934094–934099) to refresh the
+carried-over ROC PDFs whose legends still said NNPrePro/NNFullRaw — AUCs
+unchanged, labels now correct.
+
+Final AUC table (Herwig test / full MG5+Py) — generator transfer restored,
+boson pT/η/φ adds a genuine gain:
+
+| Process | NNj | NNZj | Δ | NNjj | NNjjZ | Δ |
+|---------|-----|------|---|------|-------|---|
+| Z | 0.773 / 0.773 | 0.803 / 0.804 | +0.03 | 0.838 / 0.833 | 0.864 / 0.860 | +0.03 |
+| H | 0.852 / 0.793 | 0.861 / 0.801 | +0.01 | 0.927 / 0.869 | 0.935 / 0.876 | +0.01 |
+| W | 0.764 / 0.760 | 0.801 / 0.797 | +0.04 | 0.827 / 0.819 | 0.862 / 0.854 | +0.04 |
+
+(H rows keep the 4-vector incl. M; the alternative fix — regenerating the
+Herwig QCD samples with off-shell bosons — remains open if bosonM is ever
+wanted as a feature.)
 
 ## 4. Optional follow-ups
 

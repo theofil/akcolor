@@ -6,14 +6,15 @@ from dataset import N_JET_FEAT, N_CONSTIT_FEAT
 class JetNN(nn.Module):
     """
     DeepSets-style network for VBF vs QCD classification (NNZj variant).
-    Identical to NNj plus the generator-boson 4-vector as extra jet-level scalars.
+    Identical to NNj plus the generator-boson pT, η, φ as extra jet-level
+    scalars (no bosonM: on-shell generation artifact in the Herwig QCD samples).
     No high-level pull-vector jet scalars (no NC, |t|, θ_s); no constituent weight.
 
     phi: shared MLP applied to each constituent → masked sum pooling
     rho: MLP on pooled representation concatenated with jet-level scalars → logit
 
     Inputs:
-      x_jet : (B, N_JET_FEAT=7)               — |η|, m, pT + boson pT, η, φ, M (normalised)
+      x_jet : (B, N_JET_FEAT=6)               — |η|, m, pT + boson pT, η, φ (normalised)
       x_jcs : (B, NC_MAX, N_CONSTIT_FEAT=3)   — constituent features (normalised)
       mask  : (B, NC_MAX)  bool               — True for valid (non-padded) constituents
     Output:

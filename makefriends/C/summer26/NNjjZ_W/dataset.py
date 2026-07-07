@@ -1,18 +1,18 @@
 """
 DijetDataset for NNjjZ: loads QCDWjj_herwig.h5 + VBFW_herwig.h5.
 Identical inputs to NNjj (both jets, raw low-level features) plus the
-generator-boson 4-vector as event-level scalars.
+generator-boson pT, η, φ as event-level scalars
+(no bosonM: on-shell generation artifact in the Herwig QCD samples).
 
 Jet features (3 per jet, both jets):
   [0]  jetEta — signed pseudorapidity
   [1]  jetM   — jet mass (GeV)
   [2]  jetPt  — transverse momentum (GeV)
 
-Boson features (4, event-level):
+Boson features (3, event-level):
   [0]  bosonPt  — generator boson pT (GeV)
   [1]  bosonEta — generator boson η (signed)
   [2]  bosonPhi — generator boson φ
-  [3]  bosonM   — generator boson mass (GeV)
 
 Constituent features per jet (NC_MAX=80, 3 per constituent):
   [0]  jcsDEtaRaw — raw Δη relative to jet axis
@@ -28,11 +28,11 @@ import torch
 from torch.utils.data import Dataset
 
 JET_FEATURES     = ['jetEta', 'jetM', 'jetPt']
-BOSON_FEATURES   = ['bosonPt', 'bosonEta', 'bosonPhi', 'bosonM']
+BOSON_FEATURES   = ['bosonPt', 'bosonEta', 'bosonPhi']
 CONSTIT_FEATURES = ['jcsDEtaRaw', 'jcsDPhi', 'jcsPt']
 
 N_JET_FEAT     = len(JET_FEATURES)      # 3
-N_BOSON_FEAT   = len(BOSON_FEATURES)    # 4
+N_BOSON_FEAT   = len(BOSON_FEATURES)    # 3
 N_CONSTIT_FEAT = len(CONSTIT_FEATURES)  # 3
 NC_MAX         = 80
 
@@ -41,7 +41,7 @@ SIG_FILE = '../../friends/summer26/VBFW_herwig.h5'
 
 
 def load_features(h5path):
-    """Return x_jet0 (N,3), x_jet1 (N,3), x_boson (N,4),
+    """Return x_jet0 (N,3), x_jet1 (N,3), x_boson (N,3),
     x_jcs0 (N,80,3), x_jcs1 (N,80,3), kWeight (N,)."""
     with h5py.File(h5path, 'r') as f:
         jets0 = {k: f[k][:, 0].astype(np.float32)       for k in JET_FEATURES}
@@ -53,7 +53,7 @@ def load_features(h5path):
 
     x_jet0 = np.stack([jets0[k] for k in JET_FEATURES], axis=1)   # (N, 3)
     x_jet1 = np.stack([jets1[k] for k in JET_FEATURES], axis=1)   # (N, 3)
-    x_bos  = np.stack([boson[k] for k in BOSON_FEATURES], axis=1)  # (N, 4)
+    x_bos  = np.stack([boson[k] for k in BOSON_FEATURES], axis=1)  # (N, 3)
     x_jcs0 = np.stack([jcs0[k]  for k in CONSTIT_FEATURES], axis=2)  # (N, 80, 3)
     x_jcs1 = np.stack([jcs1[k]  for k in CONSTIT_FEATURES], axis=2)  # (N, 80, 3)
 

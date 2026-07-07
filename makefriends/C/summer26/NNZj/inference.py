@@ -3,7 +3,8 @@
 Inference script for NNZj (summer26, Herwig Z): ROC curves comparing performance
 on the Herwig Z test split (training domain) and MG5_Pythia Z (transfer test).
 
-Inputs are identical to NNj plus the generator-boson 4-vector (pT, η, φ, M).
+Inputs are identical to NNj plus the generator-boson pT, η, φ
+(no bosonM: on-shell generation artifact in the Herwig QCD samples).
 Both generator ROC curves plus single-variable baselines are overlaid on one plot.
 
 Output:
@@ -63,7 +64,7 @@ def roc_from_histograms(sig_vals, bkg_vals, bins):
     return fpr, tpr, area
 
 
-# x_jet column order: |jetEta|, jetM, jetPt, then boson pT, η, φ, M
+# x_jet column order: |jetEta|, jetM, jetPt, then boson pT, η, φ
 JET_IDX = {k: i for i, k in enumerate(JET_FEATURES)}
 
 ROC_VARS = [

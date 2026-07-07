@@ -2,7 +2,8 @@
 """
 Training script for NNZj: VBF W vs QCD W+jj classification.
 DeepSets over constituents using only low-level features (no NC, |t|, θ_s, w),
-plus the generator-boson 4-vector (pT, η, φ, M) as jet-level scalars.
+plus the generator-boson pT, η, φ as jet-level scalars
+(no bosonM: on-shell generation artifact in the Herwig QCD samples).
 Trained on summer26 Herwig W samples.
 
 Outputs saved to NNZj/ (directory of this script):

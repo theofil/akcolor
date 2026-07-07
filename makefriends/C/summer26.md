@@ -172,16 +172,18 @@ Trained on **QCDZjj_herwig + VBFZ_herwig**.
 
 ### NNZj (`summer26/NNZj/`)
 
-Identical inputs to NNj plus the generator-boson 4-vector as additional
-jet-level scalars.
+Identical inputs to NNj plus the generator-boson pT, η, φ as additional
+jet-level scalars. `bosonM` is excluded (on-shell generation artifact in the
+Herwig QCD Z/W samples — see tuesday.md); only the `_H` variant keeps it
+(harmless constant 125).
 
-**Jet-level scalars** (7 = 3 jet + 4 boson): |η|, m, pT, boson pT, boson η, boson φ, boson M  
+**Jet-level scalars** (6 = 3 jet + 3 boson): |η|, m, pT, boson pT, boson η, boson φ  
 **Constituent features** (80 max × 3): Δη, ΔΦ, pT/pT_jet
 
 Architecture:
 - **phi MLP**: 3 → 64 → 64 (ReLU, shared across constituents)
 - masked-sum pooling → (B, 64)
-- **rho MLP**: 71 → 128 → 64 → 1 (BatchNorm + ReLU + Dropout(0.3))
+- **rho MLP**: 70 → 128 → 64 → 1 (BatchNorm + ReLU + Dropout(0.3)); 71 in `_H` (bosonM kept)
 
 Trained on **QCDZjj_herwig + VBFZ_herwig**.
 
@@ -205,17 +207,20 @@ Trained on **QCDZjj_herwig + VBFZ_herwig**.
 
 ### NNjjZ (`summer26/NNjjZ/`)
 
-Extension of NNjj that adds the generator-boson 4-vector as event-level scalars.
+Extension of NNjj that adds the generator-boson pT, η, φ as event-level
+scalars. `bosonM` is excluded (on-shell generation artifact in the Herwig QCD
+Z/W samples — see tuesday.md); only the `_H` variant keeps it (harmless
+constant 125).
 
 **Jet scalars** (3 per jet × 2 jets = 6 total): η (signed), m, pT  
-**Boson scalars** (4, event-level): boson pT, η, φ, M  
+**Boson scalars** (3, event-level): boson pT, η, φ  
 **Constituent features** (80 max × 3 per jet): Δη_raw, ΔΦ, pT/pT_jet
 
 Architecture:
 - **phi MLP** (shared): 3 → 64 → 64 (ReLU, applied independently per jet)
 - masked-sum pooling per jet → pool₀ (B, 64), pool₁ (B, 64)
-- concat [pool₀, pool₁, jet₀ scalars, jet₁ scalars, boson scalars] → (B, 138)
-- **rho MLP**: 138 → 128 → 64 → 1 (BatchNorm + ReLU + Dropout(0.3))
+- concat [pool₀, pool₁, jet₀ scalars, jet₁ scalars, boson scalars] → (B, 137)
+- **rho MLP**: 137 → 128 → 64 → 1 (BatchNorm + ReLU + Dropout(0.3)); 138 in `_H` (bosonM kept)
 
 Trained on **QCDZjj_herwig + VBFZ_herwig**.
 

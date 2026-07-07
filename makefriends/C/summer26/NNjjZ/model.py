@@ -7,7 +7,8 @@ class JetNN(nn.Module):
     """
     DeepSets-style network for VBF vs QCD classification (NNjjZ variant).
     Uses raw low-level features for both the leading and sub-leading jets,
-    plus the generator-boson 4-vector as event-level scalars. The phi MLP
+    plus the generator-boson pT, η, φ as event-level scalars
+    (no bosonM: on-shell generation artifact in the Herwig QCD samples). The phi MLP
     is shared across both jets' constituents.
 
     phi: shared MLP applied to each constituent → masked sum pooling per jet
@@ -16,7 +17,7 @@ class JetNN(nn.Module):
     Inputs:
       x_jet0  : (B, N_JET_FEAT=3)               — jet 0 scalars: η, m, pT (normalised)
       x_jet1  : (B, N_JET_FEAT=3)               — jet 1 scalars: η, m, pT (normalised)
-      x_boson : (B, N_BOSON_FEAT=4)             — boson pT, η, φ, M (normalised)
+      x_boson : (B, N_BOSON_FEAT=3)             — boson pT, η, φ (normalised)
       x_jcs0  : (B, NC_MAX, N_CONSTIT_FEAT=3)   — jet 0 constituent features (normalised)
       x_jcs1  : (B, NC_MAX, N_CONSTIT_FEAT=3)   — jet 1 constituent features (normalised)
       mask0   : (B, NC_MAX)  bool               — True for valid constituents of jet 0
@@ -31,7 +32,7 @@ class JetNN(nn.Module):
             nn.Linear(N_CONSTIT_FEAT, 64), nn.ReLU(),
             nn.Linear(64, 64),             nn.ReLU(),
         )
-        # 64 (pool jet0) + 64 (pool jet1) + 3 (jet0) + 3 (jet1) + 4 (boson) = 138
+        # 64 (pool jet0) + 64 (pool jet1) + 3 (jet0) + 3 (jet1) + 3 (boson) = 137
         self.rho = nn.Sequential(
             nn.Linear(64 + 64 + N_JET_FEAT + N_JET_FEAT + N_BOSON_FEAT, 128), nn.BatchNorm1d(128), nn.ReLU(), nn.Dropout(dropout),
             nn.Linear(128, 64),                                                nn.BatchNorm1d(64),  nn.ReLU(), nn.Dropout(dropout),
@@ -46,5 +47,5 @@ class JetNN(nn.Module):
     def forward(self, x_jet0, x_jet1, x_boson, x_jcs0, x_jcs1, mask0, mask1):
         pool0 = self._pool(x_jcs0, mask0)   # (B, 64)
         pool1 = self._pool(x_jcs1, mask1)   # (B, 64)
-        cat   = torch.cat([pool0, pool1, x_jet0, x_jet1, x_boson], dim=1)   # (B, 138)
+        cat   = torch.cat([pool0, pool1, x_jet0, x_jet1, x_boson], dim=1)   # (B, 137)
         return self.rho(cat)
