@@ -386,38 +386,51 @@ condor_submit summer26/NNjjBj_W/infer_gpu.sub</code></pre>
 <p>These error bars are shown in <code>figs/summer26/mjj_{W,Z,H}_Run3.pdf</code>, produced by</p>
 <p><code>summer26/plots.py</code>.</p>
 <hr>
-<h2 id="sr-run3-optimization-per-channel-mjj-yjj-nnj-jet0-cuts">SR_Run3 optimization — per-channel (mjj, |ΔYjj|, NNj_jet0) cuts</h2>
+<h2 id="sr-run3-optimization-per-channel-mjj-yjj-nn-score-cuts">SR_Run3 optimization — per-channel (mjj, |ΔYjj|, NN score) cuts</h2>
 <p>Script: <code>summer26/plots.py</code> (SR optimization section, just before the</p>
 <p><code>jetSPVA_SR_Run3</code> plots). Scan performed on <strong>Herwig samples only</strong> at</p>
 <p>L = 300 fb⁻¹; the resulting cuts are also applied to the MG5+Pythia figures.</p>
 <p>Grid: mjj threshold 0–4000 GeV in 10 GeV steps, |ΔYjj| threshold 0–6 in 0.1</p>
-<p>steps, NNj_jet0 threshold 0–1 in 0.01 steps.</p>
+<p>steps, NN score threshold 0–1 in 0.01 steps. Since 2026-07-09 the scan runs</p>
+<p><strong>once per event-level score column</strong> — <code>NNj_jet0</code>, <code>NNjB</code>, <code>NNjjBj</code> (all</p>
+<p>per-channel scores, see the score-columns section below).</p>
 <p>Objective: maximize S/(S+B), subject to <strong>S &gt; 1000</strong> expected signal events and</p>
 <p><strong>≥ 10 raw MC background events</strong> (guard against the B→0 MC-statistics floor).</p>
 <p>The table is regenerated on every <code>plots.py</code> run and written to</p>
 <p><code>figs/summer26/SR_optimization.txt</code>.</p>
 <div class="tbl-wrap"><table>
-<tr><th>Channel</th><th>mjj cut (GeV)</th><th>\</th><th>ΔYjj\</th><th>cut</th><th>NN cut</th><th>S</th><th>B</th><th>S/(S+B)</th><th>raw S</th><th>raw B</th></tr>
-<tr><td><strong>H</strong></td><td>&gt; 870</td><td>&gt; 4.7</td><td>&gt; 0.96</td><td>4 724</td><td>15</td><td><strong>0.997</strong></td><td>5 328</td><td>10</td></tr>
-<tr><td><strong>W</strong></td><td>&gt; 2210</td><td>&gt; 4.9</td><td>&gt; 0.85</td><td>4 526</td><td>5 192</td><td><strong>0.466</strong></td><td>2 017</td><td>10</td></tr>
-<tr><td><strong>Z</strong></td><td>&gt; 1320</td><td>&gt; 4.2</td><td>&gt; 0.92</td><td>1 275</td><td>3 158</td><td><strong>0.288</strong></td><td>3 799</td><td>31</td></tr>
+<tr><th>Score</th><th>Channel</th><th>mjj cut (GeV)</th><th>\</th><th>ΔYjj\</th><th>cut</th><th>NN cut</th><th>S</th><th>B</th><th>S/(S+B)</th><th>raw S</th><th>raw B</th></tr>
+<tr><td><code>NNj_jet0</code></td><td><strong>H</strong></td><td>&gt; 870</td><td>&gt; 4.7</td><td>&gt; 0.96</td><td>4 724</td><td>15</td><td><strong>0.997</strong></td><td>5 328</td><td>10</td></tr>
+<tr><td><code>NNj_jet0</code></td><td><strong>W</strong></td><td>&gt; 2210</td><td>&gt; 4.9</td><td>&gt; 0.85</td><td>4 526</td><td>5 192</td><td><strong>0.466</strong></td><td>2 017</td><td>10</td></tr>
+<tr><td><code>NNj_jet0</code></td><td><strong>Z</strong></td><td>&gt; 1320</td><td>&gt; 4.2</td><td>&gt; 0.92</td><td>1 275</td><td>3 158</td><td><strong>0.288</strong></td><td>3 799</td><td>31</td></tr>
+<tr><td><code>NNjB</code></td><td><strong>H</strong></td><td>&gt; 660</td><td>&gt; 4.7</td><td>&gt; 0.97</td><td>4 890</td><td>15</td><td><strong>0.997</strong></td><td>5 515</td><td>10</td></tr>
+<tr><td><code>NNjB</code></td><td><strong>W</strong></td><td>&gt; 1660</td><td>&gt; 4.7</td><td>&gt; 0.92</td><td>7 524</td><td>5 192</td><td><strong>0.592</strong></td><td>3 356</td><td>10</td></tr>
+<tr><td><code>NNjB</code></td><td><strong>Z</strong></td><td>&gt; 1760</td><td>&gt; 4.8</td><td>&gt; 0.91</td><td>1 235</td><td>1 121</td><td><strong>0.524</strong></td><td>3 736</td><td>11</td></tr>
+<tr><td><code>NNjjBj</code></td><td><strong>H</strong></td><td>&gt; 1030</td><td>&gt; 5.0</td><td>&gt; 0.99</td><td>6 360</td><td>15</td><td><strong>0.998</strong></td><td>7 173</td><td>10</td></tr>
+<tr><td><code>NNjjBj</code></td><td><strong>W</strong></td><td>&gt; 1620</td><td>&gt; 4.2</td><td>&gt; 0.99</td><td>15 857</td><td>5 192</td><td><strong>0.753</strong></td><td>7 074</td><td>10</td></tr>
+<tr><td><code>NNjjBj</code></td><td><strong>Z</strong></td><td>&gt; 1760</td><td>&gt; 3.4</td><td>&gt; 0.99</td><td>2 850</td><td>1 019</td><td><strong>0.737</strong></td><td>8 497</td><td>10</td></tr>
 </table></div>
-<p>Since 2026-07-08 <code>NNj_jet0</code> holds <strong>per-channel</strong> scores (each channel&#x27;s own</p>
-<p>Herwig-trained net — see the score-columns section below), which is what this</p>
-<p>table reflects: H gained strongly over the earlier Z-net scores</p>
-<p>(0.990 → 0.997 at 3.2× the signal), W moved slightly, Z is unchanged.</p>
+<p>The event-level nets transform the W and Z channels (2026-07-09): with</p>
+<p><code>NNjjBj</code> the W purity goes 0.466 → <strong>0.753</strong> at 3.5× the signal and Z</p>
+<p>0.288 → <strong>0.737</strong> at 2.2× the signal; H was already purity-saturated but</p>
+<p>keeps 35% more signal. <code>NNjB</code> sits in between. In all cases the NN cut also</p>
+<p>relaxes the mjj cut relative to the cut-only optimum (more signal kept).</p>
 <p>For reference (Herwig): the previous common SR (<code>|ΔYjj| &gt; 3</code>, <code>mjj &gt; 2</code> TeV)</p>
 <p>gave H 0.937, W 0.194, Z 0.172; the 2-variable (mjj, |ΔYjj|) optimum gave</p>
-<p>H 0.975, W 0.449, Z 0.239. Adding the NN cut both raises purity and relaxes</p>
-<p>the mjj cut (more signal kept).</p>
-<p><strong>Note:</strong> the H and W optima sit exactly at the raw-B ≥ 10 guard — the surviving</p>
-<p>background estimates rest on only 10 MC events each and carry a ~30%</p>
-<p>MC-statistical uncertainty.</p>
+<p>H 0.975, W 0.449, Z 0.239.</p>
+<p><strong>Notes:</strong> (i) every optimum except <code>NNj_jet0</code> Z and <code>NNjB</code> Z sits exactly at</p>
+<p>the raw-B ≥ 10 guard — those background estimates rest on only 10 MC events</p>
+<p>and carry a ~30% MC-statistical uncertainty. (ii) The <code>NNjjBj</code> optima all</p>
+<p>select the <strong>last scan bin</strong> of the NN cut (&gt; 0.99): the score is so</p>
+<p>discriminating that the optimum is grid-limited; a finer threshold scan near 1</p>
+<p>would be needed to map the true optimum.</p>
 <p>The <code>figs/summer26/jetSPVA_SR_Run3_{H,W,Z}_{Herwig,MG5Pythia}.pdf</code> figures use</p>
-<p>these per-channel optimized cuts (shown in each figure title). The companion</p>
-<p><code>jetSPVA_jet1_SR_Run3_*.pdf</code> figures show |θs| of the <strong>sub-leading</strong> jet in the</p>
-<p>same SR — largely uncorrelated with the jet-0 |θs| (the NNj cut acts on</p>
-<p>jet 0 only).</p>
+<p>the <strong><code>NNjjBj</code>-optimized</strong> per-channel cuts (<code>SR_SPVA_COL</code> in <code>plots.py</code>;</p>
+<p>cuts shown in each figure title) — until 2026-07-09 they used the <code>NNj_jet0</code></p>
+<p>cuts. The companion <code>jetSPVA_jet1_SR_Run3_*.pdf</code> figures show |θs| of the</p>
+<p><strong>sub-leading</strong> jet in the same SR. Caveat: unlike the old NNj-based SR, the</p>
+<p><code>NNjjBj</code> cut already consumes both jets&#x27; constituents, so the |θs| shapes</p>
+<p>inside this SR are shaped by the NN selection for both jets.</p>
 <hr>
 <h2 id="event-level-nn-score-columns-in-the-h5-files-per-channel-2026-07-08">Event-level NN score columns in the h5 files (per-channel, 2026-07-08)</h2>
 <p>Each production h5 file carries per-event sigmoid scores written back by the</p>
@@ -442,6 +455,11 @@ condor_submit summer26/NNjjBj_W/infer_gpu.sub</code></pre>
 <p>2026-07-08 (H- and W-file scores changed, Z unchanged). Validation: for every</p>
 <p>net/channel, the AUC recomputed from the stored scores on the full MG5+Pythia</p>
 <p>files reproduces <code>auc_mg5</code> in the dir&#x27;s <code>roc_data_{P}.npz</code> to 4 decimals.</p>
+<p><code>plots.py</code> draws the score distributions for all three event-level columns</p>
+<p>in the same four variants as the mjj figures:</p>
+<p><code>figs/summer26/{NNj_jet0,NNjB,NNjjBj}_{H,W,Z}[_Run3][_abs].pdf</code></p>
+<p>(normalized / SR |ΔYjj|&gt;3 / absolute log-y / SR absolute × 300 fb⁻¹). The</p>
+<p>three columns also feed the per-column SR_Run3 optimization above.</p>
 <p>Writes go through a small retry loop (<code>write_dataset(s)</code> in <code>save_scores.py</code>):</p>
 <p>EOS FUSE occasionally fails HDF5 metadata operations on the GPU nodes with</p>
 <p><code>bad object header version number</code>; if a job dies there anyway, delete the</p>

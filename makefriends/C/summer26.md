@@ -407,44 +407,57 @@ These error bars are shown in `figs/summer26/mjj_{W,Z,H}_Run3.pdf`, produced by
 
 ---
 
-## SR_Run3 optimization — per-channel (mjj, |ΔYjj|, NNj_jet0) cuts
+## SR_Run3 optimization — per-channel (mjj, |ΔYjj|, NN score) cuts
 
 Script: `summer26/plots.py` (SR optimization section, just before the
 `jetSPVA_SR_Run3` plots). Scan performed on **Herwig samples only** at
 L = 300 fb⁻¹; the resulting cuts are also applied to the MG5+Pythia figures.
 
 Grid: mjj threshold 0–4000 GeV in 10 GeV steps, |ΔYjj| threshold 0–6 in 0.1
-steps, NNj_jet0 threshold 0–1 in 0.01 steps.
+steps, NN score threshold 0–1 in 0.01 steps. Since 2026-07-09 the scan runs
+**once per event-level score column** — `NNj_jet0`, `NNjB`, `NNjjBj` (all
+per-channel scores, see the score-columns section below).
 Objective: maximize S/(S+B), subject to **S > 1000** expected signal events and
 **≥ 10 raw MC background events** (guard against the B→0 MC-statistics floor).
 The table is regenerated on every `plots.py` run and written to
 `figs/summer26/SR_optimization.txt`.
 
-| Channel | mjj cut (GeV) | \|ΔYjj\| cut | NN cut | S | B | S/(S+B) | raw S | raw B |
-|---------|--------------:|------------:|-------:|--:|--:|--------:|------:|------:|
-| **H** | > 870 | > 4.7 | > 0.96 | 4 724 | 15 | **0.997** | 5 328 | 10 |
-| **W** | > 2210 | > 4.9 | > 0.85 | 4 526 | 5 192 | **0.466** | 2 017 | 10 |
-| **Z** | > 1320 | > 4.2 | > 0.92 | 1 275 | 3 158 | **0.288** | 3 799 | 31 |
+| Score | Channel | mjj cut (GeV) | \|ΔYjj\| cut | NN cut | S | B | S/(S+B) | raw S | raw B |
+|-------|---------|--------------:|------------:|-------:|--:|--:|--------:|------:|------:|
+| `NNj_jet0` | **H** | > 870 | > 4.7 | > 0.96 | 4 724 | 15 | **0.997** | 5 328 | 10 |
+| `NNj_jet0` | **W** | > 2210 | > 4.9 | > 0.85 | 4 526 | 5 192 | **0.466** | 2 017 | 10 |
+| `NNj_jet0` | **Z** | > 1320 | > 4.2 | > 0.92 | 1 275 | 3 158 | **0.288** | 3 799 | 31 |
+| `NNjB` | **H** | > 660 | > 4.7 | > 0.97 | 4 890 | 15 | **0.997** | 5 515 | 10 |
+| `NNjB` | **W** | > 1660 | > 4.7 | > 0.92 | 7 524 | 5 192 | **0.592** | 3 356 | 10 |
+| `NNjB` | **Z** | > 1760 | > 4.8 | > 0.91 | 1 235 | 1 121 | **0.524** | 3 736 | 11 |
+| `NNjjBj` | **H** | > 1030 | > 5.0 | > 0.99 | 6 360 | 15 | **0.998** | 7 173 | 10 |
+| `NNjjBj` | **W** | > 1620 | > 4.2 | > 0.99 | 15 857 | 5 192 | **0.753** | 7 074 | 10 |
+| `NNjjBj` | **Z** | > 1760 | > 3.4 | > 0.99 | 2 850 | 1 019 | **0.737** | 8 497 | 10 |
 
-Since 2026-07-08 `NNj_jet0` holds **per-channel** scores (each channel's own
-Herwig-trained net — see the score-columns section below), which is what this
-table reflects: H gained strongly over the earlier Z-net scores
-(0.990 → 0.997 at 3.2× the signal), W moved slightly, Z is unchanged.
+The event-level nets transform the W and Z channels (2026-07-09): with
+`NNjjBj` the W purity goes 0.466 → **0.753** at 3.5× the signal and Z
+0.288 → **0.737** at 2.2× the signal; H was already purity-saturated but
+keeps 35% more signal. `NNjB` sits in between. In all cases the NN cut also
+relaxes the mjj cut relative to the cut-only optimum (more signal kept).
 
 For reference (Herwig): the previous common SR (`|ΔYjj| > 3`, `mjj > 2` TeV)
 gave H 0.937, W 0.194, Z 0.172; the 2-variable (mjj, |ΔYjj|) optimum gave
-H 0.975, W 0.449, Z 0.239. Adding the NN cut both raises purity and relaxes
-the mjj cut (more signal kept).
+H 0.975, W 0.449, Z 0.239.
 
-**Note:** the H and W optima sit exactly at the raw-B ≥ 10 guard — the surviving
-background estimates rest on only 10 MC events each and carry a ~30%
-MC-statistical uncertainty.
+**Notes:** (i) every optimum except `NNj_jet0` Z and `NNjB` Z sits exactly at
+the raw-B ≥ 10 guard — those background estimates rest on only 10 MC events
+and carry a ~30% MC-statistical uncertainty. (ii) The `NNjjBj` optima all
+select the **last scan bin** of the NN cut (> 0.99): the score is so
+discriminating that the optimum is grid-limited; a finer threshold scan near 1
+would be needed to map the true optimum.
 
 The `figs/summer26/jetSPVA_SR_Run3_{H,W,Z}_{Herwig,MG5Pythia}.pdf` figures use
-these per-channel optimized cuts (shown in each figure title). The companion
-`jetSPVA_jet1_SR_Run3_*.pdf` figures show |θs| of the **sub-leading** jet in the
-same SR — largely uncorrelated with the jet-0 |θs| (the NNj cut acts on
-jet 0 only).
+the **`NNjjBj`-optimized** per-channel cuts (`SR_SPVA_COL` in `plots.py`;
+cuts shown in each figure title) — until 2026-07-09 they used the `NNj_jet0`
+cuts. The companion `jetSPVA_jet1_SR_Run3_*.pdf` figures show |θs| of the
+**sub-leading** jet in the same SR. Caveat: unlike the old NNj-based SR, the
+`NNjjBj` cut already consumes both jets' constituents, so the |θs| shapes
+inside this SR are shaped by the NN selection for both jets.
 
 ---
 
@@ -474,6 +487,12 @@ This replaces the original NNj setup where the **Z-trained** net scored all
 2026-07-08 (H- and W-file scores changed, Z unchanged). Validation: for every
 net/channel, the AUC recomputed from the stored scores on the full MG5+Pythia
 files reproduces `auc_mg5` in the dir's `roc_data_{P}.npz` to 4 decimals.
+
+`plots.py` draws the score distributions for all three event-level columns
+in the same four variants as the mjj figures:
+`figs/summer26/{NNj_jet0,NNjB,NNjjBj}_{H,W,Z}[_Run3][_abs].pdf`
+(normalized / SR |ΔYjj|>3 / absolute log-y / SR absolute × 300 fb⁻¹). The
+three columns also feed the per-column SR_Run3 optimization above.
 
 Writes go through a small retry loop (`write_dataset(s)` in `save_scores.py`):
 EOS FUSE occasionally fails HDF5 metadata operations on the GPU nodes with

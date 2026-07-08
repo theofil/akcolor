@@ -909,12 +909,20 @@ for group in ['VBF', 'QCD']:
         print('Saved', outpath)
         plt.close(fig)
 
-# ── NNj score jet0 (inclusive, same selection as mjj) ───────────────────
+# ── event-level NN scores: NNj_jet0 / NNjB / NNjjBj distributions ────────
 score_bins        = np.linspace(0, 1, 51)
 score_bin_centers = (score_bins[:-1] + score_bins[1:]) / 2
 score_bin_width   = score_bins[1] - score_bins[0]
 
-for proc, samples in SAMPLES_BY_PROC.items():
+SCORE_COLS = [
+    ('NNj_jet0', 'NNj score (jet 0)'),
+    ('NNjB',     'NNjB score'),
+    ('NNjjBj',   'NNjjBj score'),
+]
+
+# inclusive, same selection as mjj
+for score_col, score_xlabel in SCORE_COLS:
+  for proc, samples in SAMPLES_BY_PROC.items():
     fig, ax = plt.subplots(figsize=FIG_SIZE)
     for s in samples:
         fpath = DATA_DIR / f'{s["name"]}.h5'
@@ -922,10 +930,10 @@ for proc, samples in SAMPLES_BY_PROC.items():
             print(f'  Skipping {fpath} (not found)')
             continue
         with h5py.File(fpath, 'r') as f:
-            if 'NNj_jet0' not in f:
-                print(f'  NNj_jet0 not found in {fpath}')
+            if score_col not in f:
+                print(f'  {score_col} not found in {fpath}')
                 continue
-            score = f['NNj_jet0'][:].astype(float)
+            score = f[score_col][:].astype(float)
             kw    = f['kWeight'][:].astype(float)
         counts, _ = np.histogram(score, bins=score_bins, weights=kw)
         norm = counts.sum() * score_bin_width
@@ -936,19 +944,20 @@ for proc, samples in SAMPLES_BY_PROC.items():
                 linewidth=3, color=group_colors[s['group']], linestyle=gen_styles[s['gen']],
                 label=s['label'])
     apply_style(ax,
-                xlabel='NNj score (jet 0)',
+                xlabel=score_xlabel,
                 ylabel='Normalized density',
                 title='',
                 xlim=(0, 1),
                 legend_loc='upper center')
     plt.tight_layout()
-    outpath = str(FIGS / f'NNj_jet0_{proc}.pdf')
+    outpath = str(FIGS / f'{score_col}_{proc}.pdf')
     fig.savefig(outpath, bbox_inches='tight')
     print('Saved', outpath)
     plt.close(fig)
 
-# ── NNj score jet0 in SR (|dYjj| > 3, same selection as mjj_Run3) ───────
-for proc, samples in SAMPLES_BY_PROC.items():
+# scores in SR (|dYjj| > 3, same selection as mjj_Run3)
+for score_col, score_xlabel in SCORE_COLS:
+  for proc, samples in SAMPLES_BY_PROC.items():
     fig, ax = plt.subplots(figsize=FIG_SIZE)
     for s in samples:
         fpath = DATA_DIR / f'{s["name"]}.h5'
@@ -956,10 +965,10 @@ for proc, samples in SAMPLES_BY_PROC.items():
             print(f'  Skipping {fpath} (not found)')
             continue
         with h5py.File(fpath, 'r') as f:
-            if 'NNj_jet0' not in f:
-                print(f'  NNj_jet0 not found in {fpath}')
+            if score_col not in f:
+                print(f'  {score_col} not found in {fpath}')
                 continue
-            score = f['NNj_jet0'][:].astype(float)
+            score = f[score_col][:].astype(float)
             kw    = f['kWeight'][:].astype(float)
             dYjj  = f['dYjj'][:].astype(float)
         sr = np.abs(dYjj) > 3.0
@@ -973,19 +982,20 @@ for proc, samples in SAMPLES_BY_PROC.items():
                 linewidth=3, color=group_colors[s['group']], linestyle=gen_styles[s['gen']],
                 label=s['label'])
     apply_style(ax,
-                xlabel='NNj score (jet 0)',
+                xlabel=score_xlabel,
                 ylabel='Normalized density',
                 title=r'SR: $|\Delta Y_{jj}| > 3$',
                 xlim=(0, 1),
                 legend_loc='upper center')
     plt.tight_layout()
-    outpath = str(FIGS / f'NNj_jet0_{proc}_Run3.pdf')
+    outpath = str(FIGS / f'{score_col}_{proc}_Run3.pdf')
     fig.savefig(outpath, bbox_inches='tight')
     print('Saved', outpath)
     plt.close(fig)
 
-# ── NNj score jet0 inclusive, absolute norm, log-y (same as mjj) ────────
-for proc, samples in SAMPLES_BY_PROC.items():
+# scores inclusive, absolute norm, log-y (same as mjj)
+for score_col, score_xlabel in SCORE_COLS:
+  for proc, samples in SAMPLES_BY_PROC.items():
     fig, ax = plt.subplots(figsize=FIG_SIZE)
     for s in samples:
         fpath = DATA_DIR / f'{s["name"]}.h5'
@@ -993,30 +1003,31 @@ for proc, samples in SAMPLES_BY_PROC.items():
             print(f'  Skipping {fpath} (not found)')
             continue
         with h5py.File(fpath, 'r') as f:
-            if 'NNj_jet0' not in f:
-                print(f'  NNj_jet0 not found in {fpath}')
+            if score_col not in f:
+                print(f'  {score_col} not found in {fpath}')
                 continue
-            score = f['NNj_jet0'][:].astype(float)
+            score = f[score_col][:].astype(float)
             kw    = f['kWeight'][:].astype(float)
         counts, _ = np.histogram(score, bins=score_bins, weights=kw)
         ax.hist(score_bin_centers, bins=score_bins, weights=counts, histtype='step',
                 linewidth=3, color=group_colors[s['group']], linestyle=gen_styles[s['gen']],
                 label=s['label'])
     apply_style(ax,
-                xlabel='NNj score (jet 0)',
+                xlabel=score_xlabel,
                 ylabel=f'events / {score_bin_width:.2f} / pb$^{{-1}}$',
                 title='',
                 xlim=(0, 1),
                 log_y=True,
                 legend_loc='upper center')
     plt.tight_layout()
-    outpath = str(FIGS / f'NNj_jet0_{proc}_abs.pdf')
+    outpath = str(FIGS / f'{score_col}_{proc}_abs.pdf')
     fig.savefig(outpath, bbox_inches='tight')
     print('Saved', outpath)
     plt.close(fig)
 
-# ── NNj score jet0 SR, absolute norm × L_RUN3, log-y (same as mjj_Run3) ─
-for proc, samples in SAMPLES_BY_PROC.items():
+# scores in SR, absolute norm × L_RUN3, log-y (same as mjj_Run3)
+for score_col, score_xlabel in SCORE_COLS:
+  for proc, samples in SAMPLES_BY_PROC.items():
     fig, ax = plt.subplots(figsize=FIG_SIZE)
     for s in samples:
         fpath = DATA_DIR / f'{s["name"]}.h5'
@@ -1024,10 +1035,10 @@ for proc, samples in SAMPLES_BY_PROC.items():
             print(f'  Skipping {fpath} (not found)')
             continue
         with h5py.File(fpath, 'r') as f:
-            if 'NNj_jet0' not in f:
-                print(f'  NNj_jet0 not found in {fpath}')
+            if score_col not in f:
+                print(f'  {score_col} not found in {fpath}')
                 continue
-            score = f['NNj_jet0'][:].astype(float)
+            score = f[score_col][:].astype(float)
             kw    = f['kWeight'][:].astype(float)
             dYjj  = f['dYjj'][:].astype(float)
         sr = np.abs(dYjj) > 3.0
@@ -1045,33 +1056,34 @@ for proc, samples in SAMPLES_BY_PROC.items():
                     yerr=[yerr_lo, yerr],
                     fmt='none', ecolor=color, elinewidth=1, capsize=2, alpha=0.6)
     apply_style(ax,
-                xlabel='NNj score (jet 0)',
+                xlabel=score_xlabel,
                 ylabel=f'events / {score_bin_width:.2f} / 300 fb$^{{-1}}$',
                 title=r'SR: $|\Delta Y_{jj}| > 3$',
                 xlim=(0, 1),
                 log_y=True,
                 legend_loc='upper center')
     plt.tight_layout()
-    outpath = str(FIGS / f'NNj_jet0_{proc}_Run3_abs.pdf')
+    outpath = str(FIGS / f'{score_col}_{proc}_Run3_abs.pdf')
     fig.savefig(outpath, bbox_inches='tight')
     print('Saved', outpath)
     plt.close(fig)
 
-# ── SR_Run3 optimization: per-channel (mjj, |dYjj|, NNj_jet0) cuts ───────
-# maximizing S/(S+B). Scan on Herwig samples only, L = 300 fb⁻¹, subject to
-# S > 1000 expected signal events and ≥ 10 raw MC background events (guard
-# against the B→0 MC-stat floor).
+# ── SR_Run3 optimization: per-channel (mjj, |dYjj|, NN score) cuts ───────
+# maximizing S/(S+B); one independent scan per event-level score column.
+# Scan on Herwig samples only, L = 300 fb⁻¹, subject to S > 1000 expected
+# signal events and ≥ 10 raw MC background events (guard against the B→0
+# MC-stat floor).
 sr_mjj_edges   = np.arange(0, 4010.0, 10.0)
 sr_dyjj_edges  = np.arange(0, 6.1, 0.1)
 sr_score_edges = np.arange(0, 1.01, 0.01)
 
-def _sr_cumulative_yields(name):
+def _sr_cumulative_yields(name, score_col):
     """Reverse-cumulative (kWeight×L, raw count) grids over
-    (mjj, |dYjj|, NNj_jet0) cuts."""
+    (mjj, |dYjj|, score_col) cuts."""
     with h5py.File(DATA_DIR / f'{name}.h5', 'r') as f:
         mjj   = f['mjj'][:].astype(float)
         dY    = np.abs(f['dYjj'][:].astype(float))
-        score = f['NNj_jet0'][:].astype(float)
+        score = f[score_col][:].astype(float)
         kw    = f['kWeight'][:].astype(float)
     edges  = [sr_mjj_edges, sr_dyjj_edges, sr_score_edges]
     sample = np.stack([np.clip(v, e[0], e[-1] - 1e-9)
@@ -1084,31 +1096,37 @@ def _sr_cumulative_yields(name):
         return h
     return revcum(hw) * L_RUN3, revcum(hn)
 
-SR_CUTS = {}
+SR_SPVA_COL = 'NNjjBj'   # score column defining the SR of the jetSPVA figures
+SR_CUTS = {}             # (score_col, proc) -> (mjj, |dYjj|, score) cuts
 sr_table_lines = [
     'SR_Run3 optimization (Herwig only, L = 300 fb^-1)',
     'maximize S/(S+B) subject to S > 1000 and >= 10 raw MC background events',
+    'one independent scan per event-level score column',
     '',
-    f'{"chan":>4} {"mjj cut":>8} {"|dYjj| cut":>10} {"NN cut":>7} {"S":>10} '
-    f'{"B":>10} {"S/(S+B)":>8} {"raw S":>8} {"raw B":>8}',
+    f'{"score":>9} {"chan":>4} {"mjj cut":>8} {"|dYjj| cut":>10} {"NN cut":>7} '
+    f'{"S":>10} {"B":>10} {"S/(S+B)":>8} {"raw S":>8} {"raw B":>8}',
 ]
-for proc, samples in SAMPLES_BY_PROC.items():
-    hw_samps = [s for s in samples if s['gen'] == 'herwig']
-    sig_name = next(s['name'] for s in hw_samps if s['group'] == 'VBF')
-    bkg_name = next(s['name'] for s in hw_samps if s['group'] == 'QCD')
-    S, rawS = _sr_cumulative_yields(sig_name)
-    B, rawB = _sr_cumulative_yields(bkg_name)
-    purity = S / np.maximum(S + B, 1e-12)
-    allowed = (S > 1000.0) & (rawB >= 10)
-    i, j, k = np.unravel_index(np.argmax(np.where(allowed, purity, -1.0)),
-                               purity.shape)
-    SR_CUTS[proc] = (float(sr_mjj_edges[i]), float(sr_dyjj_edges[j]),
-                     float(sr_score_edges[k]))
-    sr_table_lines.append(
-        f'{proc:>4} {sr_mjj_edges[i]:>8.0f} {sr_dyjj_edges[j]:>10.1f} '
-        f'{sr_score_edges[k]:>7.2f} {S[i, j, k]:>10.1f} {B[i, j, k]:>10.1f} '
-        f'{purity[i, j, k]:>8.3f} {rawS[i, j, k]:>8.0f} {rawB[i, j, k]:>8.0f}')
-sr_table = '\n'.join(sr_table_lines) + '\n'
+for score_col, _ in SCORE_COLS:
+    for proc, samples in SAMPLES_BY_PROC.items():
+        hw_samps = [s for s in samples if s['gen'] == 'herwig']
+        sig_name = next(s['name'] for s in hw_samps if s['group'] == 'VBF')
+        bkg_name = next(s['name'] for s in hw_samps if s['group'] == 'QCD')
+        S, rawS = _sr_cumulative_yields(sig_name, score_col)
+        B, rawB = _sr_cumulative_yields(bkg_name, score_col)
+        purity = S / np.maximum(S + B, 1e-12)
+        allowed = (S > 1000.0) & (rawB >= 10)
+        i, j, k = np.unravel_index(np.argmax(np.where(allowed, purity, -1.0)),
+                                   purity.shape)
+        SR_CUTS[score_col, proc] = (float(sr_mjj_edges[i]),
+                                    float(sr_dyjj_edges[j]),
+                                    float(sr_score_edges[k]))
+        sr_table_lines.append(
+            f'{score_col:>9} {proc:>4} {sr_mjj_edges[i]:>8.0f} '
+            f'{sr_dyjj_edges[j]:>10.1f} {sr_score_edges[k]:>7.2f} '
+            f'{S[i, j, k]:>10.1f} {B[i, j, k]:>10.1f} '
+            f'{purity[i, j, k]:>8.3f} {rawS[i, j, k]:>8.0f} {rawB[i, j, k]:>8.0f}')
+    sr_table_lines.append('')
+sr_table = '\n'.join(sr_table_lines).rstrip('\n') + '\n'
 print(sr_table)
 (FIGS / 'SR_optimization.txt').write_text(sr_table)
 print('Saved', FIGS / 'SR_optimization.txt')
@@ -1131,7 +1149,7 @@ def _spva_hist(name, jet, mjj_cut, dyjj_cut, score_cut):
         kw    = f['kWeight'][:].astype(float)
         dYjj  = f['dYjj'][:].astype(float)
         mjj   = f['mjj'][:].astype(float)
-        score = f['NNj_jet0'][:].astype(float)
+        score = f[SR_SPVA_COL][:].astype(float)
     sr  = (np.abs(dYjj) > dyjj_cut) & (mjj > mjj_cut) & (score > score_cut)
     w   = kw[sr] * L_RUN3
     h,  _ = np.histogram(spva[sr], bins=spva_bins, weights=w)
@@ -1157,7 +1175,7 @@ for gen in ('mg5', 'herwig'):
         gen_samps = [s for s in samples if s['gen'] == gen]
         sig = next(s for s in gen_samps if s['group'] == 'VBF')
         bkg = next(s for s in gen_samps if s['group'] == 'QCD')
-        mjj_cut, dyjj_cut, score_cut = SR_CUTS[proc]
+        mjj_cut, dyjj_cut, score_cut = SR_CUTS[SR_SPVA_COL, proc]
 
         for jet in (0, 1):
             sig_hist, sig_mc_sq = _spva_hist(sig['name'], jet, mjj_cut, dyjj_cut, score_cut)
@@ -1184,7 +1202,7 @@ for gen in ('mg5', 'herwig'):
                         title=(r'SR$_{\mathrm{Run3}}$ (optimized): '
                                rf'$|\Delta Y_{{jj}}|>{dyjj_cut:.1f}$, '
                                rf'$m_{{jj}}>{mjj_cut / 1000:.2f}$ TeV, '
-                               rf'NN$>{score_cut:.2f}$'
+                               rf'{SR_SPVA_COL}$>{score_cut:.2f}$'
                                f'  [{GEN_TITLE[gen]}]'),
                         xlim=(0, np.pi),
                         legend_loc='upper right')
