@@ -531,6 +531,51 @@ for proc, samples in SAMPLES_BY_PROC.items():
     print('Saved', outpath)
     plt.close(fig)
 
+# ── Summary ROC: all NNs per channel (no single-observable curves) ───────────
+# Reads the roc_data_{proc}.npz files written by each NN dir's inference.py
+# (solid = Herwig test split, dashed = MG5+Pythia transfer).
+NN_SUMMARY = [
+    ('NNkin',  '#7f7f7f'),
+    ('NNj',    '#1f77b4'),
+    ('NNjB',   '#2ca02c'),
+    ('NNjj',   '#ff7f0e'),
+    ('NNjjB',  '#9467bd'),
+    ('NNjjBj', '#d62728'),
+]
+NN_BASE = pathlib.Path(__file__).parent
+
+for proc in SAMPLES_BY_PROC:
+    fig, ax = plt.subplots(figsize=FIG_SIZE)
+    n_curves = 0
+    for nn, color in NN_SUMMARY:
+        nn_dir = NN_BASE / (nn if proc == 'Z' else f'{nn}_{proc}')
+        npz_path = nn_dir / f'roc_data_{proc}.npz'
+        if not npz_path.exists():
+            print(f'  roc_summary_{proc}: missing {npz_path.name} in {nn_dir.name}, skipping')
+            continue
+        d = np.load(npz_path)
+        ax.plot(d['fpr_hw'],  d['tpr_hw'],  linewidth=2, color=color, linestyle='-',
+                label=f'{nn} Herwig  AUC={float(d["auc_hw"]):.3f}')
+        ax.plot(d['fpr_mg5'], d['tpr_mg5'], linewidth=2, color=color, linestyle='--',
+                label=f'{nn} MG5+Py  AUC={float(d["auc_mg5"]):.3f}')
+        n_curves += 2
+    if n_curves == 0:
+        plt.close(fig)
+        continue
+    ax.plot([0, 1], [0, 1], color='gray', linewidth=1, linestyle='--')
+    apply_style(ax,
+                xlabel='Background efficiency',
+                ylabel='Signal efficiency',
+                title='',
+                xlim=(0, 1), ylim=(0, 1),
+                legend_loc='lower right')
+    ax.legend(loc='lower right', frameon=False, fontsize=10)  # 12 entries: shrink
+    plt.tight_layout()
+    outpath = str(FIGS / f'roc_summary_{proc}.pdf')
+    fig.savefig(outpath, bbox_inches='tight')
+    print('Saved', outpath)
+    plt.close(fig)
+
 # ── mjj distribution (absolute normalization via kWeight) ────────────────────
 mjj_bins        = np.arange(0, 2010, 10)
 mjj_bin_centers = (mjj_bins[:-1] + mjj_bins[1:]) / 2

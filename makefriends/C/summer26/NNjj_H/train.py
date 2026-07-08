@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-Training script for NNjj_H: VBF H vs QCD H+jj classification.
+Training script for NNjj: VBF H vs QCD H+jj classification.
 DeepSets over constituents of both jets using only low-level features.
 Trained on summer26 Herwig H samples.
 
-Outputs saved to NNjj_H/ (directory of this script):
+Outputs saved to NNjj/ (directory of this script):
   best_model.pt      — state dict at best validation loss
   scaler.pkl         — dict {'jet0', 'jet1', 'jcs0', 'jcs1'}: StandardScalers
   split_indices.npz  — train_idx, val_idx, test_idx into the full concatenated array
@@ -44,7 +44,7 @@ SCHED_PAT  = 5
 SCHED_FAC  = 0.5
 VAL_FRAC   = 0.15
 TEST_FRAC  = 0.15
-PROCESS    = "H"
+PROCESS = "H"
 
 
 def scale_jcs(x_jcs, scaler):

@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """
-Inference script for NNjj_H (summer26, Herwig H): ROC curves comparing performance
+Inference script for NNjj (summer26, Herwig Z): ROC curves comparing performance
 on the Herwig H test split (training domain) and MG5_Pythia H (transfer test).
 
 Both generator ROC curves plus single-variable baselines are overlaid on one plot.
+The model ROC curves are also saved to roc_data_{PROCESS}.npz for the summary
+plot made by summer26/plots.py.
 
 Output:
-  ../../figs/summer26/roc_nnjj_H.pdf
+  ../../figs/summer26/roc_nnjj.pdf
 """
 
 import os
@@ -41,6 +43,14 @@ def roc_from_scores(y_true, scores):
     if area < 0.5:
         fpr, tpr, area = 1 - fpr[::-1], 1 - tpr[::-1], 1 - area
     return fpr, tpr, area
+
+
+def decimate_roc(fpr, tpr, max_points=5000):
+    """Uniform-stride subsampling keeping both endpoints (for the summary npz)."""
+    if len(fpr) <= max_points:
+        return fpr, tpr
+    idx = np.linspace(0, len(fpr) - 1, max_points).round().astype(int)
+    return fpr[idx], tpr[idx]
 
 
 def roc_from_histograms(sig_vals, bkg_vals, bins):
@@ -159,8 +169,17 @@ def main():
 
     fpr_hw,  tpr_hw,  auc_hw  = roc_from_scores(y_test_hw, scores_hw)
     fpr_mg5, tpr_mg5, auc_mg5 = roc_from_scores(y_all_mg5, scores_mg5)
-    print(f'NNjj Herwig H  AUC = {auc_hw:.4f}')
-    print(f'NNjj MG5+Py H  AUC = {auc_mg5:.4f}')
+    print(f'NNjj Herwig    AUC = {auc_hw:.4f}')
+    print(f'NNjj MG5+Py    AUC = {auc_mg5:.4f}')
+
+    # ── Save ROC data for the all-NN summary plot (summer26/plots.py) ────────
+    fpr_hw_s,  tpr_hw_s  = decimate_roc(fpr_hw,  tpr_hw)
+    fpr_mg5_s, tpr_mg5_s = decimate_roc(fpr_mg5, tpr_mg5)
+    np.savez(HERE / f'roc_data_{PROCESS}.npz',
+             fpr_hw=fpr_hw_s, tpr_hw=tpr_hw_s, auc_hw=auc_hw,
+             fpr_mg5=fpr_mg5_s, tpr_mg5=tpr_mg5_s, auc_mg5=auc_mg5)
+    print(f'Saved {HERE / f"roc_data_{PROCESS}.npz"}')
+
 
     # ── Single-variable ROCs (Herwig test set, leading-jet scalars) ──────────
     x_j0_bkg_test = x_j0_test_raw[y_test_hw == 0]

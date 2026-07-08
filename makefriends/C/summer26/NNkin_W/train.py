@@ -43,7 +43,7 @@ SCHED_PAT  = 5
 SCHED_FAC  = 0.5
 VAL_FRAC   = 0.15
 TEST_FRAC  = 0.15
-PROCESS    = "W"
+PROCESS = "W"
 
 
 def main():

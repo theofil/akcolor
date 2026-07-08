@@ -1,5 +1,5 @@
 """
-DijetDataset for NNjj_H: loads QCDHjj_herwig.h5 + VBFH_herwig.h5.
+DijetDataset for NNjj: loads QCDHjj_herwig.h5 + VBFH_herwig.h5.
 Raw low-level features for both the leading (index 0)
 and sub-leading (index 1) jets.
 

@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """
-Training script for NNj: VBF W vs QCD W+jj classification.
-DeepSets over constituents using only low-level features (no NC, |t|, θ_s, w).
-Trained on summer26 Herwig W samples.
+Training script for NNjjBj: VBF H vs QCD H+jj classification.
+DeepSets over constituents of all three jets using only low-level features,
+plus the 3rd-jet 4-momentum (zeros when no 3rd jet) and the generator-boson
+4-vector (pT, η, φ, M) as event-level scalars.
+Trained on summer26 Herwig H samples.
 
-Outputs saved to NNj/ (directory of this script):
+Outputs saved to NNjjBj/ (directory of this script):
   best_model.pt      — state dict at best validation loss
-  scaler.pkl         — dict {'jet': StandardScaler, 'jcs': StandardScaler}
+  scaler.pkl         — dict {'jet0', 'jet1', 'jet2', 'boson', 'jcs0', 'jcs1', 'jcs2'}: StandardScalers
   split_indices.npz  — train_idx, val_idx, test_idx into the full concatenated array
   loss_curve.pdf     — training and validation loss vs epoch
 """
@@ -44,7 +46,7 @@ SCHED_PAT  = 5
 SCHED_FAC  = 0.5
 VAL_FRAC   = 0.15
 TEST_FRAC  = 0.15
-PROCESS = "W"
+PROCESS = "H"
 
 
 def scale_jcs(x_jcs, scaler):
@@ -59,17 +61,22 @@ def main():
 
     # ── Load data ────────────────────────────────────────────────────────────
     print('Loading background ...')
-    x_jet_bkg, x_jcs_bkg, _ = load_features(HERE / BKG_FILE)
-    print(f'  QCD W+jj Herwig: {len(x_jet_bkg)} events')
+    x_j0_bkg, x_j1_bkg, x_j2_bkg, x_bos_bkg, x_c0_bkg, x_c1_bkg, x_c2_bkg, _ = load_features(HERE / BKG_FILE)
+    print(f'  QCD H+jj Herwig: {len(x_j0_bkg)} events')
 
     print('Loading signal ...')
-    x_jet_sig, x_jcs_sig, _ = load_features(HERE / SIG_FILE)
-    print(f'  VBF W Herwig: {len(x_jet_sig)} events')
+    x_j0_sig, x_j1_sig, x_j2_sig, x_bos_sig, x_c0_sig, x_c1_sig, x_c2_sig, _ = load_features(HERE / SIG_FILE)
+    print(f'  VBF H Herwig: {len(x_j0_sig)} events')
 
-    x_jet_all = np.concatenate([x_jet_bkg, x_jet_sig], axis=0)   # (N, 3)
-    x_jcs_all = np.concatenate([x_jcs_bkg, x_jcs_sig], axis=0)   # (N, 80, 4)
-    y_all = np.concatenate([np.zeros(len(x_jet_bkg), dtype=np.float32),
-                            np.ones (len(x_jet_sig), dtype=np.float32)], axis=0)
+    x_j0_all = np.concatenate([x_j0_bkg, x_j0_sig], axis=0)   # (N, 3)
+    x_j1_all = np.concatenate([x_j1_bkg, x_j1_sig], axis=0)   # (N, 3)
+    x_j2_all = np.concatenate([x_j2_bkg, x_j2_sig], axis=0)   # (N, 4)
+    x_bos_all = np.concatenate([x_bos_bkg, x_bos_sig], axis=0)  # (N, 4)
+    x_c0_all = np.concatenate([x_c0_bkg, x_c0_sig], axis=0)   # (N, 80, 3)
+    x_c1_all = np.concatenate([x_c1_bkg, x_c1_sig], axis=0)   # (N, 80, 3)
+    x_c2_all = np.concatenate([x_c2_bkg, x_c2_sig], axis=0)   # (N, 80, 3)
+    y_all = np.concatenate([np.zeros(len(x_j0_bkg), dtype=np.float32),
+                            np.ones (len(x_j0_sig), dtype=np.float32)], axis=0)
 
     n_total = len(y_all)
     idx = np.arange(n_total)
@@ -87,31 +94,62 @@ def main():
     print(f'Split: train={len(idx_train)}, val={len(idx_val)}, test={len(idx_test)}')
 
     # ── Jet-scalar normalisation (fit on training set only) ──────────────────
-    scaler_jet = StandardScaler()
-    x_jet_train = scaler_jet.fit_transform(x_jet_all[idx_train]).astype(np.float32)
-    x_jet_val   = scaler_jet.transform(x_jet_all[idx_val]).astype(np.float32)
+    # jet2 rows are all-zero when no 3rd jet exists; the scaler is fit on all
+    # training rows (zeros included) so absence maps to a constant code.
+    scaler_j0  = StandardScaler()
+    scaler_j1  = StandardScaler()
+    scaler_j2  = StandardScaler()
+    scaler_bos = StandardScaler()
+    x_j0_train  = scaler_j0.fit_transform(x_j0_all[idx_train]).astype(np.float32)
+    x_j1_train  = scaler_j1.fit_transform(x_j1_all[idx_train]).astype(np.float32)
+    x_j2_train  = scaler_j2.fit_transform(x_j2_all[idx_train]).astype(np.float32)
+    x_bos_train = scaler_bos.fit_transform(x_bos_all[idx_train]).astype(np.float32)
+    x_j0_val    = scaler_j0.transform(x_j0_all[idx_val]).astype(np.float32)
+    x_j1_val    = scaler_j1.transform(x_j1_all[idx_val]).astype(np.float32)
+    x_j2_val    = scaler_j2.transform(x_j2_all[idx_val]).astype(np.float32)
+    x_bos_val   = scaler_bos.transform(x_bos_all[idx_val]).astype(np.float32)
 
     # ── Constituent normalisation (fit on valid constituents only) ───────────
     # jcsPt (index 2) > 0 identifies real constituents
-    mask_train = (x_jcs_all[idx_train][..., 2] > 0)   # (N_train, 80), bool
-    mask_val   = (x_jcs_all[idx_val]  [..., 2] > 0)
+    mask0_train = (x_c0_all[idx_train][..., 2] > 0)
+    mask1_train = (x_c1_all[idx_train][..., 2] > 0)
+    mask2_train = (x_c2_all[idx_train][..., 2] > 0)
+    mask0_val   = (x_c0_all[idx_val]  [..., 2] > 0)
+    mask1_val   = (x_c1_all[idx_val]  [..., 2] > 0)
+    mask2_val   = (x_c2_all[idx_val]  [..., 2] > 0)
 
-    flat_train = x_jcs_all[idx_train].reshape(-1, N_CONSTIT_FEAT)
-    valid_rows = flat_train[:, 2] > 0
-    scaler_jcs = StandardScaler()
-    scaler_jcs.fit(flat_train[valid_rows])
+    def fit_jcs_scaler(x_jcs_train):
+        flat = x_jcs_train.reshape(-1, N_CONSTIT_FEAT)
+        valid = flat[:, 2] > 0
+        sc = StandardScaler()
+        sc.fit(flat[valid])
+        return sc
 
-    x_jcs_train = scale_jcs(x_jcs_all[idx_train], scaler_jcs)
-    x_jcs_val   = scale_jcs(x_jcs_all[idx_val],   scaler_jcs)
+    scaler_c0 = fit_jcs_scaler(x_c0_all[idx_train])
+    scaler_c1 = fit_jcs_scaler(x_c1_all[idx_train])
+    scaler_c2 = fit_jcs_scaler(x_c2_all[idx_train])
+
+    x_c0_train = scale_jcs(x_c0_all[idx_train], scaler_c0)
+    x_c1_train = scale_jcs(x_c1_all[idx_train], scaler_c1)
+    x_c2_train = scale_jcs(x_c2_all[idx_train], scaler_c2)
+    x_c0_val   = scale_jcs(x_c0_all[idx_val],   scaler_c0)
+    x_c1_val   = scale_jcs(x_c1_all[idx_val],   scaler_c1)
+    x_c2_val   = scale_jcs(x_c2_all[idx_val],   scaler_c2)
 
     with open(HERE / f'scaler_{PROCESS}.pkl', 'wb') as fh:
-        pickle.dump({'jet': scaler_jet, 'jcs': scaler_jcs}, fh)
+        pickle.dump({'jet0': scaler_j0, 'jet1': scaler_j1, 'jet2': scaler_j2,
+                     'boson': scaler_bos,
+                     'jcs0': scaler_c0, 'jcs1': scaler_c1, 'jcs2': scaler_c2}, fh)
 
     y_train = y_all[idx_train]
     y_val   = y_all[idx_val]
 
-    train_ds = DijetDataset(x_jet_train, x_jcs_train, mask_train, y_train)
-    val_ds   = DijetDataset(x_jet_val,   x_jcs_val,   mask_val,   y_val)
+    train_ds = DijetDataset(x_j0_train, x_j1_train, x_j2_train, x_bos_train,
+                            x_c0_train, x_c1_train, x_c2_train,
+                            mask0_train, mask1_train, mask2_train, y_train)
+    val_ds   = DijetDataset(x_j0_val,   x_j1_val,   x_j2_val,   x_bos_val,
+                            x_c0_val,   x_c1_val,   x_c2_val,
+                            mask0_val,   mask1_val,   mask2_val,   y_val)
 
     train_loader = DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True,  num_workers=2, pin_memory=True)
     val_loader   = DataLoader(val_ds,   batch_size=BATCH_SIZE, shuffle=False, num_workers=2, pin_memory=True)
@@ -139,13 +177,14 @@ def main():
     for epoch in range(1, MAX_EPOCHS + 1):
         model.train()
         running = 0.0
-        for x_jet_b, x_jcs_b, mask_b, yb, _ in train_loader:
-            x_jet_b = x_jet_b.to(device)
-            x_jcs_b = x_jcs_b.to(device)
-            mask_b  = mask_b.to(device)
-            yb      = yb.to(device)
+        for x_j0_b, x_j1_b, x_j2_b, x_bos_b, x_c0_b, x_c1_b, x_c2_b, m0_b, m1_b, m2_b, yb, _ in train_loader:
+            x_j0_b = x_j0_b.to(device); x_j1_b = x_j1_b.to(device)
+            x_j2_b = x_j2_b.to(device); x_bos_b = x_bos_b.to(device)
+            x_c0_b = x_c0_b.to(device); x_c1_b = x_c1_b.to(device); x_c2_b = x_c2_b.to(device)
+            m0_b   = m0_b.to(device);   m1_b   = m1_b.to(device);   m2_b   = m2_b.to(device)
+            yb     = yb.to(device)
             optimizer.zero_grad()
-            loss = criterion(model(x_jet_b, x_jcs_b, mask_b), yb)
+            loss = criterion(model(x_j0_b, x_j1_b, x_j2_b, x_bos_b, x_c0_b, x_c1_b, x_c2_b, m0_b, m1_b, m2_b), yb)
             loss.backward()
             optimizer.step()
             running += loss.item() * len(yb)
@@ -154,12 +193,13 @@ def main():
         model.eval()
         running = 0.0
         with torch.no_grad():
-            for x_jet_b, x_jcs_b, mask_b, yb, _ in val_loader:
-                x_jet_b = x_jet_b.to(device)
-                x_jcs_b = x_jcs_b.to(device)
-                mask_b  = mask_b.to(device)
-                yb      = yb.to(device)
-                running += criterion(model(x_jet_b, x_jcs_b, mask_b), yb).item() * len(yb)
+            for x_j0_b, x_j1_b, x_j2_b, x_bos_b, x_c0_b, x_c1_b, x_c2_b, m0_b, m1_b, m2_b, yb, _ in val_loader:
+                x_j0_b = x_j0_b.to(device); x_j1_b = x_j1_b.to(device)
+                x_j2_b = x_j2_b.to(device); x_bos_b = x_bos_b.to(device)
+                x_c0_b = x_c0_b.to(device); x_c1_b = x_c1_b.to(device); x_c2_b = x_c2_b.to(device)
+                m0_b   = m0_b.to(device);   m1_b   = m1_b.to(device);   m2_b   = m2_b.to(device)
+                yb     = yb.to(device)
+                running += criterion(model(x_j0_b, x_j1_b, x_j2_b, x_bos_b, x_c0_b, x_c1_b, x_c2_b, m0_b, m1_b, m2_b), yb).item() * len(yb)
         val_loss = running / len(val_ds)
 
         train_losses.append(train_loss)
@@ -188,9 +228,9 @@ def main():
     apply_style(ax, xlabel='Epoch', ylabel='Loss', title='', legend_loc='upper right')
     plt.tight_layout()
     FIG_DIR.mkdir(parents=True, exist_ok=True)
-    fig.savefig(FIG_DIR / f'NNj_{PROCESS}_loss_curve.pdf', bbox_inches='tight')
+    fig.savefig(FIG_DIR / f'NNjjBj_{PROCESS}_loss_curve.pdf', bbox_inches='tight')
     plt.close(fig)
-    print(f'Saved {FIG_DIR / f"NNj_{PROCESS}_loss_curve.pdf"}')
+    print(f'Saved {FIG_DIR / f"NNjjBj_{PROCESS}_loss_curve.pdf"}')
 
 
 if __name__ == '__main__':

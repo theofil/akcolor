@@ -49,6 +49,7 @@ _NAV = '''
 <a class="h3" href="#nnjb-summer26-nnjb">NNjB</a>
 <a class="h3" href="#nnjj-summer26-nnjj">NNjj</a>
 <a class="h3" href="#nnjjb-summer26-nnjjb">NNjjB</a>
+<a class="h3" href="#nnjjbj-summer26-nnjjbj">NNjjBj</a>
 <a class="h2" href="#step-6-run-inference">Step 6 — Inference</a>
 <a class="h2" href="#step-7-head-to-head-comparison">Step 7 — Comparison</a>
 <a class="h2" href="#step-8-publish-plots">Step 8 — Publish</a>

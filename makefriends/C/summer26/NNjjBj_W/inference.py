@@ -1,14 +1,17 @@
 #!/usr/bin/env python3
 """
-Inference script for NNjj (summer26, Herwig Z): ROC curves comparing performance
+Inference script for NNjjBj (summer26, Herwig Z): ROC curves comparing performance
 on the Herwig W test split (training domain) and MG5_Pythia W (transfer test).
 
+Inputs are identical to NNjjB plus the 3rd jet — 4-momentum and constituents,
+zeros when no 3rd jet
+(no bosonM: on-shell generation artifact in the Herwig QCD samples).
 Both generator ROC curves plus single-variable baselines are overlaid on one plot.
 The model ROC curves are also saved to roc_data_{PROCESS}.npz for the summary
 plot made by summer26/plots.py.
 
 Output:
-  ../../figs/summer26/roc_nnjj.pdf
+  ../../figs/summer26/roc_nnjjbj.pdf
 """
 
 import os
@@ -89,20 +92,28 @@ def scale_jcs(x_jcs, scaler):
     return scaler.transform(x_jcs.reshape(-1, N_CONSTIT_FEAT)).reshape(shape).astype(np.float32)
 
 
-def run_nn(model, scalers, x_j0_raw, x_j1_raw, x_c0_raw, x_c1_raw, device):
+def run_nn(model, scalers, x_j0_raw, x_j1_raw, x_j2_raw, x_bos_raw, x_c0_raw, x_c1_raw, x_c2_raw, device):
     x_j0  = scalers['jet0'].transform(x_j0_raw).astype(np.float32)
     x_j1  = scalers['jet1'].transform(x_j1_raw).astype(np.float32)
+    x_j2  = scalers['jet2'].transform(x_j2_raw).astype(np.float32)
+    x_bos = scalers['boson'].transform(x_bos_raw).astype(np.float32)
     x_c0  = scale_jcs(x_c0_raw, scalers['jcs0'])
     x_c1  = scale_jcs(x_c1_raw, scalers['jcs1'])
+    x_c2  = scale_jcs(x_c2_raw, scalers['jcs2'])
     mask0 = (x_c0_raw[..., 2] > 0)
     mask1 = (x_c1_raw[..., 2] > 0)
+    mask2 = (x_c2_raw[..., 2] > 0)
 
     x_j0_t  = torch.from_numpy(x_j0)
     x_j1_t  = torch.from_numpy(x_j1)
+    x_j2_t  = torch.from_numpy(x_j2)
+    x_bos_t = torch.from_numpy(x_bos)
     x_c0_t  = torch.from_numpy(x_c0)
     x_c1_t  = torch.from_numpy(x_c1)
+    x_c2_t  = torch.from_numpy(x_c2)
     mask0_t = torch.from_numpy(mask0)
     mask1_t = torch.from_numpy(mask1)
+    mask2_t = torch.from_numpy(mask2)
 
     BATCH = 512
     logits_list = []
@@ -112,10 +123,14 @@ def run_nn(model, scalers, x_j0_raw, x_j1_raw, x_c0_raw, x_c1_raw, device):
             out = model(
                 x_j0_t [start:end].to(device),
                 x_j1_t [start:end].to(device),
+                x_j2_t [start:end].to(device),
+                x_bos_t[start:end].to(device),
                 x_c0_t [start:end].to(device),
                 x_c1_t [start:end].to(device),
+                x_c2_t [start:end].to(device),
                 mask0_t[start:end].to(device),
                 mask1_t[start:end].to(device),
+                mask2_t[start:end].to(device),
             )
             logits_list.append(out.cpu())
     logits = torch.cat(logits_list).numpy().ravel()
@@ -125,31 +140,40 @@ def run_nn(model, scalers, x_j0_raw, x_j1_raw, x_c0_raw, x_c1_raw, device):
 def main():
     # ── Load Herwig W (training domain) ──────────────────────────────────────
     print('Loading Herwig W ...')
-    x_j0_bkg_hw, x_j1_bkg_hw, x_c0_bkg_hw, x_c1_bkg_hw, _ = load_features(HERE / BKG_FILE)
-    x_j0_sig_hw, x_j1_sig_hw, x_c0_sig_hw, x_c1_sig_hw, _ = load_features(HERE / SIG_FILE)
-    x_j0_all_hw = np.concatenate([x_j0_bkg_hw, x_j0_sig_hw], axis=0)
-    x_j1_all_hw = np.concatenate([x_j1_bkg_hw, x_j1_sig_hw], axis=0)
-    x_c0_all_hw = np.concatenate([x_c0_bkg_hw, x_c0_sig_hw], axis=0)
-    x_c1_all_hw = np.concatenate([x_c1_bkg_hw, x_c1_sig_hw], axis=0)
+    x_j0_bkg_hw, x_j1_bkg_hw, x_j2_bkg_hw, x_bos_bkg_hw, x_c0_bkg_hw, x_c1_bkg_hw, x_c2_bkg_hw, _ = load_features(HERE / BKG_FILE)
+    x_j0_sig_hw, x_j1_sig_hw, x_j2_sig_hw, x_bos_sig_hw, x_c0_sig_hw, x_c1_sig_hw, x_c2_sig_hw, _ = load_features(HERE / SIG_FILE)
+    x_j0_all_hw  = np.concatenate([x_j0_bkg_hw, x_j0_sig_hw], axis=0)
+    x_j1_all_hw  = np.concatenate([x_j1_bkg_hw, x_j1_sig_hw], axis=0)
+    x_j2_all_hw  = np.concatenate([x_j2_bkg_hw, x_j2_sig_hw], axis=0)
+    x_bos_all_hw = np.concatenate([x_bos_bkg_hw, x_bos_sig_hw], axis=0)
+    x_c0_all_hw  = np.concatenate([x_c0_bkg_hw, x_c0_sig_hw], axis=0)
+    x_c1_all_hw  = np.concatenate([x_c1_bkg_hw, x_c1_sig_hw], axis=0)
+    x_c2_all_hw  = np.concatenate([x_c2_bkg_hw, x_c2_sig_hw], axis=0)
     y_all_hw = np.concatenate([np.zeros(len(x_j0_bkg_hw), dtype=np.float32),
                                np.ones (len(x_j0_sig_hw), dtype=np.float32)], axis=0)
 
     idx_test       = np.load(HERE / f'split_indices_{PROCESS}.npz')['test_idx']
     x_j0_test_raw  = x_j0_all_hw[idx_test]
     x_j1_test_raw  = x_j1_all_hw[idx_test]
+    x_j2_test_raw  = x_j2_all_hw[idx_test]
+    x_bos_test_raw = x_bos_all_hw[idx_test]
     x_c0_test_raw  = x_c0_all_hw[idx_test]
     x_c1_test_raw  = x_c1_all_hw[idx_test]
+    x_c2_test_raw  = x_c2_all_hw[idx_test]
     y_test_hw      = y_all_hw[idx_test]
     print(f'Herwig test: {len(y_test_hw)} events  (sig={int(y_test_hw.sum())}, bkg={int((y_test_hw==0).sum())})')
 
     # ── Load MG5_Pythia W (transfer test, full dataset) ──────────────────────
     print('Loading MG5_Pythia W ...')
-    x_j0_bkg_mg5, x_j1_bkg_mg5, x_c0_bkg_mg5, x_c1_bkg_mg5, _ = load_features(HERE / BKG_FILE_MG5)
-    x_j0_sig_mg5, x_j1_sig_mg5, x_c0_sig_mg5, x_c1_sig_mg5, _ = load_features(HERE / SIG_FILE_MG5)
-    x_j0_all_mg5 = np.concatenate([x_j0_bkg_mg5, x_j0_sig_mg5], axis=0)
-    x_j1_all_mg5 = np.concatenate([x_j1_bkg_mg5, x_j1_sig_mg5], axis=0)
-    x_c0_all_mg5 = np.concatenate([x_c0_bkg_mg5, x_c0_sig_mg5], axis=0)
-    x_c1_all_mg5 = np.concatenate([x_c1_bkg_mg5, x_c1_sig_mg5], axis=0)
+    x_j0_bkg_mg5, x_j1_bkg_mg5, x_j2_bkg_mg5, x_bos_bkg_mg5, x_c0_bkg_mg5, x_c1_bkg_mg5, x_c2_bkg_mg5, _ = load_features(HERE / BKG_FILE_MG5)
+    x_j0_sig_mg5, x_j1_sig_mg5, x_j2_sig_mg5, x_bos_sig_mg5, x_c0_sig_mg5, x_c1_sig_mg5, x_c2_sig_mg5, _ = load_features(HERE / SIG_FILE_MG5)
+    x_j0_all_mg5  = np.concatenate([x_j0_bkg_mg5, x_j0_sig_mg5], axis=0)
+    x_j1_all_mg5  = np.concatenate([x_j1_bkg_mg5, x_j1_sig_mg5], axis=0)
+    x_j2_all_mg5  = np.concatenate([x_j2_bkg_mg5, x_j2_sig_mg5], axis=0)
+    x_bos_all_mg5 = np.concatenate([x_bos_bkg_mg5, x_bos_sig_mg5], axis=0)
+    x_c0_all_mg5  = np.concatenate([x_c0_bkg_mg5, x_c0_sig_mg5], axis=0)
+    x_c1_all_mg5  = np.concatenate([x_c1_bkg_mg5, x_c1_sig_mg5], axis=0)
+    x_c2_all_mg5  = np.concatenate([x_c2_bkg_mg5, x_c2_sig_mg5], axis=0)
     y_all_mg5 = np.concatenate([np.zeros(len(x_j0_bkg_mg5), dtype=np.float32),
                                 np.ones (len(x_j0_sig_mg5), dtype=np.float32)], axis=0)
     print(f'MG5_Pythia: {len(y_all_mg5)} events  (sig={int(y_all_mg5.sum())}, bkg={int((y_all_mg5==0).sum())})')
@@ -164,13 +188,13 @@ def main():
     model.eval()
 
     # ── NN scores ─────────────────────────────────────────────────────────────
-    scores_hw  = run_nn(model, scalers, x_j0_test_raw, x_j1_test_raw, x_c0_test_raw, x_c1_test_raw, device)
-    scores_mg5 = run_nn(model, scalers, x_j0_all_mg5,  x_j1_all_mg5,  x_c0_all_mg5,  x_c1_all_mg5,  device)
+    scores_hw  = run_nn(model, scalers, x_j0_test_raw, x_j1_test_raw, x_j2_test_raw, x_bos_test_raw, x_c0_test_raw, x_c1_test_raw, x_c2_test_raw, device)
+    scores_mg5 = run_nn(model, scalers, x_j0_all_mg5,  x_j1_all_mg5,  x_j2_all_mg5,  x_bos_all_mg5,  x_c0_all_mg5,  x_c1_all_mg5,  x_c2_all_mg5,  device)
 
     fpr_hw,  tpr_hw,  auc_hw  = roc_from_scores(y_test_hw, scores_hw)
     fpr_mg5, tpr_mg5, auc_mg5 = roc_from_scores(y_all_mg5, scores_mg5)
-    print(f'NNjj Herwig    AUC = {auc_hw:.4f}')
-    print(f'NNjj MG5+Py    AUC = {auc_mg5:.4f}')
+    print(f'NNjjBj Herwig    AUC = {auc_hw:.4f}')
+    print(f'NNjjBj MG5+Py    AUC = {auc_mg5:.4f}')
 
     # ── Save ROC data for the all-NN summary plot (summer26/plots.py) ────────
     fpr_hw_s,  tpr_hw_s  = decimate_roc(fpr_hw,  tpr_hw)
@@ -180,7 +204,6 @@ def main():
              fpr_mg5=fpr_mg5_s, tpr_mg5=tpr_mg5_s, auc_mg5=auc_mg5)
     print(f'Saved {HERE / f"roc_data_{PROCESS}.npz"}')
 
-
     # ── Single-variable ROCs (Herwig test set, leading-jet scalars) ──────────
     x_j0_bkg_test = x_j0_test_raw[y_test_hw == 0]
     x_j0_sig_test = x_j0_test_raw[y_test_hw == 1]
@@ -189,9 +212,9 @@ def main():
     fig, ax = plt.subplots(figsize=FIG_SIZE)
 
     ax.plot(fpr_hw,  tpr_hw,  linewidth=3, color='black',
-            label=f'NNjj Herwig W  AUC={auc_hw:.3f}')
+            label=f'NNjjBj Herwig W  AUC={auc_hw:.3f}')
     ax.plot(fpr_mg5, tpr_mg5, linewidth=3, color='#1f77b4', linestyle='--',
-            label=f'NNjj MG5+Py W  AUC={auc_mg5:.3f}')
+            label=f'NNjjBj MG5+Py W  AUC={auc_mg5:.3f}')
 
     for i, (label, bins, col_idx) in enumerate(ROC_VARS):
         fpr_v, tpr_v, auc_v = roc_from_histograms(
@@ -207,7 +230,7 @@ def main():
                 title='', xlim=(0, 1), ylim=(0, 1), legend_loc='lower right')
     plt.tight_layout()
     FIG_DIR.mkdir(parents=True, exist_ok=True)
-    out = FIG_DIR / f'roc_nnjj_{PROCESS}.pdf'
+    out = FIG_DIR / f'roc_nnjjbj_{PROCESS}.pdf'
     fig.savefig(out, bbox_inches='tight')
     plt.close(fig)
     print(f'Saved {out}')

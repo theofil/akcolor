@@ -1,5 +1,5 @@
 """
-Creates the 9 missing (network, process) directories for W and H variants.
+Creates the 10 missing (network, process) directories for W and H variants.
 Run once from the summer26/ directory or with python summer26/make_variants.py.
 """
 import os
@@ -9,7 +9,7 @@ from pathlib import Path
 
 BASE = Path(__file__).parent
 
-# NNjB_H and NNjjB_H are deliberately NOT in VARIANTS: they keep bosonM,
+# NNjB_H, NNjjB_H and NNjjBj_H are deliberately NOT in VARIANTS: they keep bosonM,
 # which the base (Z) and _W dirs dropped as a Herwig Z/W generation artifact
 # (see commit 9ce67b6). Regenerating them from base would silently drop the
 # feature and desync them from the trained best_model_H.pt (input dim).
@@ -21,6 +21,7 @@ VARIANTS = [
     ('NNjj',   'NNjj_H',   'H'),
     ('NNjj',   'NNjj_W',   'W'),
     ('NNjjB',  'NNjjB_W',  'W'),
+    ('NNjjBj', 'NNjjBj_W', 'W'),
     ('NNkin',  'NNkin_H',  'H'),
     ('NNkin',  'NNkin_W',  'W'),
 ]
@@ -28,9 +29,10 @@ VARIANTS = [
 
 def check_boson_invariant(base=BASE):
     """bosonM must stay in the _H boson nets and out of the base/W ones."""
-    must_have    = ['NNjB_H/dataset.py', 'NNjjB_H/dataset.py']
-    must_not_have = ['NNjB/dataset.py',  'NNjB_W/dataset.py',
-                     'NNjjB/dataset.py', 'NNjjB_W/dataset.py']
+    must_have    = ['NNjB_H/dataset.py', 'NNjjB_H/dataset.py', 'NNjjBj_H/dataset.py']
+    must_not_have = ['NNjB/dataset.py',   'NNjB_W/dataset.py',
+                     'NNjjB/dataset.py',  'NNjjB_W/dataset.py',
+                     'NNjjBj/dataset.py', 'NNjjBj_W/dataset.py']
     errors = []
     for rel in must_have:
         if "'bosonM'" not in (base / rel).read_text():

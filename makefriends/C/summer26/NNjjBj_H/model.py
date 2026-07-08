@@ -1,0 +1,56 @@
+import torch
+import torch.nn as nn
+from dataset import N_JET_FEAT, N_JET2_FEAT, N_BOSON_FEAT, N_CONSTIT_FEAT
+
+
+class JetNN(nn.Module):
+    """
+    DeepSets-style network for VBF vs QCD classification (NNjjBj variant).
+    Uses raw low-level features for both the leading and sub-leading jets,
+    plus the 3rd jet — 4-momentum and constituents, zeros when no 3rd jet —
+    and the generator-boson 4-vector as event-level scalars. The phi MLP
+    is shared across all three jets' constituents; an absent 3rd jet has an
+    all-False mask, so its pooled vector is exactly zero.
+
+    phi: shared MLP applied to each constituent → masked sum pooling per jet
+    rho: MLP on [pool0, pool1, pool2, jet0_scalars, jet1_scalars, jet2_scalars, boson_scalars] → logit
+
+    Inputs:
+      x_jet0  : (B, N_JET_FEAT=3)               — jet 0 scalars: η, m, pT (normalised)
+      x_jet1  : (B, N_JET_FEAT=3)               — jet 1 scalars: η, m, pT (normalised)
+      x_jet2  : (B, N_JET2_FEAT=4)              — jet 2 scalars: η, m, φ, pT (normalised; zeros if absent)
+      x_boson : (B, N_BOSON_FEAT=4)             — boson pT, η, φ, M (normalised)
+      x_jcs0  : (B, NC_MAX, N_CONSTIT_FEAT=3)   — jet 0 constituent features (normalised)
+      x_jcs1  : (B, NC_MAX, N_CONSTIT_FEAT=3)   — jet 1 constituent features (normalised)
+      x_jcs2  : (B, NC_MAX, N_CONSTIT_FEAT=3)   — jet 2 constituent features (normalised; zeros if absent)
+      mask0   : (B, NC_MAX)  bool               — True for valid constituents of jet 0
+      mask1   : (B, NC_MAX)  bool               — True for valid constituents of jet 1
+      mask2   : (B, NC_MAX)  bool               — True for valid constituents of jet 2 (all False if absent)
+    Output:
+      (B, 1) raw logit
+    """
+
+    def __init__(self, dropout=0.3):
+        super().__init__()
+        self.phi = nn.Sequential(
+            nn.Linear(N_CONSTIT_FEAT, 64), nn.ReLU(),
+            nn.Linear(64, 64),             nn.ReLU(),
+        )
+        # 64×3 (pools jet0/1/2) + 3 (jet0) + 3 (jet1) + 4 (jet2) + 4 (boson) = 206
+        self.rho = nn.Sequential(
+            nn.Linear(64 + 64 + 64 + N_JET_FEAT + N_JET_FEAT + N_JET2_FEAT + N_BOSON_FEAT, 128), nn.BatchNorm1d(128), nn.ReLU(), nn.Dropout(dropout),
+            nn.Linear(128, 64),                                                                  nn.BatchNorm1d(64),  nn.ReLU(), nn.Dropout(dropout),
+            nn.Linear(64, 1),
+        )
+
+    def _pool(self, x_jcs, mask):
+        B, N, F = x_jcs.shape
+        h = self.phi(x_jcs.view(B * N, F)).view(B, N, -1)   # (B, NC_MAX, 64)
+        return (h * mask.unsqueeze(-1)).sum(dim=1)            # (B, 64) masked sum pool
+
+    def forward(self, x_jet0, x_jet1, x_jet2, x_boson, x_jcs0, x_jcs1, x_jcs2, mask0, mask1, mask2):
+        pool0 = self._pool(x_jcs0, mask0)   # (B, 64)
+        pool1 = self._pool(x_jcs1, mask1)   # (B, 64)
+        pool2 = self._pool(x_jcs2, mask2)   # (B, 64); zero vector when no 3rd jet
+        cat   = torch.cat([pool0, pool1, pool2, x_jet0, x_jet1, x_jet2, x_boson], dim=1)   # (B, 206)
+        return self.rho(cat)
