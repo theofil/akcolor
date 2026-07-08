@@ -407,43 +407,6 @@ These error bars are shown in `figs/summer26/mjj_{W,Z,H}_Run3.pdf`, produced by
 
 ---
 
-## NNj purity study — optimal cut on jet-0 score
-
-Script: `summer26/plots.py` (section starting at line 971).  
-Selection: SR defined by `|ΔY_jj| > 3`, weights scaled to L = 300 fb⁻¹ (Run 3).  
-Generators averaged (Herwig + MG5+Pythia weighted equally per class).
-
-Scanning NNj_jet0 > threshold to maximise S/(S+B), requiring at least
-10 expected signal and 10 expected background events (to avoid the MC-statistics
-floor where B drops to zero in the tail).
-
-| Channel | Selection | S | B | S/(S+B) | S/√B |
-|---------|-----------|--:|--:|--------:|-----:|
-| **H** | SR only (`\|dYjj\|>3`) | 174 000 | 85 000 | 0.672 | 597 |
-| **H** | **optimal NNj_jet0 > 0.936** | **1 095** | **40** | **0.965** | **174** |
-| **H** | **optimal mjj > 1988 GeV** | **2 130** | **199** | **0.915** | **151** |
-| **W** | SR only | 415 000 | 24 700 000 | 0.017 | 83 |
-| **W** | **optimal NNj_jet0 > 0.974** | **221** | **247** | **0.472** | **14** |
-| **W** | **optimal mjj > 1997 GeV** | **23 118** | **102 334** | **0.184** | **72** |
-| **Z** | SR only | 67 500 | 4 800 000 | 0.014 | 31 |
-| **Z** | **optimal NNj_jet0 > 0.975** | **33** | **51** | **0.392** | **4.6** |
-| **Z** | **optimal mjj > 1999 GeV** | **4 056** | **18 449** | **0.180** | **30** |
-
-**Key observations:**
-
-- **H channel** starts at S/(S+B) = 0.67 already (QCD H+jj cross-section is small).
-  With score > 0.936 it reaches **0.965**, keeping 0.6% of signal and 0.05% of
-  background. S/√B peaks at moderate cuts (score > 0.5, S/√B = 642) rather than
-  at the purity-optimal threshold.
-- **W and Z channels** start background-dominated (purity ~1–2%). The NN can push
-  purity to **0.47** (W) and **0.39** (Z), but only by retaining a tiny signal tail
-  (~0.05% of background remains). S/√B peaks at moderate cuts (score > 0.7) rather
-  than at the purity-optimal threshold.
-- The optimal thresholds for W/Z (~0.974–0.975) sit near the MC-statistics floor;
-  the few tens of background events surviving there carry large MC uncertainties.
-
----
-
 ## SR_Run3 optimization — per-channel (mjj, |ΔYjj|, NNj_jet0) cuts
 
 Script: `summer26/plots.py` (SR optimization section, just before the
@@ -459,9 +422,14 @@ The table is regenerated on every `plots.py` run and written to
 
 | Channel | mjj cut (GeV) | \|ΔYjj\| cut | NN cut | S | B | S/(S+B) | raw S | raw B |
 |---------|--------------:|------------:|-------:|--:|--:|--------:|------:|------:|
-| **H** | > 1250 | > 4.9 | > 0.90 | 1 471 | 15 | **0.990** | 1 659 | 10 |
-| **W** | > 2050 | > 5.0 | > 0.86 | 4 632 | 5 192 | **0.472** | 2 059 | 10 |
+| **H** | > 870 | > 4.7 | > 0.96 | 4 724 | 15 | **0.997** | 5 328 | 10 |
+| **W** | > 2210 | > 4.9 | > 0.85 | 4 526 | 5 192 | **0.466** | 2 017 | 10 |
 | **Z** | > 1320 | > 4.2 | > 0.92 | 1 275 | 3 158 | **0.288** | 3 799 | 31 |
+
+Since 2026-07-08 `NNj_jet0` holds **per-channel** scores (each channel's own
+Herwig-trained net — see the score-columns section below), which is what this
+table reflects: H gained strongly over the earlier Z-net scores
+(0.990 → 0.997 at 3.2× the signal), W moved slightly, Z is unchanged.
 
 For reference (Herwig): the previous common SR (`|ΔYjj| > 3`, `mjj > 2` TeV)
 gave H 0.937, W 0.194, Z 0.172; the 2-variable (mjj, |ΔYjj|) optimum gave
@@ -477,6 +445,40 @@ these per-channel optimized cuts (shown in each figure title). The companion
 `jetSPVA_jet1_SR_Run3_*.pdf` figures show |θs| of the **sub-leading** jet in the
 same SR — largely uncorrelated with the jet-0 |θs| (the NNj cut acts on
 jet 0 only).
+
+---
+
+## Event-level NN score columns in the h5 files (per-channel, 2026-07-08)
+
+Each production h5 file carries per-event sigmoid scores written back by the
+`save_scores.py` script of the corresponding net directory (HTCondor GPU jobs,
+`save_scores.sub`):
+
+| Column | Net | Inputs |
+|--------|-----|--------|
+| `NNj_jet0` | NNj | leading jet scalars + constituents (score of jet 0) |
+| `NNj_jet1` | NNj | same net applied to the subleading jet |
+| `NNjB` | NNjB | leading jet + constituents + boson scalars (one score/event) |
+| `NNjjBj` | NNjjBj | jets 0+1 with constituents, 3rd-jet 4-mom + constituents, boson scalars (one score/event) |
+
+**Per-channel convention:** every net is trained on its own channel's Herwig
+samples and applied only to that channel's 4 files — Herwig **and** MG5+Pythia
+(generator-transfer inference is intended; cross-process inference is not).
+Concretely: `NNjB_H/best_model_H.pt` scores `QCDHjj_*` / `VBFH_*`, the base
+(Z) dirs score the Z files, `_W` dirs the W files. The `_H` nets keep the
+`bosonM` input; the base/W nets exclude it (Herwig on-shell generation
+artifact, commit 9ce67b6).
+
+This replaces the original NNj setup where the **Z-trained** net scored all
+12 files; the `NNj_jet0`/`NNj_jet1` columns were rewritten per-channel on
+2026-07-08 (H- and W-file scores changed, Z unchanged). Validation: for every
+net/channel, the AUC recomputed from the stored scores on the full MG5+Pythia
+files reproduces `auc_mg5` in the dir's `roc_data_{P}.npz` to 4 decimals.
+
+Writes go through a small retry loop (`write_dataset(s)` in `save_scores.py`):
+EOS FUSE occasionally fails HDF5 metadata operations on the GPU nodes with
+`bad object header version number`; if a job dies there anyway, delete the
+stale column interactively from lxplus and resubmit (creates don't hit it).
 
 ---
 
@@ -523,7 +525,7 @@ makefriends/C/
     │   ├── model.py        # JetNN: phi(3→64→64) + masked pool + rho(67→128→64→1)
     │   ├── train.py        # training loop
     │   ├── inference.py    # ROC on Herwig test + MG5 transfer test
-    │   ├── save_scores.py  # writes NNj_jet0/NNj_jet1 sigmoid scores into all 12 h5 files
+    │   ├── save_scores.py  # writes NNj_jet0/NNj_jet1 sigmoid scores into this channel's 4 h5 files
     │   ├── style.py        # matplotlib style helpers
     │   ├── train_gpu.sh    # LCG_106_cuda wrapper
     │   └── train_gpu.sub   # HTCondor submission
@@ -532,6 +534,7 @@ makefriends/C/
     │   ├── model.py        # JetNN: phi(3→64→64) + masked pool + rho(71→128→64→1)
     │   ├── train.py        # training loop
     │   ├── inference.py    # ROC on Herwig test + MG5 transfer test
+    │   ├── save_scores.py  # writes NNjB event-level score into this channel's 4 h5 files
     │   ├── style.py        # matplotlib style helpers
     │   ├── train_gpu.sh    # LCG_106_cuda wrapper
     │   └── train_gpu.sub   # HTCondor submission
@@ -556,9 +559,12 @@ makefriends/C/
     │   ├── model.py        # JetNN: shared phi(3→64→64) + masked pool per jet (×3) + rho(205→128→64→1)
     │   ├── train.py        # training loop
     │   ├── inference.py    # ROC on Herwig test + MG5 transfer test
+    │   ├── save_scores.py  # writes NNjjBj event-level score into this channel's 4 h5 files
     │   ├── style.py        # matplotlib style helpers
     │   ├── train_gpu.sh    # LCG_106_cuda wrapper
     │   └── train_gpu.sub   # HTCondor submission
     └── <NN>_H/, <NN>_W/    # per-process variants generated by make_variants.py
-                            # (PROCESS="H"/"W", QCD{H,W}jj + VBF{H,W} samples)
+                            # (PROCESS="H"/"W", QCD{H,W}jj + VBF{H,W} samples);
+                            # save_scores.py copies are hand-maintained per channel
+                            # (make_variants.py skips them by design)
 ```

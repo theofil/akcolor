@@ -29,7 +29,7 @@ sys.path.insert(0, str(HERE))
 from dataset import JET_FEATURES, CONSTIT_FEATURES, N_CONSTIT_FEAT
 from model import JetNN
 
-PROCESS = "Z"
+PROCESS = "W"
 
 H5_FILES = [
     HERE / f'../../friends/summer26/QCD{PROCESS}jj_herwig.h5',

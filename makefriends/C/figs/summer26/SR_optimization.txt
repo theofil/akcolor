@@ -2,6 +2,6 @@ SR_Run3 optimization (Herwig only, L = 300 fb^-1)
 maximize S/(S+B) subject to S > 1000 and >= 10 raw MC background events
 
 chan  mjj cut |dYjj| cut  NN cut          S          B  S/(S+B)    raw S    raw B
-   H     1250        4.9    0.90     1470.9       15.2    0.990     1659       10
-   W     2050        5.0    0.86     4632.2     5191.6    0.472     2059       10
+   H      870        4.7    0.96     4724.0       15.2    0.997     5328       10
+   W     2210        4.9    0.85     4526.2     5191.6    0.466     2017       10
    Z     1320        4.2    0.92     1275.1     3157.6    0.288     3799       31

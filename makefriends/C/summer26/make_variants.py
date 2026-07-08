@@ -51,8 +51,11 @@ def check_boson_invariant(base=BASE):
 
 SKIP_DIRS = {'logs', '__pycache__'}
 SKIP_EXTS = {'.pt', '.pkl', '.npz', '.pdf'}
-# save_scores runs once from the base (Z) dir and writes the NNj_jet0/jet1
-# h5 columns — variants must not get a copy (they would clobber those columns)
+# save_scores.py is per-channel and hand-maintained in every dir (base and
+# variants): each dir's copy scores only its own process's 4 h5 files with its
+# PROCESS-matched model. Variants must not get a base-derived copy — it would
+# silently overwrite the hand-placed one (PROCESS line aside, the _H dirs also
+# pair with bosonM-keeping dataset.py).
 SKIP_PREFIXES = ('save_scores',)
 
 

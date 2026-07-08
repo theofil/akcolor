@@ -1,0 +1,12 @@
+executable     = /eos/home-t/theofil/work/akcolor/makefriends/C/summer26/NNj_W/save_scores.sh
+output         = /eos/home-t/theofil/work/akcolor/makefriends/C/summer26/NNj_W/logs/save_scores.$(ClusterId).out
+error          = /eos/home-t/theofil/work/akcolor/makefriends/C/summer26/NNj_W/logs/save_scores.$(ClusterId).err
+log            = /eos/home-t/theofil/work/akcolor/makefriends/C/summer26/NNj_W/logs/save_scores.$(ClusterId).log
+
+request_cpus   = 2
+request_memory = 8GB
+request_gpus   = 1
+
++JobFlavour    = "microcentury"
+
+queue
