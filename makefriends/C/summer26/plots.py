@@ -67,7 +67,7 @@ ROOT.gStyle.SetOptTitle(0)
 
 FIGS.mkdir(parents=True, exist_ok=True)
 
-SKIP_HISTS   = {'hLeadJetSPVA', 'hLeadJetSPVM', 'hJetPt1', 'hNJets'}
+SKIP_HISTS   = {'hLeadJetSPVA', 'hLeadJetSPVM', 'hJetPt1', 'hNJets', 'jetShapeRaw'}
 HIST_CLASSES = {'TH1F', 'TH2F', 'TH2Poly'}
 
 for root_file in sorted(DATA_DIR.glob('*friend.root')):
@@ -111,7 +111,7 @@ for root_file in sorted(DATA_DIR.glob('*friend.root')):
 for stale in FIGS.glob('*.friend.pdf'):
     stale.unlink()
     print('Removed', stale)
-for pattern in ('hJetPt1_*.pdf', 'hNJets_*.pdf'):
+for pattern in ('hJetPt1_*.pdf', 'hNJets_*.pdf', 'jetShapeRaw_*.pdf'):
     for stale in FIGS.glob(pattern):
         stale.unlink()
         print('Removed', stale)
@@ -122,8 +122,6 @@ for stale_name in (
     'jetPt.pdf', 'jetEta.pdf', 'jetNC.pdf', 'jetNC_ratio.pdf',
     'jet_roc.pdf', 'jetSPVA.pdf', 'jetSPVA_ratio.pdf',
     'jetSPVM.pdf', 'jetSPVM_ratio.pdf',
-    'jetSPVA_SR_Run3H.pdf',
-    'jetSPVA_SR_Run3_W.pdf', 'jetSPVA_SR_Run3_Z.pdf', 'jetSPVA_SR_Run3_H.pdf',
 ):
     p = FIGS / stale_name
     if p.exists():
@@ -133,30 +131,30 @@ for stale_name in (
 # ── Sample catalog ─────────────────────────────────────────────────────────────
 SAMPLES_BY_PROC = {
     'H': [
-        {'name': 'QCDHjj_mg5_pythia', 'label': 'QCD H  MG5+Pythia', 'group': 'QCD', 'gen': 'mg5'},
+        {'name': 'QCDHjj_mg5_pythia', 'label': 'QCD H  Pythia', 'group': 'QCD', 'gen': 'mg5'},
         {'name': 'QCDHjj_herwig',     'label': 'QCD H  Herwig',      'group': 'QCD', 'gen': 'herwig'},
-        {'name': 'VBFH_mg5_pythia',   'label': 'VBF H  MG5+Pythia',  'group': 'VBF', 'gen': 'mg5'},
+        {'name': 'VBFH_mg5_pythia',   'label': 'VBF H  Pythia',  'group': 'VBF', 'gen': 'mg5'},
         {'name': 'VBFH_herwig',       'label': 'VBF H  Herwig',      'group': 'VBF', 'gen': 'herwig'},
     ],
     'W': [
-        {'name': 'QCDWjj_mg5_pythia', 'label': 'QCD W  MG5+Pythia', 'group': 'QCD', 'gen': 'mg5'},
+        {'name': 'QCDWjj_mg5_pythia', 'label': 'QCD W  Pythia', 'group': 'QCD', 'gen': 'mg5'},
         {'name': 'QCDWjj_herwig',     'label': 'QCD W  Herwig',      'group': 'QCD', 'gen': 'herwig'},
-        {'name': 'VBFW_mg5_pythia',   'label': 'VBF W  MG5+Pythia',  'group': 'VBF', 'gen': 'mg5'},
+        {'name': 'VBFW_mg5_pythia',   'label': 'VBF W  Pythia',  'group': 'VBF', 'gen': 'mg5'},
         {'name': 'VBFW_herwig',       'label': 'VBF W  Herwig',      'group': 'VBF', 'gen': 'herwig'},
     ],
     'Z': [
-        {'name': 'QCDZjj_mg5_pythia', 'label': 'QCD Z  MG5+Pythia', 'group': 'QCD', 'gen': 'mg5'},
+        {'name': 'QCDZjj_mg5_pythia', 'label': 'QCD Z  Pythia', 'group': 'QCD', 'gen': 'mg5'},
         {'name': 'QCDZjj_herwig',     'label': 'QCD Z  Herwig',      'group': 'QCD', 'gen': 'herwig'},
-        {'name': 'VBFZ_mg5_pythia',   'label': 'VBF Z  MG5+Pythia',  'group': 'VBF', 'gen': 'mg5'},
+        {'name': 'VBFZ_mg5_pythia',   'label': 'VBF Z  Pythia',  'group': 'VBF', 'gen': 'mg5'},
         {'name': 'VBFZ_herwig',       'label': 'VBF Z  Herwig',      'group': 'VBF', 'gen': 'herwig'},
     ],
 }
 # color by group (VBF/QCD), linestyle by generator
 group_colors     = {'VBF': 'steelblue', 'QCD': 'tomato'}
-gen_styles       = {'mg5': '-', 'herwig': '--'}
+gen_styles       = {'mg5': '--', 'herwig': '-'}
 # for ratio plots: color by generator
 gen_colors_ratio = {'mg5': 'black', 'herwig': 'royalblue'}
-gen_labels_ratio = {'mg5': 'MG5+Pythia', 'herwig': 'Herwig'}
+gen_labels_ratio = {'mg5': 'Pythia', 'herwig': 'Herwig'}
 
 # ── Leading-jet |SPVA| comparison ────────────────────────────────────────────
 bins        = np.linspace(0, np.pi, 21)
@@ -263,6 +261,84 @@ for proc, samples in SAMPLES_BY_PROC.items():
     fig.savefig(outpath, bbox_inches='tight')
     print('Saved', outpath)
     plt.close(fig)
+
+# ── Leading-jet |SPVA| combined W/Z/H (all in one crowded diagram) ──────────
+# color = boson (W/Z/H, matching index3.php palette), linestyle = VBF/QCD.
+# Filenames carry no trailing _W/_Z/_H boson suffix, so index3.php's
+# glob-based W/Z/H triplet grouping does not sweep these in.
+boson_color_combined = {'W': '#1a6eb5', 'Z': '#2e8b57', 'H': '#b52020'}
+group_ls_combined    = {'VBF': '-', 'QCD': '--'}
+combined_ylim        = (0.25, 0.46)
+
+def _read_spva_density(fpath):
+    if not fpath.exists():
+        print(f'  Skipping {fpath} (not found)')
+        return None, None
+    with uproot.open(str(fpath)) as rf:
+        if 'hLeadJetSPVA' not in rf:
+            print(f'  hLeadJetSPVA not found in {fpath}')
+            return None, None
+        h = rf['hLeadJetSPVA']
+        counts, variances = h.values(), h.variances()
+    norm = counts.sum() * bin_width
+    if norm <= 0:
+        return None, None
+    return counts / norm, np.sqrt(variances) / norm
+
+# -- Herwig only: 6 curves ----------------------------------------------------
+fig, ax = plt.subplots(figsize=FIG_SIZE)
+for proc, samples in SAMPLES_BY_PROC.items():
+    for group in ('VBF', 'QCD'):
+        s = next(s for s in samples if s['group'] == group and s['gen'] == 'herwig')
+        hist, hist_err = _read_spva_density(DATA_DIR / f'{s["name"]}.friend.root')
+        if hist is None:
+            continue
+        ax.hist(bin_centers, bins=bins, weights=hist, histtype='step',
+                linewidth=3, color=boson_color_combined[proc], linestyle=group_ls_combined[group],
+                label=f'{proc} {group} Herwig')
+        ax.errorbar(bin_centers, hist, yerr=hist_err, fmt='none',
+                    color=boson_color_combined[proc], capsize=3, capthick=1, elinewidth=1)
+apply_style(ax,
+            xlabel=r'$|\theta_s|$ [rad]',
+            ylabel='Normalized density [1/rad]',
+            title='',
+            xlim=(0, np.pi), ylim=combined_ylim,
+            legend_loc='upper right')
+plt.tight_layout()
+outpath = str(FIGS / 'jetSPVA_combined_herwig.pdf')
+fig.savefig(outpath, bbox_inches='tight')
+print('Saved', outpath)
+plt.close(fig)
+
+# -- Both generators: 12 curves, generator encoded via alpha/linewidth -------
+gen_alpha_combined = {'mg5': 1.0, 'herwig': 0.5}
+gen_lw_combined     = {'mg5': 3.0, 'herwig': 1.8}
+gen_label_combined  = {'mg5': 'Pythia', 'herwig': 'Herwig'}
+
+fig, ax = plt.subplots(figsize=FIG_SIZE)
+for proc, samples in SAMPLES_BY_PROC.items():
+    for group in ('VBF', 'QCD'):
+        for gen in ('mg5', 'herwig'):
+            s = next(s for s in samples if s['group'] == group and s['gen'] == gen)
+            hist, hist_err = _read_spva_density(DATA_DIR / f'{s["name"]}.friend.root')
+            if hist is None:
+                continue
+            ax.hist(bin_centers, bins=bins, weights=hist, histtype='step',
+                    linewidth=gen_lw_combined[gen], alpha=gen_alpha_combined[gen],
+                    color=boson_color_combined[proc], linestyle=group_ls_combined[group],
+                    label=f'{proc} {group} {gen_label_combined[gen]}')
+apply_style(ax,
+            xlabel=r'$|\theta_s|$ [rad]',
+            ylabel='Normalized density [1/rad]',
+            title='',
+            xlim=(0, np.pi), ylim=combined_ylim,
+            legend_loc='upper right')
+ax.legend(loc='upper right', frameon=False, fontsize=7, ncol=3)
+plt.tight_layout()
+outpath = str(FIGS / 'jetSPVA_combined_all.pdf')
+fig.savefig(outpath, bbox_inches='tight')
+print('Saved', outpath)
+plt.close(fig)
 
 # ── Leading-jet PVM |t⃗| comparison ──────────────────────────────────────────
 spvm_bins        = np.linspace(0, 0.06, 21)
@@ -492,7 +568,7 @@ roc_vars = [
     (r'$m_{jj}$',        '-.',  _tree_counts('mjj',  np.arange(0, 2010, 10))),
 ]
 gen_colors_roc = {'mg5': 'black', 'herwig': 'royalblue'}
-gen_labels_roc = {'mg5': 'MG5', 'herwig': 'Herwig'}
+gen_labels_roc = {'mg5': 'Pythia', 'herwig': 'Herwig'}
 
 for proc, samples in SAMPLES_BY_PROC.items():
     fig, ax = plt.subplots(figsize=FIG_SIZE)
@@ -557,7 +633,7 @@ for proc in SAMPLES_BY_PROC:
         ax.plot(d['fpr_hw'],  d['tpr_hw'],  linewidth=2, color=color, linestyle='-',
                 label=f'{nn} Herwig  AUC={float(d["auc_hw"]):.3f}')
         ax.plot(d['fpr_mg5'], d['tpr_mg5'], linewidth=2, color=color, linestyle='--',
-                label=f'{nn} MG5+Py  AUC={float(d["auc_mg5"]):.3f}')
+                label=f'{nn} Pythia  AUC={float(d["auc_mg5"]):.3f}')
         n_curves += 2
     if n_curves == 0:
         plt.close(fig)
@@ -607,51 +683,6 @@ for proc, samples in SAMPLES_BY_PROC.items():
                 legend_loc='upper right')
     plt.tight_layout()
     outpath = str(FIGS / f'mjj_{proc}.pdf')
-    fig.savefig(outpath, bbox_inches='tight')
-    print('Saved', outpath)
-    plt.close(fig)
-
-# ── mjj distribution Run3 (L = 300 000 pb⁻¹ = 300 fb⁻¹) ────────────────────
-L_RUN3 = 300_000.0  # pb^{-1}
-
-for proc, samples in SAMPLES_BY_PROC.items():
-    fig, ax = plt.subplots(figsize=FIG_SIZE)
-    for s in samples:
-        fpath = DATA_DIR / f'{s["name"]}.friend.root'
-        if not fpath.exists():
-            print(f'  Skipping {fpath} (not found)')
-            continue
-        with uproot.open(str(fpath)) as rf:
-            if 'events' not in rf:
-                print(f'  events tree not found in {fpath}')
-                continue
-            mjj_vals  = rf['events']['mjj'].array(library='np').astype(float)
-            kw_vals   = rf['events']['kWeight'].array(library='np').astype(float)
-            dyjj_vals = rf['events']['dYjj'].array(library='np').astype(float)
-        sr = np.abs(dyjj_vals) > 3.0
-        mjj_vals, kw_vals = mjj_vals[sr], kw_vals[sr]
-        counts_pb, _ = np.histogram(np.clip(mjj_vals, mjj_bins[0], mjj_bins[-1]),
-                                    bins=mjj_bins, weights=kw_vals)
-        counts_run3 = counts_pb * L_RUN3
-        yerr    = np.sqrt(np.maximum(counts_run3, 0))
-        yerr_lo = np.minimum(yerr, counts_run3)
-        color  = group_colors[s['group']]
-        lstyle = gen_styles[s['gen']]
-        ax.hist(mjj_bin_centers, bins=mjj_bins, weights=counts_run3,
-                histtype='step', linewidth=3,
-                color=color, linestyle=lstyle, label=s['label'])
-        ax.errorbar(mjj_bin_centers, counts_run3,
-                    yerr=[yerr_lo, yerr],
-                    fmt='none', ecolor=color, elinewidth=1, capsize=2, alpha=0.6)
-    apply_style(ax,
-                xlabel=r'$m_{jj}$ [GeV]',
-                ylabel=r'events / 10 GeV / 300 fb$^{-1}$',
-                title=r'SR: $|\Delta Y_{jj}| > 3$',
-                xlim=(0, 2000),
-                log_y=True,
-                legend_loc='upper right')
-    plt.tight_layout()
-    outpath = str(FIGS / f'mjj_{proc}_Run3.pdf')
     fig.savefig(outpath, bbox_inches='tight')
     print('Saved', outpath)
     plt.close(fig)
@@ -955,44 +986,6 @@ for score_col, score_xlabel in SCORE_COLS:
     print('Saved', outpath)
     plt.close(fig)
 
-# scores in SR (|dYjj| > 3, same selection as mjj_Run3)
-for score_col, score_xlabel in SCORE_COLS:
-  for proc, samples in SAMPLES_BY_PROC.items():
-    fig, ax = plt.subplots(figsize=FIG_SIZE)
-    for s in samples:
-        fpath = DATA_DIR / f'{s["name"]}.h5'
-        if not fpath.exists():
-            print(f'  Skipping {fpath} (not found)')
-            continue
-        with h5py.File(fpath, 'r') as f:
-            if score_col not in f:
-                print(f'  {score_col} not found in {fpath}')
-                continue
-            score = f[score_col][:].astype(float)
-            kw    = f['kWeight'][:].astype(float)
-            dYjj  = f['dYjj'][:].astype(float)
-        sr = np.abs(dYjj) > 3.0
-        score, kw = score[sr], kw[sr]
-        counts, _ = np.histogram(score, bins=score_bins, weights=kw)
-        norm = counts.sum() * score_bin_width
-        if norm <= 0:
-            continue
-        hist = counts / norm
-        ax.hist(score_bin_centers, bins=score_bins, weights=hist, histtype='step',
-                linewidth=3, color=group_colors[s['group']], linestyle=gen_styles[s['gen']],
-                label=s['label'])
-    apply_style(ax,
-                xlabel=score_xlabel,
-                ylabel='Normalized density',
-                title=r'SR: $|\Delta Y_{jj}| > 3$',
-                xlim=(0, 1),
-                legend_loc='upper center')
-    plt.tight_layout()
-    outpath = str(FIGS / f'{score_col}_{proc}_Run3.pdf')
-    fig.savefig(outpath, bbox_inches='tight')
-    print('Saved', outpath)
-    plt.close(fig)
-
 # scores inclusive, absolute norm, log-y (same as mjj)
 for score_col, score_xlabel in SCORE_COLS:
   for proc, samples in SAMPLES_BY_PROC.items():
@@ -1024,194 +1017,6 @@ for score_col, score_xlabel in SCORE_COLS:
     fig.savefig(outpath, bbox_inches='tight')
     print('Saved', outpath)
     plt.close(fig)
-
-# scores in SR, absolute norm × L_RUN3, log-y (same as mjj_Run3)
-for score_col, score_xlabel in SCORE_COLS:
-  for proc, samples in SAMPLES_BY_PROC.items():
-    fig, ax = plt.subplots(figsize=FIG_SIZE)
-    for s in samples:
-        fpath = DATA_DIR / f'{s["name"]}.h5'
-        if not fpath.exists():
-            print(f'  Skipping {fpath} (not found)')
-            continue
-        with h5py.File(fpath, 'r') as f:
-            if score_col not in f:
-                print(f'  {score_col} not found in {fpath}')
-                continue
-            score = f[score_col][:].astype(float)
-            kw    = f['kWeight'][:].astype(float)
-            dYjj  = f['dYjj'][:].astype(float)
-        sr = np.abs(dYjj) > 3.0
-        score, kw = score[sr], kw[sr]
-        counts_pb, _ = np.histogram(score, bins=score_bins, weights=kw)
-        counts_run3  = counts_pb * L_RUN3
-        yerr    = np.sqrt(np.maximum(counts_run3, 0))
-        yerr_lo = np.minimum(yerr, counts_run3)
-        color  = group_colors[s['group']]
-        lstyle = gen_styles[s['gen']]
-        ax.hist(score_bin_centers, bins=score_bins, weights=counts_run3,
-                histtype='step', linewidth=3,
-                color=color, linestyle=lstyle, label=s['label'])
-        ax.errorbar(score_bin_centers, counts_run3,
-                    yerr=[yerr_lo, yerr],
-                    fmt='none', ecolor=color, elinewidth=1, capsize=2, alpha=0.6)
-    apply_style(ax,
-                xlabel=score_xlabel,
-                ylabel=f'events / {score_bin_width:.2f} / 300 fb$^{{-1}}$',
-                title=r'SR: $|\Delta Y_{jj}| > 3$',
-                xlim=(0, 1),
-                log_y=True,
-                legend_loc='upper center')
-    plt.tight_layout()
-    outpath = str(FIGS / f'{score_col}_{proc}_Run3_abs.pdf')
-    fig.savefig(outpath, bbox_inches='tight')
-    print('Saved', outpath)
-    plt.close(fig)
-
-# ── SR_Run3 optimization: per-channel (mjj, |dYjj|, NN score) cuts ───────
-# maximizing S/(S+B); one independent scan per event-level score column.
-# Scan on Herwig samples only, L = 300 fb⁻¹, subject to S > 1000 expected
-# signal events and ≥ 10 raw MC background events (guard against the B→0
-# MC-stat floor).
-sr_mjj_edges   = np.arange(0, 4010.0, 10.0)
-sr_dyjj_edges  = np.arange(0, 6.1, 0.1)
-sr_score_edges = np.arange(0, 1.01, 0.01)
-
-def _sr_cumulative_yields(name, score_col):
-    """Reverse-cumulative (kWeight×L, raw count) grids over
-    (mjj, |dYjj|, score_col) cuts."""
-    with h5py.File(DATA_DIR / f'{name}.h5', 'r') as f:
-        mjj   = f['mjj'][:].astype(float)
-        dY    = np.abs(f['dYjj'][:].astype(float))
-        score = f[score_col][:].astype(float)
-        kw    = f['kWeight'][:].astype(float)
-    edges  = [sr_mjj_edges, sr_dyjj_edges, sr_score_edges]
-    sample = np.stack([np.clip(v, e[0], e[-1] - 1e-9)
-                       for v, e in zip((mjj, dY, score), edges)], axis=1)
-    hw, _ = np.histogramdd(sample, bins=edges, weights=kw)
-    hn, _ = np.histogramdd(sample, bins=edges)
-    def revcum(h):
-        for ax in range(h.ndim):
-            h = np.flip(np.cumsum(np.flip(h, axis=ax), axis=ax), axis=ax)
-        return h
-    return revcum(hw) * L_RUN3, revcum(hn)
-
-SR_SPVA_COL = 'NNjjBj'   # score column defining the SR of the jetSPVA figures
-SR_CUTS = {}             # (score_col, proc) -> (mjj, |dYjj|, score) cuts
-sr_table_lines = [
-    'SR_Run3 optimization (Herwig only, L = 300 fb^-1)',
-    'maximize S/(S+B) subject to S > 1000 and >= 10 raw MC background events',
-    'one independent scan per event-level score column',
-    '',
-    f'{"score":>9} {"chan":>4} {"mjj cut":>8} {"|dYjj| cut":>10} {"NN cut":>7} '
-    f'{"S":>10} {"B":>10} {"S/(S+B)":>8} {"raw S":>8} {"raw B":>8}',
-]
-for score_col, _ in SCORE_COLS:
-    for proc, samples in SAMPLES_BY_PROC.items():
-        hw_samps = [s for s in samples if s['gen'] == 'herwig']
-        sig_name = next(s['name'] for s in hw_samps if s['group'] == 'VBF')
-        bkg_name = next(s['name'] for s in hw_samps if s['group'] == 'QCD')
-        S, rawS = _sr_cumulative_yields(sig_name, score_col)
-        B, rawB = _sr_cumulative_yields(bkg_name, score_col)
-        purity = S / np.maximum(S + B, 1e-12)
-        allowed = (S > 1000.0) & (rawB >= 10)
-        i, j, k = np.unravel_index(np.argmax(np.where(allowed, purity, -1.0)),
-                                   purity.shape)
-        SR_CUTS[score_col, proc] = (float(sr_mjj_edges[i]),
-                                    float(sr_dyjj_edges[j]),
-                                    float(sr_score_edges[k]))
-        sr_table_lines.append(
-            f'{score_col:>9} {proc:>4} {sr_mjj_edges[i]:>8.0f} '
-            f'{sr_dyjj_edges[j]:>10.1f} {sr_score_edges[k]:>7.2f} '
-            f'{S[i, j, k]:>10.1f} {B[i, j, k]:>10.1f} '
-            f'{purity[i, j, k]:>8.3f} {rawS[i, j, k]:>8.0f} {rawB[i, j, k]:>8.0f}')
-    sr_table_lines.append('')
-sr_table = '\n'.join(sr_table_lines).rstrip('\n') + '\n'
-print(sr_table)
-(FIGS / 'SR_optimization.txt').write_text(sr_table)
-print('Saved', FIGS / 'SR_optimization.txt')
-
-# ── jetSPVA in SR_Run3 (optimized cuts), per generator, absolute norm, 300 fb⁻¹ ─
-spva_bins        = np.linspace(0, np.pi, 21)
-spva_bin_centers = (spva_bins[:-1] + spva_bins[1:]) / 2
-
-GEN_LABEL = {'mg5': 'MG5Pythia', 'herwig': 'Herwig'}
-GEN_TITLE = {'mg5': 'MG5+Pythia', 'herwig': 'Herwig'}
-
-def _spva_hist(name, jet, mjj_cut, dyjj_cut, score_cut):
-    """Return (hist, mc_sq) in SR_Run3 for jet-`jet` |θs|, scaled to L_RUN3."""
-    fpath = DATA_DIR / f'{name}.h5'
-    if not fpath.exists():
-        print(f'  Skipping {fpath} (not found)')
-        return None, None
-    with h5py.File(fpath, 'r') as f:
-        spva  = np.abs(f['jetSPVA'][:, jet].astype(float))
-        kw    = f['kWeight'][:].astype(float)
-        dYjj  = f['dYjj'][:].astype(float)
-        mjj   = f['mjj'][:].astype(float)
-        score = f[SR_SPVA_COL][:].astype(float)
-    sr  = (np.abs(dYjj) > dyjj_cut) & (mjj > mjj_cut) & (score > score_cut)
-    w   = kw[sr] * L_RUN3
-    h,  _ = np.histogram(spva[sr], bins=spva_bins, weights=w)
-    hsq,_ = np.histogram(spva[sr], bins=spva_bins, weights=w**2)
-    return h, hsq
-
-def _draw_hist_with_errs(ax, centers, bins, hist, mc_sq, color, label):
-    ax.hist(centers, bins=bins, weights=hist,
-            histtype='step', linewidth=3, color=color, label=label)
-    data_err = np.sqrt(np.maximum(hist, 0))
-    mc_err   = np.sqrt(mc_sq)
-    # MC stat: thick translucent bar, no caps
-    ax.errorbar(centers, hist,
-                yerr=[np.minimum(mc_err, hist), mc_err],
-                fmt='none', ecolor=color, elinewidth=5, capsize=0, alpha=0.25)
-    # Data stat: thin bar with caps
-    ax.errorbar(centers, hist,
-                yerr=[np.minimum(data_err, hist), data_err],
-                fmt='none', ecolor=color, elinewidth=1.5, capsize=3, alpha=0.8)
-
-for gen in ('mg5', 'herwig'):
-    for proc, samples in SAMPLES_BY_PROC.items():
-        gen_samps = [s for s in samples if s['gen'] == gen]
-        sig = next(s for s in gen_samps if s['group'] == 'VBF')
-        bkg = next(s for s in gen_samps if s['group'] == 'QCD')
-        mjj_cut, dyjj_cut, score_cut = SR_CUTS[SR_SPVA_COL, proc]
-
-        for jet in (0, 1):
-            sig_hist, sig_mc_sq = _spva_hist(sig['name'], jet, mjj_cut, dyjj_cut, score_cut)
-            bkg_hist, bkg_mc_sq = _spva_hist(bkg['name'], jet, mjj_cut, dyjj_cut, score_cut)
-            if sig_hist is None or bkg_hist is None:
-                continue
-
-            splusb_hist  = sig_hist  + bkg_hist
-            splusb_mc_sq = sig_mc_sq + bkg_mc_sq
-
-            fig, ax = plt.subplots(figsize=FIG_SIZE)
-            _draw_hist_with_errs(ax, spva_bin_centers, spva_bins,
-                                 sig_hist, sig_mc_sq, 'steelblue',
-                                 f'VBF {proc}  ({int(round(sig_hist.sum()))} events)')
-            _draw_hist_with_errs(ax, spva_bin_centers, spva_bins,
-                                 bkg_hist, bkg_mc_sq, 'tomato',
-                                 f'QCD {proc}  ({int(round(bkg_hist.sum()))} events)')
-            _draw_hist_with_errs(ax, spva_bin_centers, spva_bins,
-                                 splusb_hist, splusb_mc_sq, 'black',
-                                 f'S+B  ({int(round(splusb_hist.sum()))} events)')
-            apply_style(ax,
-                        xlabel=rf'$|\theta_s|$ (jet {jet}) [rad]',
-                        ylabel=r'events / bin / 300 fb$^{-1}$',
-                        title=(r'SR$_{\mathrm{Run3}}$ (optimized): '
-                               rf'$|\Delta Y_{{jj}}|>{dyjj_cut:.1f}$, '
-                               rf'$m_{{jj}}>{mjj_cut / 1000:.2f}$ TeV, '
-                               rf'{SR_SPVA_COL}$>{score_cut:.2f}$'
-                               f'  [{GEN_TITLE[gen]}]'),
-                        xlim=(0, np.pi),
-                        legend_loc='upper right')
-            plt.tight_layout()
-            jet_tag = '' if jet == 0 else f'_jet{jet}'
-            outpath = str(FIGS / f'jetSPVA{jet_tag}_SR_Run3_{proc}_{GEN_LABEL[gen]}.pdf')
-            fig.savefig(outpath, bbox_inches='tight')
-            print('Saved', outpath)
-            plt.close(fig)
 
 # ── update index.php ──────────────────────────────────────────────────────────
 index_path = FIGS / 'index.php'

@@ -53,7 +53,7 @@ GROUP B  Histograms: hLeadJetSPVA, hLeadJetSPVM
 -----------------------------------------------------------------------------
 GROUP C  Histograms: jetShape, jetShapeRaw  (TH2Poly, 128*phi x 60*rho bins)
          Plots: jetShape_{stem}.pdf
-                jetShapeRaw_{stem}.pdf
+                (jetShapeRaw is filled and written but not plotted)
 -----------------------------------------------------------------------------
 
   Selection: Group A

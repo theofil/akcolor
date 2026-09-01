@@ -388,76 +388,102 @@ Only events passing all three cuts enter the output `events` TTree (and thus con
 
 Summing `kWeight` over all selected events gives `σ_eff` (effective cross-section after selection, in pb).
 
-### Expected events at Run 3 (L = 300 fb⁻¹) and Poisson uncertainty
-
-For a histogram bin of width Δm (e.g. 10 GeV in mjj):
-
-```
-N_bin = L × Σ_{i ∈ bin} kWeight_i
-```
-
-with L = 300 000 pb⁻¹ = 300 fb⁻¹. The Poisson statistical uncertainty is:
-
-```
-δN_bin = √N_bin = √( L × Σ_{i ∈ bin} kWeight_i )
-```
-
-These error bars are shown in `figs/summer26/mjj_{W,Z,H}_Run3.pdf`, produced by
-`summer26/plots.py`.
-
 ---
 
-## SR_Run3 optimization — per-channel (mjj, |ΔYjj|, NN score) cuts
+## Signal/background estimation from ROC curves
 
-Script: `summer26/plots.py` (SR optimization section, just before the
-`jetSPVA_SR_Run3` plots). Scan performed on **Herwig samples only** at
-L = 300 fb⁻¹; the resulting cuts are also applied to the MG5+Pythia figures.
+Script: `summer26/sb_estimate.py` (numpy + h5py only, no ROOT/torch/matplotlib needed).
+For every (net, channel) combination — the same 18 `roc_data_{H,W,Z}.npz` files used by
+the `roc_summary_{H,W,Z}.pdf` figures — the script scans the net's own ROC curve
+(signal efficiency `tpr` vs background efficiency `fpr`, no additional mjj/ΔYjj cuts) and
+picks the operating point that **maximizes significance `S/√(S+B)`** at **L = 300 fb⁻¹**,
+subject to a `raw B ≥ 10` statistical-validity floor (same guard convention as the removed
+`SR_optimization.txt` study). `S` and `B` come from each sample's post-selection
+`Σ kWeight` (pb, see kWeight section above) × `L` × the ROC efficiency at that point. Both
+the Herwig held-out test split (training domain) and the full MG5+Pythia dataset
+(independent generator-transfer test) are scanned and reported side by side. Raw output:
+`figs/summer26/SB_estimate.txt`.
 
-Grid: mjj threshold 0–4000 GeV in 10 GeV steps, |ΔYjj| threshold 0–6 in 0.1
-steps, NN score threshold 0–1 in 0.01 steps. Since 2026-07-09 the scan runs
-**once per event-level score column** — `NNj_jet0`, `NNjB`, `NNjjBj` (all
-per-channel scores, see the score-columns section below).
-Objective: maximize S/(S+B), subject to **S > 1000** expected signal events and
-**≥ 10 raw MC background events** (guard against the B→0 MC-statistics floor).
-The table is regenerated on every `plots.py` run and written to
-`figs/summer26/SR_optimization.txt`.
+### Branching-ratio rescale (decay-chain-aware)
 
-| Score | Channel | mjj cut (GeV) | \|ΔYjj\| cut | NN cut | S | B | S/(S+B) | raw S | raw B |
-|-------|---------|--------------:|------------:|-------:|--:|--:|--------:|------:|------:|
-| `NNj_jet0` | **H** | > 870 | > 4.7 | > 0.96 | 4 724 | 15 | **0.997** | 5 328 | 10 |
-| `NNj_jet0` | **W** | > 2210 | > 4.9 | > 0.85 | 4 526 | 5 192 | **0.466** | 2 017 | 10 |
-| `NNj_jet0` | **Z** | > 1320 | > 4.2 | > 0.92 | 1 275 | 3 158 | **0.288** | 3 799 | 31 |
-| `NNjB` | **H** | > 660 | > 4.7 | > 0.97 | 4 890 | 15 | **0.997** | 5 515 | 10 |
-| `NNjB` | **W** | > 1660 | > 4.7 | > 0.92 | 7 524 | 5 192 | **0.592** | 3 356 | 10 |
-| `NNjB` | **Z** | > 1760 | > 4.8 | > 0.91 | 1 235 | 1 121 | **0.524** | 3 736 | 11 |
-| `NNjjBj` | **H** | > 1030 | > 5.0 | > 0.99 | 6 360 | 15 | **0.998** | 7 173 | 10 |
-| `NNjjBj` | **W** | > 1620 | > 4.2 | > 0.99 | 15 857 | 5 192 | **0.753** | 7 074 | 10 |
-| `NNjjBj` | **Z** | > 1760 | > 3.4 | > 0.99 | 2 850 | 1 019 | **0.737** | 8 497 | 10 |
+The samples were generated with the boson decayed in an "invisible-like" mode: H is kept
+fully **stable** (BSM-invisible-Higgs convention — its tabulated cross section is
+therefore the true **inclusive** VBF/QCD production rate, unaffected by any decay BR); Z
+is reconstructed specifically as **Z→ν_eν̄_e** and W as **W→τν_τ** (real SM decay chains —
+see "Boson 4-vector branches" above — so their tabulated cross sections already have that
+one channel's real branching fraction baked in by the matrix element). To reinterpret
+these yields for a realistic H→γγ / Z→ee,μμ / W→eν,μν search, each channel's `S` and `B`
+are rescaled by:
 
-The event-level nets transform the W and Z channels (2026-07-09): with
-`NNjjBj` the W purity goes 0.466 → **0.753** at 3.5× the signal and Z
-0.288 → **0.737** at 2.2× the signal; H was already purity-saturated but
-keeps 35% more signal. `NNjB` sits in between. In all cases the NN cut also
-relaxes the mjj cut relative to the cut-only optimum (more signal kept).
+| Channel | Tabulated σ represents | Rescale formula | BR values used (PDG) | Factor |
+|---------|------------------------|------------------|-----------------------|-------:|
+| **H** | inclusive VBF/QCD H production | `BR(H→γγ)` | BR(H→γγ) = 2.27×10⁻³ (mH=125.09 GeV) | **0.00227** |
+| **Z** | exclusive Z→ν_eν̄_e production | `[BR(Z→ee)+BR(Z→μμ)] / BR(Z→ν_eν̄_e)` | BR(Z→ee)=3.363%, BR(Z→μμ)=3.366%, BR(Z→νν̄)ₜₒₜₐₗ=20.00% ÷ 3 flavors = 6.667% | **1.0093** |
+| **W** | exclusive W→τν_τ production | `[BR(W→eν)+BR(W→μν)] / BR(W→τν)` | BR(W→eν)=10.71%, BR(W→μν)=10.63%, BR(W→τν)=11.38% | **1.8752** |
 
-For reference (Herwig): the previous common SR (`|ΔYjj| > 3`, `mjj > 2` TeV)
-gave H 0.937, W 0.194, Z 0.172; the 2-variable (mjj, |ΔYjj|) optimum gave
-H 0.975, W 0.449, Z 0.239.
+The **same** per-channel factor is applied to both the VBF signal and the QCD background,
+since QCD H/W/Z+jj is only a real background to a γγ/ee,μμ/eν,μν search once its boson
+also decays to that same final state.
 
-**Notes:** (i) every optimum except `NNj_jet0` Z and `NNjB` Z sits exactly at
-the raw-B ≥ 10 guard — those background estimates rest on only 10 MC events
-and carry a ~30% MC-statistical uncertainty. (ii) The `NNjjBj` optima all
-select the **last scan bin** of the NN cut (> 0.99): the score is so
-discriminating that the optimum is grid-limited; a finer threshold scan near 1
-would be needed to map the true optimum.
+**Rescale-invariance caveat:** because the identical factor multiplies `S` and `B` within
+a channel, it cancels exactly in the `S/B` ratio and does not shift which ROC point
+maximizes significance (`significance_final = √factor × significance_unrescaled` at every
+point, so the argmax is unchanged — verified numerically by `sb_estimate.py`'s
+`verify_rescale_invariance()`). The scan therefore runs once on the un-rescaled yields;
+the rescale is applied only to the winning point's final `S`, `B` before display. In other
+words, this whole exercise changes the absolute event counts to a physically realistic
+decay channel, but says nothing about which NN or working point is best — that ordering
+is exactly what it would be without any BR at all.
 
-The `figs/summer26/jetSPVA_SR_Run3_{H,W,Z}_{Herwig,MG5Pythia}.pdf` figures use
-the **`NNjjBj`-optimized** per-channel cuts (`SR_SPVA_COL` in `plots.py`;
-cuts shown in each figure title) — until 2026-07-09 they used the `NNj_jet0`
-cuts. The companion `jetSPVA_jet1_SR_Run3_*.pdf` figures show |θs| of the
-**sub-leading** jet in the same SR. Caveat: unlike the old NNj-based SR, the
-`NNjjBj` cut already consumes both jets' constituents, so the |θs| shapes
-inside this SR are shaped by the NN selection for both jets.
+**Statistical floor caveat:** the `raw B ≥ 10` guard never actually binds for any of the
+36 rows below (`floor` column in `SB_estimate.txt` is 0 throughout) — unlike the old
+S/(S+B)-purity-optimized table (which sat at this floor almost everywhere), a significance
+objective doesn't push toward the tightest possible cut, so the guard is inactive here by
+construction rather than by coincidence.
+
+**Decimated-ROC-grid caveat:** `roc_data_{H,W,Z}.npz` stores only the decimated
+(≤5000-point) `fpr`/`tpr` arrays saved by each net's `inference.py` — the underlying
+sklearn `roc_curve` **threshold values are discarded and never saved**. The table below
+therefore reports the operating point as a **(signal efficiency, background efficiency)**
+pair, not an NN-score cut value, and the true continuous optimum may differ slightly from
+the grid optimum.
+
+**No detector effects, no other SM backgrounds:** `S` and `B` here are MC-truth,
+particle-level yields from exactly two samples per channel (VBF-produced vs
+QCD-produced boson+dijet) — there is no detector simulation and no competing SM
+background process (e.g. real diphoton QCD for H→γγ, Drell-Yan for Z→ll, W+jets/ttbar
+for W→lν). The resulting significance values (up to a few hundred for the W/Z channels,
+driven by their much larger QCD cross sections) are **not** discovery-significance
+estimates for a real search — they measure the NNs' relative discrimination power only.
+
+### Results (18 nets × 2 generators, best ROC operating point at L = 300 fb⁻¹)
+
+| Net | Ch | AUC (HW) | ε_sig* (HW) | ε_bkg* (HW) | S (HW) | B (HW) | S/(S+B) (HW) | S/√(S+B) (HW) | raw S (HW) | raw B (HW) | AUC (MG5) | ε_sig* (MG5) | ε_bkg* (MG5) | S (MG5) | B (MG5) | S/(S+B) (MG5) | S/√(S+B) (MG5) | raw S (MG5) | raw B (MG5) |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| `NNkin` | **H** | 0.8981 | 0.881 | 0.270 | 456.0 | 135.7 | 0.771 | **18.75** | 33777 | 5908 | 0.8285 | 0.821 | 0.341 | 541.2 | 299.3 | 0.644 | **18.67** | 275006 | 36138 |
+| `NNj` | **H** | 0.8524 | 0.835 | 0.306 | 432.2 | 153.9 | 0.737 | **17.85** | 32013 | 6700 | 0.7930 | 0.831 | 0.427 | 548.0 | 374.9 | 0.594 | **18.04** | 278472 | 45267 |
+| `NNjB` | **H** | 0.8610 | 0.851 | 0.314 | 440.5 | 158.2 | 0.736 | **18.00** | 32629 | 6887 | 0.8009 | 0.830 | 0.408 | 547.3 | 358.5 | 0.604 | **18.18** | 278101 | 43285 |
+| `NNjj` | **H** | 0.9265 | 0.869 | 0.172 | 449.8 | 86.6 | 0.838 | **19.42** | 33318 | 3772 | 0.8685 | 0.834 | 0.264 | 549.8 | 232.3 | 0.703 | **19.66** | 279373 | 28047 |
+| `NNjjB` | **H** | 0.9345 | 0.891 | 0.177 | 461.1 | 89.3 | 0.838 | **19.65** | 34153 | 3888 | 0.8757 | 0.815 | 0.222 | 537.5 | 195.3 | 0.733 | **19.85** | 273095 | 23580 |
+| `NNjjBj` | **H** | 0.9406 | 0.891 | 0.159 | 460.9 | 80.0 | 0.852 | **19.82** | 34140 | 3482 | 0.8837 | 0.824 | 0.222 | 543.6 | 194.8 | 0.736 | **20.00** | 276204 | 23524 |
+| `NNkin` | **W** | 0.8158 | 0.430 | 0.066 | 597 463.8 | 9 589 086.4 | 0.059 | **187.20** | 21312 | 1477 | 0.8074 | 0.369 | 0.049 | 552 918.3 | 9 119 834.6 | 0.057 | **177.78** | 136444 | 9844 |
+| `NNj` | **W** | 0.7639 | 0.495 | 0.141 | 688 462.6 | 20 431 181.4 | 0.033 | **149.81** | 24558 | 3147 | 0.7602 | 0.443 | 0.114 | 664 613.1 | 21 074 562.9 | 0.031 | **142.54** | 164007 | 22748 |
+| `NNjB` | **W** | 0.8012 | 0.434 | 0.077 | 603 995.7 | 11 199 170.0 | 0.051 | **175.81** | 21545 | 1725 | 0.7971 | 0.366 | 0.056 | 549 218.5 | 10 339 024.2 | 0.050 | **166.44** | 135531 | 11160 |
+| `NNjj` | **W** | 0.8273 | 0.329 | 0.031 | 457 040.7 | 4 512 129.3 | 0.092 | **205.03** | 16303 | 695 | 0.8192 | 0.343 | 0.036 | 513 910.4 | 6 709 248.5 | 0.071 | **191.22** | 126818 | 7242 |
+| `NNjjB` | **W** | 0.8619 | 0.218 | 0.006 | 303 245.4 | 824 518.6 | 0.269 | **285.55** | 10817 | 127 | 0.8536 | 0.254 | 0.011 | 380 029.0 | 2 005 733.6 | 0.159 | **246.04** | 93780 | 2165 |
+| `NNjjBj` | **W** | 0.8757 | 0.321 | 0.010 | 446 331.7 | 1 486 730.4 | 0.231 | **321.02** | 15921 | 229 | 0.8508 | 0.268 | 0.012 | 401 887.3 | 2 309 604.6 | 0.148 | **244.06** | 99174 | 2493 |
+| `NNkin` | **Z** | 0.8250 | 0.327 | 0.035 | 41 245.2 | 539 550.8 | 0.071 | **54.12** | 18567 | 787 | 0.8207 | 0.345 | 0.037 | 47 205.2 | 737 439.2 | 0.060 | **53.29** | 143573 | 7698 |
+| `NNj` | **Z** | 0.7730 | 0.564 | 0.176 | 71 134.4 | 2 737 517.5 | 0.025 | **42.45** | 32022 | 3993 | 0.7728 | 0.472 | 0.116 | 64 708.5 | 2 333 691.4 | 0.027 | **41.78** | 196809 | 24361 |
+| `NNjB` | **Z** | 0.8028 | 0.413 | 0.070 | 52 136.8 | 1 090 756.4 | 0.046 | **48.77** | 23470 | 1591 | 0.8041 | 0.353 | 0.047 | 48 357.9 | 937 557.5 | 0.049 | **48.70** | 147079 | 9787 |
+| `NNjj` | **Z** | 0.8380 | 0.393 | 0.042 | 49 633.3 | 649 929.0 | 0.071 | **59.34** | 22343 | 948 | 0.8325 | 0.379 | 0.038 | 51 933.8 | 773 554.4 | 0.063 | **57.16** | 157955 | 8075 |
+| `NNjjB` | **Z** | 0.8641 | 0.201 | 0.005 | 25 408.6 | 82 955.1 | 0.234 | **77.19** | 11438 | 121 | 0.8604 | 0.320 | 0.016 | 43 840.0 | 322 450.0 | 0.120 | **72.44** | 133338 | 3366 |
+| `NNjjBj` | **Z** | 0.8764 | 0.287 | 0.008 | 36 222.5 | 116 548.5 | 0.237 | **92.67** | 16306 | 170 | 0.8558 | 0.253 | 0.009 | 34 632.0 | 187 856.4 | 0.156 | **73.42** | 105332 | 1961 |
+
+`NNjjBj` has the best significance in 5 of the 6 channel/generator blocks (H-Herwig 19.82,
+H-MG5 20.00, W-Herwig 321.02, Z-Herwig 92.67, Z-MG5 73.42); `NNjjB` edges it out only in
+W-MG5 (246.04 vs 244.06, a 1% difference). In every channel the ranking broadly tracks
+AUC: the boson-aware, both-jets nets (`NNjjB`, `NNjjBj`) consistently beat the
+single-jet nets (`NNkin`, `NNj`, `NNjB`).
 
 ---
 
@@ -489,10 +515,9 @@ net/channel, the AUC recomputed from the stored scores on the full MG5+Pythia
 files reproduces `auc_mg5` in the dir's `roc_data_{P}.npz` to 4 decimals.
 
 `plots.py` draws the score distributions for all three event-level columns
-in the same four variants as the mjj figures:
-`figs/summer26/{NNj_jet0,NNjB,NNjjBj}_{H,W,Z}[_Run3][_abs].pdf`
-(normalized / SR |ΔYjj|>3 / absolute log-y / SR absolute × 300 fb⁻¹). The
-three columns also feed the per-column SR_Run3 optimization above.
+in the same two variants as the mjj figures:
+`figs/summer26/{NNj_jet0,NNjB,NNjjBj}_{H,W,Z}[_abs].pdf`
+(normalized / absolute log-y).
 
 Writes go through a small retry loop (`write_dataset(s)` in `save_scores.py`):
 EOS FUSE occasionally fails HDF5 metadata operations on the GPU nodes with

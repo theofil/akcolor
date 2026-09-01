@@ -58,7 +58,7 @@ _NAV = '''
 <a class="h3" href="#kweight-formula">kWeight formula</a>
 <a class="h3" href="#per-sample-values">Per-sample values</a>
 <a class="h3" href="#character-of-the-weights-by-generator">Generator weights</a>
-<a class="h3" href="#expected-events-at-run-3-l-300-fb-and-poisson-uncertainty">Run 3 uncertainty</a>
+<a class="h2" href="#signal-background-estimation-from-roc-curves">S/B estimation</a>
 <a class="h2" href="#input-files">Input files</a>
 <a class="h2" href="#file-map">File map</a>
 '''
