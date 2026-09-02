@@ -39,6 +39,7 @@ strong{color:#0f172a;font-weight:600;}
 <nav>
 <div class="nav-title">summer26</div>
 <a class="h2" href="#campaign-details">Campaign details</a>
+<a class="h2" href="#mjj-400-gev-y-jj-2-5-preselection-added-2026-09-01">mjj/&Delta;Y preselection</a>
 <a class="h2" href="#step-2-run-event-reconstruction">Step 2 — Reconstruction</a>
 <a class="h2" href="#step-4-diagnostic-plots">Step 4 — Plots</a>
 <a class="h2" href="#step-5-train-the-neural-networks">Step 5 — Train NNs</a>
@@ -125,6 +126,34 @@ strong{color:#0f172a;font-weight:600;}
 <p>W median ≈ 80.4 GeV; Z median ≈ 91.2 GeV. Do <strong>not</strong> use the <code>theETmiss[4]</code> branch — its</p>
 <p>components do not match the ν system.</p>
 <hr>
+<h2 id="mjj-400-gev-y-jj-2-5-preselection-added-2026-09-01">mjj&gt;400 GeV &amp; |ΔY_jj|&gt;2.5 preselection (added 2026-09-01)</h2>
+<p>The dijet selection in <code>makefriends.cpp</code> was tightened to a standard VBF-style</p>
+<p>preselection: <strong><code>mjj &gt; 400 GeV</code></strong> and <strong><code>|ΔY_jj| &gt; 2.5</code></strong>, applied in addition</p>
+<p>to (not instead of) the existing opposite-sign-η requirement — see &quot;Dijet</p>
+<p>selection applied in <code>makefriends.cpp</code>&quot; below for the full 4-cut list.</p>
+<p>Previously the selection was <code>mjj &gt; 0</code> (no real mass cut) with no ΔY cut.</p>
+<p>**Everything downstream was regenerated from scratch under the new</p>
+<p>selection**: all 12 friend ROOT/h5 files, all 18 trained networks, all</p>
+<p>inference ROC curves, all per-channel event-level score columns, all</p>
+<p>diagnostic plots, and the SR significance table in &quot;Signal/background</p>
+<p>estimation from ROC curves&quot; below. Any such artifact with a timestamp before</p>
+<p>2026-09-01 used the old, looser selection and is stale.</p>
+<p><strong>Effect on efficiency</strong> (from <code>figs/summer26/checksum.txt</code>): the cut is far</p>
+<p>more aggressive on background than signal, as expected for a VBF topology</p>
+<p>cut — QCD weighted efficiency drops to <strong>~2.3–5.3%</strong> (was ~15–26%), VBF</p>
+<p>signal efficiency to <strong>~14.7–22.1%</strong> (was ~26–42%).</p>
+<p><strong>Effect on NN significance</strong> (counter-intuitive): the per-net/channel</p>
+<p>significance estimates in &quot;Results&quot; below are *lower* than under the old</p>
+<p>inclusive selection, even though signal purity <code>S/(S+B)</code> improved</p>
+<p>substantially. At the significance-maximizing operating point signal already</p>
+<p>dominates background (S≫B), so significance is close to</p>
+<p>signal-count-limited (∝√S) rather than background-limited; the</p>
+<p>preselection&#x27;s ~30–40% loss of raw signal (removed as an unavoidable side</p>
+<p>effect of removing far more background) costs more significance than the</p>
+<p>much larger background rejection recovers. This is a real effect of trading</p>
+<p>some peak toy significance for a cleaner, more physically realistic</p>
+<p>VBF-topology sample — not a regression.</p>
+<hr>
 <h2 id="step-2-run-event-reconstruction">Step 2 — Run event reconstruction</h2>
 <h3 id="quick-test-100-events-per-sample-foreground">Quick test (100 events per sample, foreground)</h3>
 <pre><code>./run.summer26.sh --goFast
@@ -164,13 +193,16 @@ strong{color:#0f172a;font-weight:600;}
 <h2 id="step-5-train-the-neural-networks">Step 5 — Train the neural networks</h2>
 <p>All NNs use the LCG_106_cuda environment. Training is submitted to a GPU node</p>
 <p>via HTCondor; the full submission list (all networks × Z/H/W) is in <code>train.txt</code>.</p>
-<p>To submit the base (Z) trainings:</p>
-<pre><code>condor_submit summer26/NNkin/train_gpu.sub
-condor_submit summer26/NNj/train_gpu.sub
-condor_submit summer26/NNjB/train_gpu.sub
-condor_submit summer26/NNjj/train_gpu.sub
-condor_submit summer26/NNjjB/train_gpu.sub
-condor_submit summer26/NNjjBj/train_gpu.sub</code></pre>
+<p><strong>Plain <code>condor_submit</code> fails from <code>/eos</code> paths</strong> (&quot;Standard batch schedds</p>
+<p>cannot use /eos paths directly&quot;) — submit via the EosSubmit <code>bigbird24</code></p>
+<p>schedd instead: <code>condor_submit -name bigbird24.cern.ch &lt;sub file&gt;</code>. To submit</p>
+<p>the base (Z) trainings:</p>
+<pre><code>condor_submit -name bigbird24.cern.ch summer26/NNkin/train_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNj/train_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjB/train_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjj/train_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjjB/train_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjjBj/train_gpu.sub</code></pre>
 <p>Or run interactively (falls back to CPU):</p>
 <pre><code>cd summer26/NNkin   &amp;&amp; python train.py
 cd summer26/NNj     &amp;&amp; python train.py
@@ -277,26 +309,41 @@ cd summer26/NNjjBj  &amp;&amp; python train.py</code></pre>
 </table></div>
 <hr>
 <h2 id="step-6-run-inference">Step 6 — Run inference</h2>
-<p>Submit all inference jobs to HTCondor (commands are in <code>infer.txt</code>):</p>
-<pre><code>condor_submit summer26/NNkin/infer_gpu.sub
-condor_submit summer26/NNkin_H/infer_gpu.sub
-condor_submit summer26/NNkin_W/infer_gpu.sub
-condor_submit summer26/NNj/infer_gpu.sub
-condor_submit summer26/NNj/save_scores.sub
-condor_submit summer26/NNj_H/infer_gpu.sub
-condor_submit summer26/NNj_W/infer_gpu.sub
-condor_submit summer26/NNjB/infer_gpu.sub
-condor_submit summer26/NNjB_H/infer_gpu.sub
-condor_submit summer26/NNjB_W/infer_gpu.sub
-condor_submit summer26/NNjj/infer_gpu.sub
-condor_submit summer26/NNjj_H/infer_gpu.sub
-condor_submit summer26/NNjj_W/infer_gpu.sub
-condor_submit summer26/NNjjB/infer_gpu.sub
-condor_submit summer26/NNjjB_H/infer_gpu.sub
-condor_submit summer26/NNjjB_W/infer_gpu.sub
-condor_submit summer26/NNjjBj/infer_gpu.sub
-condor_submit summer26/NNjjBj_H/infer_gpu.sub
-condor_submit summer26/NNjjBj_W/infer_gpu.sub</code></pre>
+<p>Submit all inference jobs to HTCondor (commands are in <code>infer.txt</code>), via the</p>
+<p>EosSubmit <code>bigbird24</code> schedd (plain <code>condor_submit</code> fails from <code>/eos</code> paths —</p>
+<p>see Step 5):</p>
+<pre><code>condor_submit -name bigbird24.cern.ch summer26/NNkin/infer_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNkin_H/infer_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNkin_W/infer_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNj/infer_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNj/save_scores.sub
+condor_submit -name bigbird24.cern.ch summer26/NNj_H/infer_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNj_H/save_scores.sub
+condor_submit -name bigbird24.cern.ch summer26/NNj_W/infer_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNj_W/save_scores.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjB/infer_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjB/save_scores.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjB_H/infer_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjB_H/save_scores.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjB_W/infer_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjB_W/save_scores.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjj/infer_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjj_H/infer_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjj_W/infer_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjjB/infer_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjjB_H/infer_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjjB_W/infer_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjjBj/infer_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjjBj/save_scores.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjjBj_H/infer_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjjBj_H/save_scores.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjjBj_W/infer_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjjBj_W/save_scores.sub</code></pre>
+<p><strong>Caution</strong>: within a channel (Z/H/W), the <code>save_scores.sub</code> jobs of <code>NNj</code>,</p>
+<p><code>NNjB</code> and <code>NNjjBj</code> all write to the *same* 4 h5 files for that channel — do</p>
+<p>not submit same-channel <code>save_scores</code> jobs concurrently (risks</p>
+<p>concurrent-write corruption on EOS FUSE); submit in channel-disjoint batches</p>
+<p>or one at a time instead. <code>infer.txt</code> carries the same note.</p>
 <p>Each job requests 2 CPUs, 8 GB RAM, 1 GPU (<code>microcentury</code> flavour). Each <code>inference.py</code></p>
 <p>evaluates on the Herwig test split (training domain) and the full MG5+Pythia dataset</p>
 <p>(generator transfer test), producing <code>figs/summer26/roc_&lt;nn&gt;_{W,Z,H}.pdf</code>. It also</p>
@@ -345,20 +392,24 @@ condor_submit summer26/NNjjBj_W/infer_gpu.sub</code></pre>
 <p><code>kWeight</code> statistics are from the <strong>post-selection</strong> <code>events</code> tree in the friend ROOT files</p>
 <p>(<code>friends/summer26/*.friend.root</code>); histograms in <code>figs/summer26/kWeight_{W,Z,H}.pdf</code>.</p>
 <p>Run <code>python summer26/weights.py</code> to regenerate both sets of PDFs and reprint this table.</p>
+<p>Post-selection (<code>N sel.</code>, <code>kWeight mean</code>, <code>kWeight std</code>) columns reflect the</p>
+<p>current <code>mjj&gt;400 GeV</code> + <code>|ΔY_jj|&gt;2.5</code> preselection (added 2026-09-01); <code>evweight</code></p>
+<p>columns are selection-independent (computed over all events before any cut) and</p>
+<p>unchanged from before.</p>
 <div class="tbl-wrap"><table>
 <tr><th>Sample</th><th>N events</th><th>σ `--xs` (pb)</th><th>evweight min</th><th>evweight max</th><th>evweight mean</th><th>evweight std</th><th>N sel.</th><th>kWeight mean</th><th>kWeight std</th></tr>
-<tr><td><code>VBFH_herwig</code></td><td>1 000 000</td><td>2.97189</td><td>1.000</td><td>424.94</td><td>1.0056</td><td>0.622</td><td>255 574</td><td>2.9735e-06</td><td>1.4187e-06</td></tr>
-<tr><td><code>VBFH_mg5_pythia</code></td><td>1 000 000</td><td>2.88990</td><td>2.8870</td><td>2.8920</td><td>2.8900</td><td>0.0015</td><td>335 031</td><td>2.8899e-06</td><td>1.4679e-09</td></tr>
-<tr><td><code>VBFW_herwig</code></td><td>1 000 000</td><td>7.494</td><td>1.000</td><td>91.604</td><td>1.0060</td><td>0.192</td><td>330 597</td><td>7.475e-06</td><td>9.7132e-07</td></tr>
-<tr><td><code>VBFW_mg5_pythia</code></td><td>1 000 000</td><td>7.20333</td><td>7.1962</td><td>7.2120</td><td>7.2033</td><td>0.0051</td><td>369 846</td><td>7.2033e-06</td><td>5.0482e-09</td></tr>
-<tr><td><code>VBFZ_herwig</code></td><td>1 000 000</td><td>1.099</td><td>1.000</td><td>46.794</td><td>1.0183</td><td>0.194</td><td>378 566</td><td>1.1004e-06</td><td>2.0376e-07</td></tr>
-<tr><td><code>VBFZ_mg5_pythia</code></td><td>1 000 000</td><td>1.08581</td><td>1.0846</td><td>1.0868</td><td>1.0856</td><td>0.00058</td><td>416 673</td><td>1.0858e-06</td><td>5.7907e-10</td></tr>
-<tr><td><code>QCDHjj_herwig</code></td><td>1 000 000</td><td>5.06051</td><td>1.000</td><td>12.842</td><td>1.0002</td><td>0.026</td><td>146 109</td><td>5.0596e-06</td><td>2.083e-09</td></tr>
-<tr><td><code>QCDHjj_mg5_pythia</code></td><td>409 621</td><td>4.982</td><td>4.9818</td><td>4.9818</td><td>4.9818</td><td>~0</td><td>106 059</td><td>1.2162e-05</td><td>0</td></tr>
-<tr><td><code>QCDWjj_herwig</code></td><td>1 000 000</td><td>1733.3</td><td>0.00146</td><td>6.3698</td><td>0.11363</td><td>0.011</td><td>148 885</td><td>0.0017311</td><td>0.00010734</td></tr>
-<tr><td><code>QCDWjj_mg5_pythia</code></td><td>1 000 000</td><td>1646.805</td><td>1644.5</td><td>1649.8</td><td>1646.8</td><td>1.73</td><td>200 332</td><td>0.0016468</td><td>1.7313e-06</td></tr>
-<tr><td><code>QCDZjj_herwig</code></td><td>1 000 000</td><td>340.2</td><td>0.06666</td><td>19.326</td><td>0.06679</td><td>0.025</td><td>150 848</td><td>0.00033961</td><td>6.1153e-06</td></tr>
-<tr><td><code>QCDZjj_mg5_pythia</code></td><td>1 000 000</td><td>316.363</td><td>316.00</td><td>316.72</td><td>316.37</td><td>0.232</td><td>210 073</td><td>0.00031636</td><td>2.3246e-07</td></tr>
+<tr><td><code>VBFH_herwig</code></td><td>1 000 000</td><td>2.97189</td><td>1.000</td><td>424.94</td><td>1.0056</td><td>0.622</td><td>146 901</td><td>2.9668e-06</td><td>1.3108e-06</td></tr>
+<tr><td><code>VBFH_mg5_pythia</code></td><td>1 000 000</td><td>2.88990</td><td>2.8870</td><td>2.8920</td><td>2.8900</td><td>0.0015</td><td>171 085</td><td>2.8899e-06</td><td>1.4685e-09</td></tr>
+<tr><td><code>VBFW_herwig</code></td><td>1 000 000</td><td>7.494</td><td>1.000</td><td>91.604</td><td>1.0060</td><td>0.192</td><td>176 406</td><td>7.4755e-06</td><td>9.3813e-07</td></tr>
+<tr><td><code>VBFW_mg5_pythia</code></td><td>1 000 000</td><td>7.20333</td><td>7.1962</td><td>7.2120</td><td>7.2033</td><td>0.0051</td><td>191 379</td><td>7.2033e-06</td><td>5.0483e-09</td></tr>
+<tr><td><code>VBFZ_herwig</code></td><td>1 000 000</td><td>1.099</td><td>1.000</td><td>46.794</td><td>1.0183</td><td>0.194</td><td>205 250</td><td>1.1017e-06</td><td>2.182e-07</td></tr>
+<tr><td><code>VBFZ_mg5_pythia</code></td><td>1 000 000</td><td>1.08581</td><td>1.0846</td><td>1.0868</td><td>1.0856</td><td>0.00058</td><td>220 628</td><td>1.0858e-06</td><td>5.7927e-10</td></tr>
+<tr><td><code>QCDHjj_herwig</code></td><td>1 000 000</td><td>5.06051</td><td>1.000</td><td>12.842</td><td>1.0002</td><td>0.026</td><td>23 340</td><td>5.0596e-06</td><td>~0</td></tr>
+<tr><td><code>QCDHjj_mg5_pythia</code></td><td>409 621</td><td>4.982</td><td>4.9818</td><td>4.9818</td><td>4.9818</td><td>~0</td><td>21 818</td><td>1.2162e-05</td><td>0</td></tr>
+<tr><td><code>QCDWjj_herwig</code></td><td>1 000 000</td><td>1733.3</td><td>0.00146</td><td>6.3698</td><td>0.11363</td><td>0.011</td><td>22 603</td><td>0.0017315</td><td>4.4768e-05</td></tr>
+<tr><td><code>QCDWjj_mg5_pythia</code></td><td>1 000 000</td><td>1646.805</td><td>1644.5</td><td>1649.8</td><td>1646.8</td><td>1.73</td><td>30 340</td><td>0.0016468</td><td>1.7338e-06</td></tr>
+<tr><td><code>QCDZjj_herwig</code></td><td>1 000 000</td><td>340.2</td><td>0.06666</td><td>19.326</td><td>0.06679</td><td>0.025</td><td>22 821</td><td>0.00033969</td><td>6.7361e-06</td></tr>
+<tr><td><code>QCDZjj_mg5_pythia</code></td><td>1 000 000</td><td>316.363</td><td>316.00</td><td>316.72</td><td>316.37</td><td>0.232</td><td>32 309</td><td>0.00031636</td><td>2.3195e-07</td></tr>
 </table></div>
 <h3 id="character-of-the-weights-by-generator">Character of the weights by generator</h3>
 <p><strong>MG5+Pythia</strong>: <code>evweight</code> is essentially constant across events and equals the process</p>
@@ -371,12 +422,16 @@ condor_submit summer26/NNjjBj_W/infer_gpu.sub</code></pre>
 <p><code>QCDWjj_herwig</code>, 0.067 for <code>QCDZjj_herwig</code>), reflecting Herwig&#x27;s inclusive QCD sampling</p>
 <p>strategy where most generated events carry low weight.</p>
 <h3 id="dijet-selection-applied-in-makefriends-cpp">Dijet selection applied in <code>makefriends.cpp</code></h3>
-<p>Only events passing all three cuts enter the output <code>events</code> TTree (and thus contribute to histograms):</p>
+<p>Only events passing all four cuts enter the output <code>events</code> TTree (and thus contribute to histograms):</p>
 <ol>
 <li>≥ 2 anti-kT (R=0.4) jets with pT &gt; 30 GeV and |η| &lt; 3.0</li>
 <li>Two leading jets with opposite-sign pseudorapidity: η₀ × η₁ &lt; 0</li>
-<li>Dijet invariant mass: mjj &gt; 0</li>
+<li>Dijet invariant mass: mjj &gt; 400 GeV</li>
+<li>Dijet rapidity separation: |ΔY_jj| &gt; 2.5</li>
 </ol>
+<p>Cuts 3–4 were added 2026-09-01 (previously <code>mjj &gt; 0</code>, no ΔY cut — see the</p>
+<p>changelog section above); cut 2 (opposite-sign η) is unchanged and applies</p>
+<p>in addition to, not instead of, the new mjj/ΔY cuts.</p>
 <p>Summing <code>kWeight</code> over all selected events gives <code>σ_eff</code> (effective cross-section after selection, in pb).</p>
 <hr>
 <h2 id="signal-background-estimation-from-roc-curves">Signal/background estimation from ROC curves</h2>
@@ -437,32 +492,42 @@ condor_submit summer26/NNjjBj_W/infer_gpu.sub</code></pre>
 <p>driven by their much larger QCD cross sections) are <strong>not</strong> discovery-significance</p>
 <p>estimates for a real search — they measure the NNs&#x27; relative discrimination power only.</p>
 <h3 id="results-18-nets-2-generators-best-roc-operating-point-at-l-300-fb">Results (18 nets × 2 generators, best ROC operating point at L = 300 fb⁻¹)</h3>
+<p>Regenerated 2026-09-01 under the <code>mjj&gt;400 GeV</code> + <code>|ΔY_jj|&gt;2.5</code> preselection</p>
+<p>(see the changelog section near the top of this document); numbers below are</p>
+<p><strong>not</strong> comparable to the pre-2026-09-01 version of this table (S, B, and</p>
+<p>significance all shift because the preselected sample is smaller — see the</p>
+<p>&quot;Effect on NN significance&quot; note in the changelog).</p>
 <div class="tbl-wrap"><table>
 <tr><th>Net</th><th>Ch</th><th>AUC (HW)</th><th>ε_sig* (HW)</th><th>ε_bkg* (HW)</th><th>S (HW)</th><th>B (HW)</th><th>S/(S+B) (HW)</th><th>S/√(S+B) (HW)</th><th>raw S (HW)</th><th>raw B (HW)</th><th>AUC (MG5)</th><th>ε_sig* (MG5)</th><th>ε_bkg* (MG5)</th><th>S (MG5)</th><th>B (MG5)</th><th>S/(S+B) (MG5)</th><th>S/√(S+B) (MG5)</th><th>raw S (MG5)</th><th>raw B (MG5)</th></tr>
-<tr><td><code>NNkin</code></td><td><strong>H</strong></td><td>0.8981</td><td>0.881</td><td>0.270</td><td>456.0</td><td>135.7</td><td>0.771</td><td><strong>18.75</strong></td><td>33777</td><td>5908</td><td>0.8285</td><td>0.821</td><td>0.341</td><td>541.2</td><td>299.3</td><td>0.644</td><td><strong>18.67</strong></td><td>275006</td><td>36138</td></tr>
-<tr><td><code>NNj</code></td><td><strong>H</strong></td><td>0.8524</td><td>0.835</td><td>0.306</td><td>432.2</td><td>153.9</td><td>0.737</td><td><strong>17.85</strong></td><td>32013</td><td>6700</td><td>0.7930</td><td>0.831</td><td>0.427</td><td>548.0</td><td>374.9</td><td>0.594</td><td><strong>18.04</strong></td><td>278472</td><td>45267</td></tr>
-<tr><td><code>NNjB</code></td><td><strong>H</strong></td><td>0.8610</td><td>0.851</td><td>0.314</td><td>440.5</td><td>158.2</td><td>0.736</td><td><strong>18.00</strong></td><td>32629</td><td>6887</td><td>0.8009</td><td>0.830</td><td>0.408</td><td>547.3</td><td>358.5</td><td>0.604</td><td><strong>18.18</strong></td><td>278101</td><td>43285</td></tr>
-<tr><td><code>NNjj</code></td><td><strong>H</strong></td><td>0.9265</td><td>0.869</td><td>0.172</td><td>449.8</td><td>86.6</td><td>0.838</td><td><strong>19.42</strong></td><td>33318</td><td>3772</td><td>0.8685</td><td>0.834</td><td>0.264</td><td>549.8</td><td>232.3</td><td>0.703</td><td><strong>19.66</strong></td><td>279373</td><td>28047</td></tr>
-<tr><td><code>NNjjB</code></td><td><strong>H</strong></td><td>0.9345</td><td>0.891</td><td>0.177</td><td>461.1</td><td>89.3</td><td>0.838</td><td><strong>19.65</strong></td><td>34153</td><td>3888</td><td>0.8757</td><td>0.815</td><td>0.222</td><td>537.5</td><td>195.3</td><td>0.733</td><td><strong>19.85</strong></td><td>273095</td><td>23580</td></tr>
-<tr><td><code>NNjjBj</code></td><td><strong>H</strong></td><td>0.9406</td><td>0.891</td><td>0.159</td><td>460.9</td><td>80.0</td><td>0.852</td><td><strong>19.82</strong></td><td>34140</td><td>3482</td><td>0.8837</td><td>0.824</td><td>0.222</td><td>543.6</td><td>194.8</td><td>0.736</td><td><strong>20.00</strong></td><td>276204</td><td>23524</td></tr>
-<tr><td><code>NNkin</code></td><td><strong>W</strong></td><td>0.8158</td><td>0.430</td><td>0.066</td><td>597 463.8</td><td>9 589 086.4</td><td>0.059</td><td><strong>187.20</strong></td><td>21312</td><td>1477</td><td>0.8074</td><td>0.369</td><td>0.049</td><td>552 918.3</td><td>9 119 834.6</td><td>0.057</td><td><strong>177.78</strong></td><td>136444</td><td>9844</td></tr>
-<tr><td><code>NNj</code></td><td><strong>W</strong></td><td>0.7639</td><td>0.495</td><td>0.141</td><td>688 462.6</td><td>20 431 181.4</td><td>0.033</td><td><strong>149.81</strong></td><td>24558</td><td>3147</td><td>0.7602</td><td>0.443</td><td>0.114</td><td>664 613.1</td><td>21 074 562.9</td><td>0.031</td><td><strong>142.54</strong></td><td>164007</td><td>22748</td></tr>
-<tr><td><code>NNjB</code></td><td><strong>W</strong></td><td>0.8012</td><td>0.434</td><td>0.077</td><td>603 995.7</td><td>11 199 170.0</td><td>0.051</td><td><strong>175.81</strong></td><td>21545</td><td>1725</td><td>0.7971</td><td>0.366</td><td>0.056</td><td>549 218.5</td><td>10 339 024.2</td><td>0.050</td><td><strong>166.44</strong></td><td>135531</td><td>11160</td></tr>
-<tr><td><code>NNjj</code></td><td><strong>W</strong></td><td>0.8273</td><td>0.329</td><td>0.031</td><td>457 040.7</td><td>4 512 129.3</td><td>0.092</td><td><strong>205.03</strong></td><td>16303</td><td>695</td><td>0.8192</td><td>0.343</td><td>0.036</td><td>513 910.4</td><td>6 709 248.5</td><td>0.071</td><td><strong>191.22</strong></td><td>126818</td><td>7242</td></tr>
-<tr><td><code>NNjjB</code></td><td><strong>W</strong></td><td>0.8619</td><td>0.218</td><td>0.006</td><td>303 245.4</td><td>824 518.6</td><td>0.269</td><td><strong>285.55</strong></td><td>10817</td><td>127</td><td>0.8536</td><td>0.254</td><td>0.011</td><td>380 029.0</td><td>2 005 733.6</td><td>0.159</td><td><strong>246.04</strong></td><td>93780</td><td>2165</td></tr>
-<tr><td><code>NNjjBj</code></td><td><strong>W</strong></td><td>0.8757</td><td>0.321</td><td>0.010</td><td>446 331.7</td><td>1 486 730.4</td><td>0.231</td><td><strong>321.02</strong></td><td>15921</td><td>229</td><td>0.8508</td><td>0.268</td><td>0.012</td><td>401 887.3</td><td>2 309 604.6</td><td>0.148</td><td><strong>244.06</strong></td><td>99174</td><td>2493</td></tr>
-<tr><td><code>NNkin</code></td><td><strong>Z</strong></td><td>0.8250</td><td>0.327</td><td>0.035</td><td>41 245.2</td><td>539 550.8</td><td>0.071</td><td><strong>54.12</strong></td><td>18567</td><td>787</td><td>0.8207</td><td>0.345</td><td>0.037</td><td>47 205.2</td><td>737 439.2</td><td>0.060</td><td><strong>53.29</strong></td><td>143573</td><td>7698</td></tr>
-<tr><td><code>NNj</code></td><td><strong>Z</strong></td><td>0.7730</td><td>0.564</td><td>0.176</td><td>71 134.4</td><td>2 737 517.5</td><td>0.025</td><td><strong>42.45</strong></td><td>32022</td><td>3993</td><td>0.7728</td><td>0.472</td><td>0.116</td><td>64 708.5</td><td>2 333 691.4</td><td>0.027</td><td><strong>41.78</strong></td><td>196809</td><td>24361</td></tr>
-<tr><td><code>NNjB</code></td><td><strong>Z</strong></td><td>0.8028</td><td>0.413</td><td>0.070</td><td>52 136.8</td><td>1 090 756.4</td><td>0.046</td><td><strong>48.77</strong></td><td>23470</td><td>1591</td><td>0.8041</td><td>0.353</td><td>0.047</td><td>48 357.9</td><td>937 557.5</td><td>0.049</td><td><strong>48.70</strong></td><td>147079</td><td>9787</td></tr>
-<tr><td><code>NNjj</code></td><td><strong>Z</strong></td><td>0.8380</td><td>0.393</td><td>0.042</td><td>49 633.3</td><td>649 929.0</td><td>0.071</td><td><strong>59.34</strong></td><td>22343</td><td>948</td><td>0.8325</td><td>0.379</td><td>0.038</td><td>51 933.8</td><td>773 554.4</td><td>0.063</td><td><strong>57.16</strong></td><td>157955</td><td>8075</td></tr>
-<tr><td><code>NNjjB</code></td><td><strong>Z</strong></td><td>0.8641</td><td>0.201</td><td>0.005</td><td>25 408.6</td><td>82 955.1</td><td>0.234</td><td><strong>77.19</strong></td><td>11438</td><td>121</td><td>0.8604</td><td>0.320</td><td>0.016</td><td>43 840.0</td><td>322 450.0</td><td>0.120</td><td><strong>72.44</strong></td><td>133338</td><td>3366</td></tr>
-<tr><td><code>NNjjBj</code></td><td><strong>Z</strong></td><td>0.8764</td><td>0.287</td><td>0.008</td><td>36 222.5</td><td>116 548.5</td><td>0.237</td><td><strong>92.67</strong></td><td>16306</td><td>170</td><td>0.8558</td><td>0.253</td><td>0.009</td><td>34 632.0</td><td>187 856.4</td><td>0.156</td><td><strong>73.42</strong></td><td>105332</td><td>1961</td></tr>
+<tr><td><code>NNkin</code></td><td><strong>H</strong></td><td>0.8558</td><td>0.961</td><td>0.632</td><td>285.1</td><td>50.8</td><td>0.849</td><td><strong>15.56</strong></td><td>21171</td><td>2212</td><td>0.8037</td><td>0.934</td><td>0.627</td><td>314.6</td><td>113.3</td><td>0.735</td><td><strong>15.21</strong></td><td>159839</td><td>13679</td></tr>
+<tr><td><code>NNj</code></td><td><strong>H</strong></td><td>0.8153</td><td>0.978</td><td>0.800</td><td>290.2</td><td>64.4</td><td>0.818</td><td><strong>15.41</strong></td><td>21547</td><td>2802</td><td>0.7733</td><td>0.953</td><td>0.739</td><td>320.7</td><td>133.5</td><td>0.706</td><td><strong>15.05</strong></td><td>162978</td><td>16118</td></tr>
+<tr><td><code>NNjB</code></td><td><strong>H</strong></td><td>0.8278</td><td>0.974</td><td>0.749</td><td>289.1</td><td>60.3</td><td>0.828</td><td><strong>15.47</strong></td><td>21464</td><td>2623</td><td>0.7825</td><td>0.951</td><td>0.716</td><td>320.0</td><td>129.3</td><td>0.712</td><td><strong>15.10</strong></td><td>162625</td><td>15617</td></tr>
+<tr><td><code>NNjj</code></td><td><strong>H</strong></td><td>0.9019</td><td>0.959</td><td>0.473</td><td>284.6</td><td>38.0</td><td>0.882</td><td><strong>15.84</strong></td><td>21129</td><td>1655</td><td>0.8566</td><td>0.924</td><td>0.459</td><td>311.0</td><td>82.9</td><td>0.790</td><td><strong>15.67</strong></td><td>158029</td><td>10011</td></tr>
+<tr><td><code>NNjjB</code></td><td><strong>H</strong></td><td>0.9104</td><td>0.949</td><td>0.396</td><td>281.6</td><td>31.9</td><td>0.898</td><td><strong>15.90</strong></td><td>20906</td><td>1388</td><td>0.8652</td><td>0.922</td><td>0.434</td><td>310.4</td><td>78.4</td><td>0.798</td><td><strong>15.74</strong></td><td>157739</td><td>9470</td></tr>
+<tr><td><code>NNjjBj</code></td><td><strong>H</strong></td><td>0.9284</td><td>0.967</td><td>0.421</td><td>287.0</td><td>33.8</td><td>0.895</td><td><strong>16.02</strong></td><td>21307</td><td>1473</td><td>0.8692</td><td>0.913</td><td>0.428</td><td>307.3</td><td>77.3</td><td>0.799</td><td><strong>15.67</strong></td><td>156153</td><td>9331</td></tr>
+<tr><td><code>NNkin</code></td><td><strong>W</strong></td><td>0.7241</td><td>0.748</td><td>0.429</td><td>555 175.6</td><td>9 453 682.2</td><td>0.055</td><td><strong>175.48</strong></td><td>19802</td><td>1456</td><td>0.7400</td><td>0.611</td><td>0.257</td><td>473 707.7</td><td>7 211 371.9</td><td>0.062</td><td><strong>170.88</strong></td><td>116897</td><td>7784</td></tr>
+<tr><td><code>NNj</code></td><td><strong>W</strong></td><td>0.6842</td><td>0.844</td><td>0.619</td><td>626 023.4</td><td>13 622 132.8</td><td>0.044</td><td><strong>165.85</strong></td><td>22329</td><td>2098</td><td>0.6886</td><td>0.799</td><td>0.554</td><td>619 296.5</td><td>15 567 817.8</td><td>0.038</td><td><strong>153.93</strong></td><td>152824</td><td>16804</td></tr>
+<tr><td><code>NNjB</code></td><td><strong>W</strong></td><td>0.7821</td><td>0.641</td><td>0.231</td><td>475 187.9</td><td>5 090 444.3</td><td>0.085</td><td><strong>201.42</strong></td><td>16949</td><td>784</td><td>0.7800</td><td>0.634</td><td>0.231</td><td>491 817.6</td><td>6 486 899.6</td><td>0.070</td><td><strong>186.17</strong></td><td>121366</td><td>7002</td></tr>
+<tr><td><code>NNjj</code></td><td><strong>W</strong></td><td>0.7515</td><td>0.561</td><td>0.201</td><td>416 255.5</td><td>4 434 660.0</td><td>0.086</td><td><strong>188.99</strong></td><td>14847</td><td>683</td><td>0.7572</td><td>0.519</td><td>0.164</td><td>402 597.0</td><td>4 616 426.8</td><td>0.080</td><td><strong>179.71</strong></td><td>99349</td><td>4983</td></tr>
+<tr><td><code>NNjjB</code></td><td><strong>W</strong></td><td>0.8412</td><td>0.477</td><td>0.070</td><td>354 127.0</td><td>1 545 313.4</td><td>0.186</td><td><strong>256.95</strong></td><td>12631</td><td>238</td><td>0.8384</td><td>0.523</td><td>0.092</td><td>405 287.8</td><td>2 581 975.0</td><td>0.136</td><td><strong>234.49</strong></td><td>100013</td><td>2787</td></tr>
+<tr><td><code>NNjjBj</code></td><td><strong>W</strong></td><td>0.8755</td><td>0.465</td><td>0.047</td><td>345 015.2</td><td>1 038 866.2</td><td>0.249</td><td><strong>293.28</strong></td><td>12306</td><td>160</td><td>0.8260</td><td>0.414</td><td>0.057</td><td>321 448.7</td><td>1 602 733.0</td><td>0.167</td><td><strong>231.73</strong></td><td>79324</td><td>1730</td></tr>
+<tr><td><code>NNkin</code></td><td><strong>Z</strong></td><td>0.7458</td><td>0.581</td><td>0.228</td><td>39 807.8</td><td>534 209.0</td><td>0.069</td><td><strong>52.54</strong></td><td>17899</td><td>779</td><td>0.7630</td><td>0.560</td><td>0.187</td><td>40 599.2</td><td>577 654.5</td><td>0.066</td><td><strong>51.63</strong></td><td>123481</td><td>6030</td></tr>
+<tr><td><code>NNj</code></td><td><strong>Z</strong></td><td>0.6847</td><td>0.780</td><td>0.518</td><td>53 385.5</td><td>1 216 542.7</td><td>0.042</td><td><strong>47.37</strong></td><td>24004</td><td>1774</td><td>0.7045</td><td>0.739</td><td>0.450</td><td>53 589.3</td><td>1 391 639.7</td><td>0.037</td><td><strong>44.58</strong></td><td>162990</td><td>14527</td></tr>
+<tr><td><code>NNjB</code></td><td><strong>Z</strong></td><td>0.7679</td><td>0.585</td><td>0.207</td><td>40 081.4</td><td>486 205.6</td><td>0.076</td><td><strong>55.25</strong></td><td>18022</td><td>709</td><td>0.7822</td><td>0.671</td><td>0.255</td><td>48 652.8</td><td>787 928.4</td><td>0.058</td><td><strong>53.19</strong></td><td>147976</td><td>8225</td></tr>
+<tr><td><code>NNjj</code></td><td><strong>Z</strong></td><td>0.7609</td><td>0.624</td><td>0.235</td><td>42 719.1</td><td>552 724.6</td><td>0.072</td><td><strong>55.36</strong></td><td>19208</td><td>806</td><td>0.7741</td><td>0.536</td><td>0.157</td><td>38 884.9</td><td>486 072.8</td><td>0.074</td><td><strong>53.67</strong></td><td>118267</td><td>5074</td></tr>
+<tr><td><code>NNjjB</code></td><td><strong>Z</strong></td><td>0.8324</td><td>0.564</td><td>0.111</td><td>38 618.0</td><td>259 904.0</td><td>0.129</td><td><strong>70.68</strong></td><td>17364</td><td>379</td><td>0.8463</td><td>0.469</td><td>0.065</td><td>34 039.8</td><td>200 406.8</td><td>0.145</td><td><strong>70.30</strong></td><td>103531</td><td>2092</td></tr>
+<tr><td><code>NNjjBj</code></td><td><strong>Z</strong></td><td>0.8707</td><td>0.446</td><td>0.040</td><td>30 515.9</td><td>93 263.7</td><td>0.247</td><td><strong>86.74</strong></td><td>13721</td><td>136</td><td>0.8381</td><td>0.375</td><td>0.038</td><td>27 218.8</td><td>117 734.2</td><td>0.188</td><td><strong>71.49</strong></td><td>82785</td><td>1229</td></tr>
 </table></div>
-<p><code>NNjjBj</code> has the best significance in 5 of the 6 channel/generator blocks (H-Herwig 19.82,</p>
-<p>H-MG5 20.00, W-Herwig 321.02, Z-Herwig 92.67, Z-MG5 73.42); <code>NNjjB</code> edges it out only in</p>
-<p>W-MG5 (246.04 vs 244.06, a 1% difference). In every channel the ranking broadly tracks</p>
-<p>AUC: the boson-aware, both-jets nets (<code>NNjjB</code>, <code>NNjjBj</code>) consistently beat the</p>
-<p>single-jet nets (<code>NNkin</code>, <code>NNj</code>, <code>NNjB</code>).</p>
+<p><code>NNjjBj</code> has the best significance in 4 of the 6 channel/generator blocks</p>
+<p>(H-Herwig 16.02, W-Herwig 293.28, Z-Herwig 86.74, Z-MG5 71.49); <code>NNjjB</code> edges</p>
+<p>it out in the other 2 (H-MG5: 15.74 vs 15.67, a 0.4% difference; W-MG5:</p>
+<p>234.49 vs 231.73, a 1.2% difference). In every channel the ranking broadly</p>
+<p>tracks AUC: the boson-aware, both-jets nets (<code>NNjjB</code>, <code>NNjjBj</code>) consistently</p>
+<p>beat the single-jet nets (<code>NNkin</code>, <code>NNj</code>, <code>NNjB</code>). Compared to the old</p>
+<p>inclusive-selection table, absolute significance is lower across the board</p>
+<p>(e.g. H-Herwig <code>NNjjBj</code>: 19.82 → 16.02) even though purity <code>S/(S+B)</code></p>
+<p>improved (same cell: 0.852 → 0.895) — see the &quot;Effect on NN significance&quot;</p>
+<p>note in the preselection changelog above for why.</p>
 <hr>
 <h2 id="event-level-nn-score-columns-in-the-h5-files-per-channel-2026-07-08">Event-level NN score columns in the h5 files (per-channel, 2026-07-08)</h2>
 <p>Each production h5 file carries per-event sigmoid scores written back by the</p>
@@ -491,6 +556,11 @@ condor_submit summer26/NNjjBj_W/infer_gpu.sub</code></pre>
 <p>in the same two variants as the mjj figures:</p>
 <p><code>figs/summer26/{NNj_jet0,NNjB,NNjjBj}_{H,W,Z}[_abs].pdf</code></p>
 <p>(normalized / absolute log-y).</p>
+<p>It also draws a 2D <code>NNj_jet0</code> vs <code>NNj_jet1</code> score-correlation histogram</p>
+<p>(kWeight-weighted, 50×50 bins over [0,1]²) for the Z channel&#x27;s Herwig</p>
+<p>samples, signal and background separately:</p>
+<p><code>figs/summer26/NNj_jet0_vs_jet1_{VBFZ_herwig,QCDZjj_herwig}.pdf</code> (added</p>
+<p>2026-09-01).</p>
 <p>Writes go through a small retry loop (<code>write_dataset(s)</code> in <code>save_scores.py</code>):</p>
 <p>EOS FUSE occasionally fails HDF5 metadata operations on the GPU nodes with</p>
 <p><code>bad object header version number</code>; if a job dies there anyway, delete the</p>

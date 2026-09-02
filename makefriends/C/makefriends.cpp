@@ -27,7 +27,8 @@ static const double JC_PT_MIN         = 0.0;   // pt cut on particles before clu
 static const double JC_ETA_MAX        = 20.0;  // |eta| cut on particles before clustering
 static const double JET_PT_MIN        = 30.0;  // inclusive jet pt threshold
 static const double JET_ETA_MAX       = 3.0;   // |eta| cut on reconstructed jets
-static const double MJJ_MIN           = 0.0;   // dijet invariant mass threshold
+static const double MJJ_MIN           = 400.0; // dijet invariant mass threshold
+static const double DYJJ_MIN          = 2.5;   // |dYjj| threshold (leading pair rapidity separation)
 static const double PV_A              = 1.0;   // exponent on z = pt_jc/pt_jet in pull-vector weight
 static const double PV_B              = 1.0;   // exponent on r in pull-vector weight
 static const double PV_C              = 0.0;   // exponent on JET_R in pull-vector weight denominator
@@ -432,14 +433,17 @@ int main(int argc, char* argv[]) {
         hNJets->Fill((float)jets.size(), o_kWeight);
         if (!jets.empty()) hJetPt1->Fill(jets[0].pt(), o_kWeight);
 
-        // dijet selection: mjj>MJJ_MIN, opposite-eta leading pair
-        if ((int)jets.size() >= 2 &&
+        // dijet selection: mjj>MJJ_MIN, opposite-eta leading pair, |dYjj|>DYJJ_MIN
+        bool passNJets = (int)jets.size() >= 2;
+        double dYjj    = passNJets ? (jets[0].rapidity() - jets[1].rapidity()) : -99.;
+        if (passNJets &&
             sumP4(jets, 2).M() > MJJ_MIN &&
-            jets[0].eta() * jets[1].eta() < 0.) {
+            jets[0].eta() * jets[1].eta() < 0. &&
+            std::abs(dYjj) > DYJJ_MIN) {
 
             TLorentzVector jj = sumP4(jets, 2);
             o_mjj    = (Float_t)jj.M();
-            o_dYjj   = (Float_t)(jets[0].rapidity() - jets[1].rapidity());
+            o_dYjj   = (Float_t)dYjj;
             o_dPhijj = (Float_t)deltaPhi(jets[0].phi(), jets[1].phi());
             o_ptjj   = (Float_t)jj.Pt();
             bool swap = (iev % 2 == 0);  // odd iev → leading at [0], even → leading at [1]

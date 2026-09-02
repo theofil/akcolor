@@ -1,18 +1,18 @@
-condor_submit summer26/NNkin/train_gpu.sub
-condor_submit summer26/NNkin_H/train_gpu.sub
-condor_submit summer26/NNkin_W/train_gpu.sub
-condor_submit summer26/NNj/train_gpu.sub
-condor_submit summer26/NNj_H/train_gpu.sub
-condor_submit summer26/NNj_W/train_gpu.sub
-condor_submit summer26/NNjB/train_gpu.sub
-condor_submit summer26/NNjB_H/train_gpu.sub
-condor_submit summer26/NNjB_W/train_gpu.sub
-condor_submit summer26/NNjj/train_gpu.sub
-condor_submit summer26/NNjj_H/train_gpu.sub
-condor_submit summer26/NNjj_W/train_gpu.sub
-condor_submit summer26/NNjjB/train_gpu.sub
-condor_submit summer26/NNjjB_H/train_gpu.sub
-condor_submit summer26/NNjjB_W/train_gpu.sub
-condor_submit summer26/NNjjBj/train_gpu.sub
-condor_submit summer26/NNjjBj_H/train_gpu.sub
-condor_submit summer26/NNjjBj_W/train_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNkin/train_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNkin_H/train_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNkin_W/train_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNj/train_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNj_H/train_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNj_W/train_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjB/train_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjB_H/train_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjB_W/train_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjj/train_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjj_H/train_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjj_W/train_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjjB/train_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjjB_H/train_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjjB_W/train_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjjBj/train_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjjBj_H/train_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjjBj_W/train_gpu.sub

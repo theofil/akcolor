@@ -1,0 +1,23 @@
+# Verification that friends/summer26/<sample>.friend.root is an exact skim of
+# friends/summer26/prePLB/<sample>.friend.root under the offline cut
+# mjj > 400 & |dYjj| > 2.5
+#
+# n_old          = entries in the old (prePLB) friend file
+# n_old_pass_cut = old entries surviving the offline mjj/dYjj mask
+# n_new          = entries in the current friend file
+# result          = PASS if counts match AND every branch is identical
+#                    (row-for-row, after masking) between old[mask] and new
+#
+sample                       n_old  n_old_pass_cut       n_new  result  first_mismatch                          
+VBFH_herwig                 255574          146901      146901    PASS  -                                       
+VBFH_mg5_pythia             335031          171085      171085    PASS  -                                       
+VBFW_herwig                 330597          176406      176406    PASS  -                                       
+VBFW_mg5_pythia             369846          191379      191379    PASS  -                                       
+VBFZ_herwig                 378566          205250      205250    PASS  -                                       
+VBFZ_mg5_pythia             416673          220628      220628    PASS  -                                       
+QCDHjj_herwig               146109           23340       23340    PASS  -                                       
+QCDHjj_mg5_pythia           106059           21818       21818    PASS  -                                       
+QCDWjj_herwig               148885           22603       22603    PASS  -                                       
+QCDWjj_mg5_pythia           200332           30340       30340    PASS  -                                       
+QCDZjj_herwig               150848           22821       22821    PASS  -                                       
+QCDZjj_mg5_pythia           210073           32309       32309    PASS  -                                       

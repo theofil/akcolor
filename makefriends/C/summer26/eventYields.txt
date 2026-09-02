@@ -2,11 +2,11 @@
 # integral = sum(kWeight) for all events (first/last bins absorb overflow/underflow)
 #
 variable      sample                     group         integral   raw_entries
-mjj           QCDHjj_mg5_pythia          QCD       1.283887e+00         25849
-mjj           VBFH_mg5_pythia            VBF       9.674705e-01         33488
-dYjj          QCDHjj_mg5_pythia          QCD       1.283887e+00         25849
-dYjj          VBFH_mg5_pythia            VBF       9.674705e-01         33488
-dPhijj        QCDHjj_mg5_pythia          QCD       1.283887e+00         25849
-dPhijj        VBFH_mg5_pythia            VBF       9.674705e-01         33488
-ptjj          QCDHjj_mg5_pythia          QCD       1.283887e+00         25849
-ptjj          VBFH_mg5_pythia            VBF       9.674705e-01         33488
+mjj           QCDHjj_mg5_pythia          QCD       2.653606e-01         21818
+mjj           VBFH_mg5_pythia            VBF       4.944185e-01        171085
+dYjj          QCDHjj_mg5_pythia          QCD       2.653606e-01         21818
+dYjj          VBFH_mg5_pythia            VBF       4.944185e-01        171085
+dPhijj        QCDHjj_mg5_pythia          QCD       2.653606e-01         21818
+dPhijj        VBFH_mg5_pythia            VBF       4.944185e-01        171085
+ptjj          QCDHjj_mg5_pythia          QCD       2.653606e-01         21818
+ptjj          VBFH_mg5_pythia            VBF       4.944185e-01        171085

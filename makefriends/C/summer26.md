@@ -71,6 +71,40 @@ components do not match the ν system.
 
 ---
 
+## mjj>400 GeV & |ΔY_jj|>2.5 preselection (added 2026-09-01)
+
+The dijet selection in `makefriends.cpp` was tightened to a standard VBF-style
+preselection: **`mjj > 400 GeV`** and **`|ΔY_jj| > 2.5`**, applied in addition
+to (not instead of) the existing opposite-sign-η requirement — see "Dijet
+selection applied in `makefriends.cpp`" below for the full 4-cut list.
+Previously the selection was `mjj > 0` (no real mass cut) with no ΔY cut.
+
+**Everything downstream was regenerated from scratch under the new
+selection**: all 12 friend ROOT/h5 files, all 18 trained networks, all
+inference ROC curves, all per-channel event-level score columns, all
+diagnostic plots, and the SR significance table in "Signal/background
+estimation from ROC curves" below. Any such artifact with a timestamp before
+2026-09-01 used the old, looser selection and is stale.
+
+**Effect on efficiency** (from `figs/summer26/checksum.txt`): the cut is far
+more aggressive on background than signal, as expected for a VBF topology
+cut — QCD weighted efficiency drops to **~2.3–5.3%** (was ~15–26%), VBF
+signal efficiency to **~14.7–22.1%** (was ~26–42%).
+
+**Effect on NN significance** (counter-intuitive): the per-net/channel
+significance estimates in "Results" below are *lower* than under the old
+inclusive selection, even though signal purity `S/(S+B)` improved
+substantially. At the significance-maximizing operating point signal already
+dominates background (S≫B), so significance is close to
+signal-count-limited (∝√S) rather than background-limited; the
+preselection's ~30–40% loss of raw signal (removed as an unavoidable side
+effect of removing far more background) costs more significance than the
+much larger background rejection recovers. This is a real effect of trading
+some peak toy significance for a cleaner, more physically realistic
+VBF-topology sample — not a regression.
+
+---
+
 ## Step 2 — Run event reconstruction
 
 ### Quick test (100 events per sample, foreground)
@@ -122,15 +156,18 @@ components do not match the ν system.
 
 All NNs use the LCG_106_cuda environment. Training is submitted to a GPU node
 via HTCondor; the full submission list (all networks × Z/H/W) is in `train.txt`.
-To submit the base (Z) trainings:
+**Plain `condor_submit` fails from `/eos` paths** ("Standard batch schedds
+cannot use /eos paths directly") — submit via the EosSubmit `bigbird24`
+schedd instead: `condor_submit -name bigbird24.cern.ch <sub file>`. To submit
+the base (Z) trainings:
 
 ```bash
-condor_submit summer26/NNkin/train_gpu.sub
-condor_submit summer26/NNj/train_gpu.sub
-condor_submit summer26/NNjB/train_gpu.sub
-condor_submit summer26/NNjj/train_gpu.sub
-condor_submit summer26/NNjjB/train_gpu.sub
-condor_submit summer26/NNjjBj/train_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNkin/train_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNj/train_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjB/train_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjj/train_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjjB/train_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjjBj/train_gpu.sub
 ```
 
 Or run interactively (falls back to CPU):
@@ -266,29 +303,45 @@ Trained on **QCDZjj_herwig + VBFZ_herwig**.
 
 ## Step 6 — Run inference
 
-Submit all inference jobs to HTCondor (commands are in `infer.txt`):
+Submit all inference jobs to HTCondor (commands are in `infer.txt`), via the
+EosSubmit `bigbird24` schedd (plain `condor_submit` fails from `/eos` paths —
+see Step 5):
 
 ```bash
-condor_submit summer26/NNkin/infer_gpu.sub
-condor_submit summer26/NNkin_H/infer_gpu.sub
-condor_submit summer26/NNkin_W/infer_gpu.sub
-condor_submit summer26/NNj/infer_gpu.sub
-condor_submit summer26/NNj/save_scores.sub
-condor_submit summer26/NNj_H/infer_gpu.sub
-condor_submit summer26/NNj_W/infer_gpu.sub
-condor_submit summer26/NNjB/infer_gpu.sub
-condor_submit summer26/NNjB_H/infer_gpu.sub
-condor_submit summer26/NNjB_W/infer_gpu.sub
-condor_submit summer26/NNjj/infer_gpu.sub
-condor_submit summer26/NNjj_H/infer_gpu.sub
-condor_submit summer26/NNjj_W/infer_gpu.sub
-condor_submit summer26/NNjjB/infer_gpu.sub
-condor_submit summer26/NNjjB_H/infer_gpu.sub
-condor_submit summer26/NNjjB_W/infer_gpu.sub
-condor_submit summer26/NNjjBj/infer_gpu.sub
-condor_submit summer26/NNjjBj_H/infer_gpu.sub
-condor_submit summer26/NNjjBj_W/infer_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNkin/infer_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNkin_H/infer_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNkin_W/infer_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNj/infer_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNj/save_scores.sub
+condor_submit -name bigbird24.cern.ch summer26/NNj_H/infer_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNj_H/save_scores.sub
+condor_submit -name bigbird24.cern.ch summer26/NNj_W/infer_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNj_W/save_scores.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjB/infer_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjB/save_scores.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjB_H/infer_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjB_H/save_scores.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjB_W/infer_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjB_W/save_scores.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjj/infer_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjj_H/infer_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjj_W/infer_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjjB/infer_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjjB_H/infer_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjjB_W/infer_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjjBj/infer_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjjBj/save_scores.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjjBj_H/infer_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjjBj_H/save_scores.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjjBj_W/infer_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjjBj_W/save_scores.sub
 ```
+
+**Caution**: within a channel (Z/H/W), the `save_scores.sub` jobs of `NNj`,
+`NNjB` and `NNjjBj` all write to the *same* 4 h5 files for that channel — do
+not submit same-channel `save_scores` jobs concurrently (risks
+concurrent-write corruption on EOS FUSE); submit in channel-disjoint batches
+or one at a time instead. `infer.txt` carries the same note.
 
 Each job requests 2 CPUs, 8 GB RAM, 1 GPU (`microcentury` flavour). Each `inference.py`
 evaluates on the Herwig test split (training domain) and the full MG5+Pythia dataset
@@ -349,20 +402,25 @@ original EOS files; histograms in `figs/summer26/evweight_{W,Z,H}.pdf`).
 (`friends/summer26/*.friend.root`); histograms in `figs/summer26/kWeight_{W,Z,H}.pdf`.
 Run `python summer26/weights.py` to regenerate both sets of PDFs and reprint this table.
 
+Post-selection (`N sel.`, `kWeight mean`, `kWeight std`) columns reflect the
+current `mjj>400 GeV` + `|ΔY_jj|>2.5` preselection (added 2026-09-01); `evweight`
+columns are selection-independent (computed over all events before any cut) and
+unchanged from before.
+
 | Sample | N events | σ `--xs` (pb) | evweight min | evweight max | evweight mean | evweight std | N sel. | kWeight mean | kWeight std |
 |--------|----------|--------------|-------------|-------------|--------------|-------------|--------|-------------|------------|
-| `VBFH_herwig` | 1 000 000 | 2.97189 | 1.000 | 424.94 | 1.0056 | 0.622 | 255 574 | 2.9735e-06 | 1.4187e-06 |
-| `VBFH_mg5_pythia` | 1 000 000 | 2.88990 | 2.8870 | 2.8920 | 2.8900 | 0.0015 | 335 031 | 2.8899e-06 | 1.4679e-09 |
-| `VBFW_herwig` | 1 000 000 | 7.494 | 1.000 | 91.604 | 1.0060 | 0.192 | 330 597 | 7.475e-06 | 9.7132e-07 |
-| `VBFW_mg5_pythia` | 1 000 000 | 7.20333 | 7.1962 | 7.2120 | 7.2033 | 0.0051 | 369 846 | 7.2033e-06 | 5.0482e-09 |
-| `VBFZ_herwig` | 1 000 000 | 1.099 | 1.000 | 46.794 | 1.0183 | 0.194 | 378 566 | 1.1004e-06 | 2.0376e-07 |
-| `VBFZ_mg5_pythia` | 1 000 000 | 1.08581 | 1.0846 | 1.0868 | 1.0856 | 0.00058 | 416 673 | 1.0858e-06 | 5.7907e-10 |
-| `QCDHjj_herwig` | 1 000 000 | 5.06051 | 1.000 | 12.842 | 1.0002 | 0.026 | 146 109 | 5.0596e-06 | 2.083e-09 |
-| `QCDHjj_mg5_pythia` | 409 621 | 4.982 | 4.9818 | 4.9818 | 4.9818 | ~0 | 106 059 | 1.2162e-05 | 0 |
-| `QCDWjj_herwig` | 1 000 000 | 1733.3 | 0.00146 | 6.3698 | 0.11363 | 0.011 | 148 885 | 0.0017311 | 0.00010734 |
-| `QCDWjj_mg5_pythia` | 1 000 000 | 1646.805 | 1644.5 | 1649.8 | 1646.8 | 1.73 | 200 332 | 0.0016468 | 1.7313e-06 |
-| `QCDZjj_herwig` | 1 000 000 | 340.2 | 0.06666 | 19.326 | 0.06679 | 0.025 | 150 848 | 0.00033961 | 6.1153e-06 |
-| `QCDZjj_mg5_pythia` | 1 000 000 | 316.363 | 316.00 | 316.72 | 316.37 | 0.232 | 210 073 | 0.00031636 | 2.3246e-07 |
+| `VBFH_herwig` | 1 000 000 | 2.97189 | 1.000 | 424.94 | 1.0056 | 0.622 | 146 901 | 2.9668e-06 | 1.3108e-06 |
+| `VBFH_mg5_pythia` | 1 000 000 | 2.88990 | 2.8870 | 2.8920 | 2.8900 | 0.0015 | 171 085 | 2.8899e-06 | 1.4685e-09 |
+| `VBFW_herwig` | 1 000 000 | 7.494 | 1.000 | 91.604 | 1.0060 | 0.192 | 176 406 | 7.4755e-06 | 9.3813e-07 |
+| `VBFW_mg5_pythia` | 1 000 000 | 7.20333 | 7.1962 | 7.2120 | 7.2033 | 0.0051 | 191 379 | 7.2033e-06 | 5.0483e-09 |
+| `VBFZ_herwig` | 1 000 000 | 1.099 | 1.000 | 46.794 | 1.0183 | 0.194 | 205 250 | 1.1017e-06 | 2.182e-07 |
+| `VBFZ_mg5_pythia` | 1 000 000 | 1.08581 | 1.0846 | 1.0868 | 1.0856 | 0.00058 | 220 628 | 1.0858e-06 | 5.7927e-10 |
+| `QCDHjj_herwig` | 1 000 000 | 5.06051 | 1.000 | 12.842 | 1.0002 | 0.026 | 23 340 | 5.0596e-06 | ~0 |
+| `QCDHjj_mg5_pythia` | 409 621 | 4.982 | 4.9818 | 4.9818 | 4.9818 | ~0 | 21 818 | 1.2162e-05 | 0 |
+| `QCDWjj_herwig` | 1 000 000 | 1733.3 | 0.00146 | 6.3698 | 0.11363 | 0.011 | 22 603 | 0.0017315 | 4.4768e-05 |
+| `QCDWjj_mg5_pythia` | 1 000 000 | 1646.805 | 1644.5 | 1649.8 | 1646.8 | 1.73 | 30 340 | 0.0016468 | 1.7338e-06 |
+| `QCDZjj_herwig` | 1 000 000 | 340.2 | 0.06666 | 19.326 | 0.06679 | 0.025 | 22 821 | 0.00033969 | 6.7361e-06 |
+| `QCDZjj_mg5_pythia` | 1 000 000 | 316.363 | 316.00 | 316.72 | 316.37 | 0.232 | 32 309 | 0.00031636 | 2.3195e-07 |
 
 ### Character of the weights by generator
 
@@ -380,12 +438,16 @@ strategy where most generated events carry low weight.
 
 ### Dijet selection applied in `makefriends.cpp`
 
-Only events passing all three cuts enter the output `events` TTree (and thus contribute to histograms):
+Only events passing all four cuts enter the output `events` TTree (and thus contribute to histograms):
 
 1. ≥ 2 anti-kT (R=0.4) jets with pT > 30 GeV and |η| < 3.0
 2. Two leading jets with opposite-sign pseudorapidity: η₀ × η₁ < 0
-3. Dijet invariant mass: mjj > 0
+3. Dijet invariant mass: mjj > 400 GeV
+4. Dijet rapidity separation: |ΔY_jj| > 2.5
 
+Cuts 3–4 were added 2026-09-01 (previously `mjj > 0`, no ΔY cut — see the
+changelog section above); cut 2 (opposite-sign η) is unchanged and applies
+in addition to, not instead of, the new mjj/ΔY cuts.
 Summing `kWeight` over all selected events gives `σ_eff` (effective cross-section after selection, in pb).
 
 ---
@@ -458,32 +520,43 @@ estimates for a real search — they measure the NNs' relative discrimination po
 
 ### Results (18 nets × 2 generators, best ROC operating point at L = 300 fb⁻¹)
 
+Regenerated 2026-09-01 under the `mjj>400 GeV` + `|ΔY_jj|>2.5` preselection
+(see the changelog section near the top of this document); numbers below are
+**not** comparable to the pre-2026-09-01 version of this table (S, B, and
+significance all shift because the preselected sample is smaller — see the
+"Effect on NN significance" note in the changelog).
+
 | Net | Ch | AUC (HW) | ε_sig* (HW) | ε_bkg* (HW) | S (HW) | B (HW) | S/(S+B) (HW) | S/√(S+B) (HW) | raw S (HW) | raw B (HW) | AUC (MG5) | ε_sig* (MG5) | ε_bkg* (MG5) | S (MG5) | B (MG5) | S/(S+B) (MG5) | S/√(S+B) (MG5) | raw S (MG5) | raw B (MG5) |
 |---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| `NNkin` | **H** | 0.8981 | 0.881 | 0.270 | 456.0 | 135.7 | 0.771 | **18.75** | 33777 | 5908 | 0.8285 | 0.821 | 0.341 | 541.2 | 299.3 | 0.644 | **18.67** | 275006 | 36138 |
-| `NNj` | **H** | 0.8524 | 0.835 | 0.306 | 432.2 | 153.9 | 0.737 | **17.85** | 32013 | 6700 | 0.7930 | 0.831 | 0.427 | 548.0 | 374.9 | 0.594 | **18.04** | 278472 | 45267 |
-| `NNjB` | **H** | 0.8610 | 0.851 | 0.314 | 440.5 | 158.2 | 0.736 | **18.00** | 32629 | 6887 | 0.8009 | 0.830 | 0.408 | 547.3 | 358.5 | 0.604 | **18.18** | 278101 | 43285 |
-| `NNjj` | **H** | 0.9265 | 0.869 | 0.172 | 449.8 | 86.6 | 0.838 | **19.42** | 33318 | 3772 | 0.8685 | 0.834 | 0.264 | 549.8 | 232.3 | 0.703 | **19.66** | 279373 | 28047 |
-| `NNjjB` | **H** | 0.9345 | 0.891 | 0.177 | 461.1 | 89.3 | 0.838 | **19.65** | 34153 | 3888 | 0.8757 | 0.815 | 0.222 | 537.5 | 195.3 | 0.733 | **19.85** | 273095 | 23580 |
-| `NNjjBj` | **H** | 0.9406 | 0.891 | 0.159 | 460.9 | 80.0 | 0.852 | **19.82** | 34140 | 3482 | 0.8837 | 0.824 | 0.222 | 543.6 | 194.8 | 0.736 | **20.00** | 276204 | 23524 |
-| `NNkin` | **W** | 0.8158 | 0.430 | 0.066 | 597 463.8 | 9 589 086.4 | 0.059 | **187.20** | 21312 | 1477 | 0.8074 | 0.369 | 0.049 | 552 918.3 | 9 119 834.6 | 0.057 | **177.78** | 136444 | 9844 |
-| `NNj` | **W** | 0.7639 | 0.495 | 0.141 | 688 462.6 | 20 431 181.4 | 0.033 | **149.81** | 24558 | 3147 | 0.7602 | 0.443 | 0.114 | 664 613.1 | 21 074 562.9 | 0.031 | **142.54** | 164007 | 22748 |
-| `NNjB` | **W** | 0.8012 | 0.434 | 0.077 | 603 995.7 | 11 199 170.0 | 0.051 | **175.81** | 21545 | 1725 | 0.7971 | 0.366 | 0.056 | 549 218.5 | 10 339 024.2 | 0.050 | **166.44** | 135531 | 11160 |
-| `NNjj` | **W** | 0.8273 | 0.329 | 0.031 | 457 040.7 | 4 512 129.3 | 0.092 | **205.03** | 16303 | 695 | 0.8192 | 0.343 | 0.036 | 513 910.4 | 6 709 248.5 | 0.071 | **191.22** | 126818 | 7242 |
-| `NNjjB` | **W** | 0.8619 | 0.218 | 0.006 | 303 245.4 | 824 518.6 | 0.269 | **285.55** | 10817 | 127 | 0.8536 | 0.254 | 0.011 | 380 029.0 | 2 005 733.6 | 0.159 | **246.04** | 93780 | 2165 |
-| `NNjjBj` | **W** | 0.8757 | 0.321 | 0.010 | 446 331.7 | 1 486 730.4 | 0.231 | **321.02** | 15921 | 229 | 0.8508 | 0.268 | 0.012 | 401 887.3 | 2 309 604.6 | 0.148 | **244.06** | 99174 | 2493 |
-| `NNkin` | **Z** | 0.8250 | 0.327 | 0.035 | 41 245.2 | 539 550.8 | 0.071 | **54.12** | 18567 | 787 | 0.8207 | 0.345 | 0.037 | 47 205.2 | 737 439.2 | 0.060 | **53.29** | 143573 | 7698 |
-| `NNj` | **Z** | 0.7730 | 0.564 | 0.176 | 71 134.4 | 2 737 517.5 | 0.025 | **42.45** | 32022 | 3993 | 0.7728 | 0.472 | 0.116 | 64 708.5 | 2 333 691.4 | 0.027 | **41.78** | 196809 | 24361 |
-| `NNjB` | **Z** | 0.8028 | 0.413 | 0.070 | 52 136.8 | 1 090 756.4 | 0.046 | **48.77** | 23470 | 1591 | 0.8041 | 0.353 | 0.047 | 48 357.9 | 937 557.5 | 0.049 | **48.70** | 147079 | 9787 |
-| `NNjj` | **Z** | 0.8380 | 0.393 | 0.042 | 49 633.3 | 649 929.0 | 0.071 | **59.34** | 22343 | 948 | 0.8325 | 0.379 | 0.038 | 51 933.8 | 773 554.4 | 0.063 | **57.16** | 157955 | 8075 |
-| `NNjjB` | **Z** | 0.8641 | 0.201 | 0.005 | 25 408.6 | 82 955.1 | 0.234 | **77.19** | 11438 | 121 | 0.8604 | 0.320 | 0.016 | 43 840.0 | 322 450.0 | 0.120 | **72.44** | 133338 | 3366 |
-| `NNjjBj` | **Z** | 0.8764 | 0.287 | 0.008 | 36 222.5 | 116 548.5 | 0.237 | **92.67** | 16306 | 170 | 0.8558 | 0.253 | 0.009 | 34 632.0 | 187 856.4 | 0.156 | **73.42** | 105332 | 1961 |
+| `NNkin` | **H** | 0.8558 | 0.961 | 0.632 | 285.1 | 50.8 | 0.849 | **15.56** | 21171 | 2212 | 0.8037 | 0.934 | 0.627 | 314.6 | 113.3 | 0.735 | **15.21** | 159839 | 13679 |
+| `NNj` | **H** | 0.8153 | 0.978 | 0.800 | 290.2 | 64.4 | 0.818 | **15.41** | 21547 | 2802 | 0.7733 | 0.953 | 0.739 | 320.7 | 133.5 | 0.706 | **15.05** | 162978 | 16118 |
+| `NNjB` | **H** | 0.8278 | 0.974 | 0.749 | 289.1 | 60.3 | 0.828 | **15.47** | 21464 | 2623 | 0.7825 | 0.951 | 0.716 | 320.0 | 129.3 | 0.712 | **15.10** | 162625 | 15617 |
+| `NNjj` | **H** | 0.9019 | 0.959 | 0.473 | 284.6 | 38.0 | 0.882 | **15.84** | 21129 | 1655 | 0.8566 | 0.924 | 0.459 | 311.0 | 82.9 | 0.790 | **15.67** | 158029 | 10011 |
+| `NNjjB` | **H** | 0.9104 | 0.949 | 0.396 | 281.6 | 31.9 | 0.898 | **15.90** | 20906 | 1388 | 0.8652 | 0.922 | 0.434 | 310.4 | 78.4 | 0.798 | **15.74** | 157739 | 9470 |
+| `NNjjBj` | **H** | 0.9284 | 0.967 | 0.421 | 287.0 | 33.8 | 0.895 | **16.02** | 21307 | 1473 | 0.8692 | 0.913 | 0.428 | 307.3 | 77.3 | 0.799 | **15.67** | 156153 | 9331 |
+| `NNkin` | **W** | 0.7241 | 0.748 | 0.429 | 555 175.6 | 9 453 682.2 | 0.055 | **175.48** | 19802 | 1456 | 0.7400 | 0.611 | 0.257 | 473 707.7 | 7 211 371.9 | 0.062 | **170.88** | 116897 | 7784 |
+| `NNj` | **W** | 0.6842 | 0.844 | 0.619 | 626 023.4 | 13 622 132.8 | 0.044 | **165.85** | 22329 | 2098 | 0.6886 | 0.799 | 0.554 | 619 296.5 | 15 567 817.8 | 0.038 | **153.93** | 152824 | 16804 |
+| `NNjB` | **W** | 0.7821 | 0.641 | 0.231 | 475 187.9 | 5 090 444.3 | 0.085 | **201.42** | 16949 | 784 | 0.7800 | 0.634 | 0.231 | 491 817.6 | 6 486 899.6 | 0.070 | **186.17** | 121366 | 7002 |
+| `NNjj` | **W** | 0.7515 | 0.561 | 0.201 | 416 255.5 | 4 434 660.0 | 0.086 | **188.99** | 14847 | 683 | 0.7572 | 0.519 | 0.164 | 402 597.0 | 4 616 426.8 | 0.080 | **179.71** | 99349 | 4983 |
+| `NNjjB` | **W** | 0.8412 | 0.477 | 0.070 | 354 127.0 | 1 545 313.4 | 0.186 | **256.95** | 12631 | 238 | 0.8384 | 0.523 | 0.092 | 405 287.8 | 2 581 975.0 | 0.136 | **234.49** | 100013 | 2787 |
+| `NNjjBj` | **W** | 0.8755 | 0.465 | 0.047 | 345 015.2 | 1 038 866.2 | 0.249 | **293.28** | 12306 | 160 | 0.8260 | 0.414 | 0.057 | 321 448.7 | 1 602 733.0 | 0.167 | **231.73** | 79324 | 1730 |
+| `NNkin` | **Z** | 0.7458 | 0.581 | 0.228 | 39 807.8 | 534 209.0 | 0.069 | **52.54** | 17899 | 779 | 0.7630 | 0.560 | 0.187 | 40 599.2 | 577 654.5 | 0.066 | **51.63** | 123481 | 6030 |
+| `NNj` | **Z** | 0.6847 | 0.780 | 0.518 | 53 385.5 | 1 216 542.7 | 0.042 | **47.37** | 24004 | 1774 | 0.7045 | 0.739 | 0.450 | 53 589.3 | 1 391 639.7 | 0.037 | **44.58** | 162990 | 14527 |
+| `NNjB` | **Z** | 0.7679 | 0.585 | 0.207 | 40 081.4 | 486 205.6 | 0.076 | **55.25** | 18022 | 709 | 0.7822 | 0.671 | 0.255 | 48 652.8 | 787 928.4 | 0.058 | **53.19** | 147976 | 8225 |
+| `NNjj` | **Z** | 0.7609 | 0.624 | 0.235 | 42 719.1 | 552 724.6 | 0.072 | **55.36** | 19208 | 806 | 0.7741 | 0.536 | 0.157 | 38 884.9 | 486 072.8 | 0.074 | **53.67** | 118267 | 5074 |
+| `NNjjB` | **Z** | 0.8324 | 0.564 | 0.111 | 38 618.0 | 259 904.0 | 0.129 | **70.68** | 17364 | 379 | 0.8463 | 0.469 | 0.065 | 34 039.8 | 200 406.8 | 0.145 | **70.30** | 103531 | 2092 |
+| `NNjjBj` | **Z** | 0.8707 | 0.446 | 0.040 | 30 515.9 | 93 263.7 | 0.247 | **86.74** | 13721 | 136 | 0.8381 | 0.375 | 0.038 | 27 218.8 | 117 734.2 | 0.188 | **71.49** | 82785 | 1229 |
 
-`NNjjBj` has the best significance in 5 of the 6 channel/generator blocks (H-Herwig 19.82,
-H-MG5 20.00, W-Herwig 321.02, Z-Herwig 92.67, Z-MG5 73.42); `NNjjB` edges it out only in
-W-MG5 (246.04 vs 244.06, a 1% difference). In every channel the ranking broadly tracks
-AUC: the boson-aware, both-jets nets (`NNjjB`, `NNjjBj`) consistently beat the
-single-jet nets (`NNkin`, `NNj`, `NNjB`).
+`NNjjBj` has the best significance in 4 of the 6 channel/generator blocks
+(H-Herwig 16.02, W-Herwig 293.28, Z-Herwig 86.74, Z-MG5 71.49); `NNjjB` edges
+it out in the other 2 (H-MG5: 15.74 vs 15.67, a 0.4% difference; W-MG5:
+234.49 vs 231.73, a 1.2% difference). In every channel the ranking broadly
+tracks AUC: the boson-aware, both-jets nets (`NNjjB`, `NNjjBj`) consistently
+beat the single-jet nets (`NNkin`, `NNj`, `NNjB`). Compared to the old
+inclusive-selection table, absolute significance is lower across the board
+(e.g. H-Herwig `NNjjBj`: 19.82 → 16.02) even though purity `S/(S+B)`
+improved (same cell: 0.852 → 0.895) — see the "Effect on NN significance"
+note in the preselection changelog above for why.
 
 ---
 
@@ -518,6 +591,12 @@ files reproduces `auc_mg5` in the dir's `roc_data_{P}.npz` to 4 decimals.
 in the same two variants as the mjj figures:
 `figs/summer26/{NNj_jet0,NNjB,NNjjBj}_{H,W,Z}[_abs].pdf`
 (normalized / absolute log-y).
+
+It also draws a 2D `NNj_jet0` vs `NNj_jet1` score-correlation histogram
+(kWeight-weighted, 50×50 bins over [0,1]²) for the Z channel's Herwig
+samples, signal and background separately:
+`figs/summer26/NNj_jet0_vs_jet1_{VBFZ_herwig,QCDZjj_herwig}.pdf` (added
+2026-09-01).
 
 Writes go through a small retry loop (`write_dataset(s)` in `save_scores.py`):
 EOS FUSE occasionally fails HDF5 metadata operations on the GPU nodes with

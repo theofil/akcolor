@@ -41,6 +41,7 @@ strong{color:#0f172a;font-weight:600;}
 _NAV = '''
 <div class="nav-title">summer26</div>
 <a class="h2" href="#campaign-details">Campaign details</a>
+<a class="h2" href="#mjj-400-gev-y-jj-2-5-preselection-added-2026-09-01">mjj/&Delta;Y preselection</a>
 <a class="h2" href="#step-2-run-event-reconstruction">Step 2 — Reconstruction</a>
 <a class="h2" href="#step-4-diagnostic-plots">Step 4 — Plots</a>
 <a class="h2" href="#step-5-train-the-neural-networks">Step 5 — Train NNs</a>

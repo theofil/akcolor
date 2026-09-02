@@ -12,7 +12,7 @@ import uproot
 import h5py
 
 sys.path.insert(0, '/afs/cern.ch/user/t/theofil/work/akcolor/analysis/Winter25/python/NN')
-from style import apply_style, FIG_SIZE
+from style import apply_style, FIG_SIZE, LABEL_SIZE, TITLE_SIZE, TICK_SIZE
 
 def separation_power(p, q, bin_width):
     """<S^2> = 0.5 * integral[(p-q)^2/(p+q)] dx for two normalized PDFs."""
@@ -1014,6 +1014,35 @@ for score_col, score_xlabel in SCORE_COLS:
                 legend_loc='upper center')
     plt.tight_layout()
     outpath = str(FIGS / f'{score_col}_{proc}_abs.pdf')
+    fig.savefig(outpath, bbox_inches='tight')
+    print('Saved', outpath)
+    plt.close(fig)
+
+# ── 2D score correlation: NNj_jet0 vs NNj_jet1, VBFZ_herwig vs QCDZjj_herwig ──
+for name, label in [('VBFZ_herwig', 'VBF Z  Herwig'), ('QCDZjj_herwig', 'QCD Z  Herwig')]:
+    fpath = DATA_DIR / f'{name}.h5'
+    if not fpath.exists():
+        print(f'  Skipping {fpath} (not found)')
+        continue
+    with h5py.File(fpath, 'r') as f:
+        if 'NNj_jet0' not in f or 'NNj_jet1' not in f:
+            print(f'  NNj_jet0/NNj_jet1 not found in {fpath}')
+            continue
+        jet0 = f['NNj_jet0'][:].astype(float)
+        jet1 = f['NNj_jet1'][:].astype(float)
+        kw   = f['kWeight'][:].astype(float)
+    fig, ax = plt.subplots(figsize=FIG_SIZE)
+    _, _, _, im = ax.hist2d(jet0, jet1, bins=score_bins, weights=kw,
+                             cmap='viridis', cmin=np.finfo(float).tiny)
+    fig.colorbar(im, ax=ax, label='events / pb$^{-1}$')
+    ax.set_xlabel('NNj score (jet 0)', fontsize=LABEL_SIZE)
+    ax.set_ylabel('NNj score (jet 1)', fontsize=LABEL_SIZE)
+    ax.set_title(label, fontsize=TITLE_SIZE)
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1)
+    ax.tick_params(axis='both', labelsize=TICK_SIZE)
+    plt.tight_layout()
+    outpath = str(FIGS / f'NNj_jet0_vs_jet1_{name}.pdf')
     fig.savefig(outpath, bbox_inches='tight')
     print('Saved', outpath)
     plt.close(fig)

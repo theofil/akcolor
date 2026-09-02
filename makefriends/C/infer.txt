@@ -1,19 +1,33 @@
-condor_submit summer26/NNkin/infer_gpu.sub
-condor_submit summer26/NNkin_H/infer_gpu.sub
-condor_submit summer26/NNkin_W/infer_gpu.sub
-condor_submit summer26/NNj/infer_gpu.sub
-condor_submit summer26/NNj/save_scores.sub
-condor_submit summer26/NNj_H/infer_gpu.sub
-condor_submit summer26/NNj_W/infer_gpu.sub
-condor_submit summer26/NNjB/infer_gpu.sub
-condor_submit summer26/NNjB_H/infer_gpu.sub
-condor_submit summer26/NNjB_W/infer_gpu.sub
-condor_submit summer26/NNjj/infer_gpu.sub
-condor_submit summer26/NNjj_H/infer_gpu.sub
-condor_submit summer26/NNjj_W/infer_gpu.sub
-condor_submit summer26/NNjjB/infer_gpu.sub
-condor_submit summer26/NNjjB_H/infer_gpu.sub
-condor_submit summer26/NNjjB_W/infer_gpu.sub
-condor_submit summer26/NNjjBj/infer_gpu.sub
-condor_submit summer26/NNjjBj_H/infer_gpu.sub
-condor_submit summer26/NNjjBj_W/infer_gpu.sub
+# NOTE: within a channel (Z/H/W), the save_scores.sub jobs of NNj, NNjB and
+# NNjjBj all write to the SAME 4 h5 files (that channel's QCD*jj/VBF* herwig
+# + mg5_pythia). Do not submit same-channel save_scores jobs concurrently —
+# it risks concurrent-write corruption on EOS FUSE. Submit them in
+# channel-disjoint batches (e.g. NNj(Z)+NNjB_H(H)+NNjjBj_W(W) together, then
+# rotate) or run them one at a time instead.
+condor_submit -name bigbird24.cern.ch summer26/NNkin/infer_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNkin_H/infer_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNkin_W/infer_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNj/infer_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNj/save_scores.sub
+condor_submit -name bigbird24.cern.ch summer26/NNj_H/infer_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNj_H/save_scores.sub
+condor_submit -name bigbird24.cern.ch summer26/NNj_W/infer_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNj_W/save_scores.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjB/infer_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjB/save_scores.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjB_H/infer_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjB_H/save_scores.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjB_W/infer_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjB_W/save_scores.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjj/infer_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjj_H/infer_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjj_W/infer_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjjB/infer_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjjB_H/infer_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjjB_W/infer_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjjBj/infer_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjjBj/save_scores.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjjBj_H/infer_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjjBj_H/save_scores.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjjBj_W/infer_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/NNjjBj_W/save_scores.sub
