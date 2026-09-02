@@ -217,3 +217,49 @@ Each file contains the following datasets (gzip-compressed, level 4):
 | `ptjj` | (N,) | float32 | Dijet pT |
 | `bosonM`, `bosonY`, `bosonEta`, `bosonPt`, `bosonPhi` | (N,) | float32 | Generator boson M, rapidity, η, pT, φ (−99 if absent) |
 | `leadJetIndex` | (N,) | int32 | Slot (0 or 1) of the true pT-leading jet |
+
+---
+
+## Step 4 — precoprob: color-reconnection-probability variation (Herwig only)
+
+`run.precoprob.sh` reruns the same `makefriends` pipeline (identical cross
+sections, `--boson` tags, and `mjj>400`/`|ΔYjj|>2.5` preselection) on a
+dedicated color-reconnection-probability (CRP) variant campaign, to compare
+Herwig's default CRP against a reduced value. Diagnostic only — never used
+for NN training, and Herwig-only (CRP is a Herwig-specific parton-shower
+tunable, so there is no Pythia counterpart).
+
+```bash
+./run.precoprob.sh --goFast 200   # quick smoke test
+./run.precoprob.sh                # full production (20 jobs x 50k events per sample)
+```
+
+**Input files** (symlinked automatically from campaign-00041/00042 EOS):
+
+| File | Sample | Cross section | `--boson` | CRP |
+|------|--------|---------------|-----------|-----|
+| `VBFH_herwig_preco.root` | VBF H→inv | 2.97189 pb | H | 0.25 |
+| `VBFW_herwig_preco.root` | VBF W→inv | 7.494 pb | W | 0.25 |
+| `VBFZ_herwig_preco.root` | VBF Z→inv | 1.099 pb | Z | 0.25 |
+| `QCDHjj_herwig_preco.root` | QCD H+jj (ggH) | 5.06051 pb | H | 0.25 |
+| `QCDWjj_herwig_preco.root` | QCD W+jj | 1733.3 pb | W | 0.25 |
+| `QCDZjj_herwig_preco.root` | QCD Z+jj | 340.2 pb | Z | 0.25 |
+
+Default Herwig CRP is 0.95 — the comparison baseline is the existing
+`friends/summer26/*_herwig.friend.root` (same `campaign-00023`/`-00030`
+source used by `run.summer26.sh`).
+
+**Output**: `friends/summer26/precoprob/<sample>_herwig.friend.root` — no
+HDF5 conversion (Herwig-only, no NN-score columns needed).
+
+### SPVA comparison (`summer26/spva_plots.py`)
+
+```bash
+python3 summer26/spva_plots.py
+```
+
+Compares default (CRP=0.95) vs precoprob (CRP=0.25) Herwig samples, VBF and
+QCD overlaid per boson channel (H/W/Z): pull-vector angle density
+(`jetSPVA_*.pdf`), pull-vector magnitude density + ratio (`jetSPVM_*.pdf`,
+`jetSPVM_ratio_*.pdf`), and constituent-count density + ratio (`jetNC_*.pdf`,
+`jetNC_ratio_*.pdf`). Output → `figs/summer26/precoprob/`.

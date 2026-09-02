@@ -1047,6 +1047,47 @@ for name, label in [('VBFZ_herwig', 'VBF Z  Herwig'), ('QCDZjj_herwig', 'QCD Z  
     print('Saved', outpath)
     plt.close(fig)
 
+# ── 1D NNj_jet0 shape sliced by NNj_jet1 tercile (low/mid/high), Herwig Z only ──
+jet1_slices  = [('low', 0.0, 1/3), ('mid', 1/3, 2/3), ('high', 2/3, 1.0)]
+slice_colors = {'low': '#440154', 'mid': '#21918c', 'high': '#fde725'}  # viridis triple
+
+for name, label in [('VBFZ_herwig', 'VBF Z  Herwig'), ('QCDZjj_herwig', 'QCD Z  Herwig')]:
+    fpath = DATA_DIR / f'{name}.h5'
+    if not fpath.exists():
+        print(f'  Skipping {fpath} (not found)')
+        continue
+    with h5py.File(fpath, 'r') as f:
+        if 'NNj_jet0' not in f or 'NNj_jet1' not in f:
+            print(f'  NNj_jet0/NNj_jet1 not found in {fpath}')
+            continue
+        jet0 = f['NNj_jet0'][:].astype(float)
+        jet1 = f['NNj_jet1'][:].astype(float)
+        kw   = f['kWeight'][:].astype(float)
+    fig, ax = plt.subplots(figsize=FIG_SIZE)
+    for slice_name, lo, hi in jet1_slices:
+        mask = (jet1 >= lo) & (jet1 <= hi if hi == 1.0 else jet1 < hi)
+        if mask.sum() == 0:
+            continue
+        counts, _ = np.histogram(jet0[mask], bins=score_bins, weights=kw[mask])
+        norm = counts.sum() * score_bin_width
+        if norm <= 0:
+            continue
+        hist = counts / norm
+        ax.hist(score_bin_centers, bins=score_bins, weights=hist, histtype='step',
+                linewidth=3, color=slice_colors[slice_name],
+                label=f'NNj jet1 {slice_name}  [{lo:.2f},{hi:.2f}]')
+    apply_style(ax,
+                xlabel='NNj score (jet 0)',
+                ylabel='Normalized density',
+                title=label,
+                xlim=(0, 1),
+                legend_loc='upper center')
+    plt.tight_layout()
+    outpath = str(FIGS / f'NNj_jet0_slices_{name}.pdf')
+    fig.savefig(outpath, bbox_inches='tight')
+    print('Saved', outpath)
+    plt.close(fig)
+
 # ── update index.php ──────────────────────────────────────────────────────────
 index_path = FIGS / 'index.php'
 php = '''<?php

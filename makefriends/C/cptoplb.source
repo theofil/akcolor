@@ -1,4 +1,5 @@
 cp figs/summer26/jetSPVA_Z.pdf PLB/69f720d1896ae0433a86be60/figs/
+cp figs/summer26/precoprob/jetSPVA_Z.pdf PLB/69f720d1896ae0433a86be60/figs/jetSPVA_Z_precoprob.pdf
 cp figs/summer26/jetSPVA_combined_herwig.pdf PLB/69f720d1896ae0433a86be60/figs/jetSPVA_combined.pdf
 cp figs/summer26/jetShape_VBFZ_herwig.pdf PLB/69f720d1896ae0433a86be60/figs/
 cp figs/summer26/jetShape_QCDZjj_herwig.pdf PLB/69f720d1896ae0433a86be60/figs/
