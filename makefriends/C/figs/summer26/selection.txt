@@ -28,7 +28,7 @@ Dijet gate (events failing ANY of these are NOT saved at all):
      (the two leading jets must lie in opposite rapidity hemispheres)
 
 Weighting:
-  kWeight = genWeight * xs / sumWtot     [units: pb^-1 per event]
+  kWeight = genWeight * xs / sumWtot     [units: pb per event; sum of kWeight = xs, yield = sum of kWeight x L]
 
 Note on jet0/jet1 index assignment:
   In the output tree, the leading (highest-pT) jet is randomly placed at

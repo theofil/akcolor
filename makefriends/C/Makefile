@@ -13,5 +13,9 @@ LDFLAGS  = $(shell root-config --libs)   $(shell $(FASTJET_CONFIG) --libs)
 makefriends: makefriends.cpp
 	$(CXX) $(CXXFLAGS) -o $@ $< $(LDFLAGS)
 
+# nov26 campaign fork (see nov26.md); build with `make makefriends_nov26`
+makefriends_nov26: makefriends_nov26.cpp
+	$(CXX) $(CXXFLAGS) -o $@ $< $(LDFLAGS)
+
 clean:
-	rm -f makefriends
+	rm -f makefriends makefriends_nov26

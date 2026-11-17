@@ -5,7 +5,8 @@ jet pull vectors and constituent information.
 
 For analysis steps (plots, NN training, inference) see
 [summer26.md](summer26.md). Conclusions from the earlier summer25 campaign
-are preserved in [studies/](studies/).
+are preserved in [studies/](studies/). The nov26 campaign (inclusive Z-channel
+friends with PF-type constituents) is described in [nov26.md](nov26.md).
 
 ---
 
@@ -263,3 +264,22 @@ QCD overlaid per boson channel (H/W/Z): pull-vector angle density
 (`jetSPVA_*.pdf`), pull-vector magnitude density + ratio (`jetSPVM_*.pdf`,
 `jetSPVM_ratio_*.pdf`), and constituent-count density + ratio (`jetNC_*.pdf`,
 `jetNC_ratio_*.pdf`). Output → `figs/summer26/precoprob/`.
+
+---
+
+## nov26 campaign: inclusive Z-channel friends
+
+A separate production built by `makefriends_nov26` (`make makefriends_nov26`)
+and run with `./run.nov26.sh [--goFast N]`. Outputs go to `friends/nov26/`. The
+summer26 code and outputs above are unchanged.
+
+What differs from summer26:
+- Every input event is written. The dijet gate (≥ 2 jets, mjj > 0, opposite-η
+  leading pair) is stored as the flag `gate`, not applied as a cut.
+- Only the two leading jets are stored, with their constituents.
+- Particles need pT > 0.5 GeV and |η| < 4.7.
+- Each constituent carries a CMS-PF-style type and its charge.
+- Each jet has four beam-connection values (`jetBCin`, `jetBCout`, `jetBCmet`,
+  `jetBCdphi`): the activity between the jet and its own beam.
+
+Branches, h5 layout and validation are in [nov26.md](nov26.md).
