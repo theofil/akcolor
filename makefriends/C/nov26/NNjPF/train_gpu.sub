@@ -1,0 +1,16 @@
+executable     = /eos/home-t/theofil/work/akcolor/makefriends/C/nov26/train_gpu.sh
+arguments      = NNjPF $(fold)
+output         = /eos/home-t/theofil/work/akcolor/makefriends/C/nov26/NNjPF/logs/train_fold$(fold).$(ClusterId).out
+error          = /eos/home-t/theofil/work/akcolor/makefriends/C/nov26/NNjPF/logs/train_fold$(fold).$(ClusterId).err
+log            = /eos/home-t/theofil/work/akcolor/makefriends/C/nov26/NNjPF/logs/train_fold$(fold).$(ClusterId).log
+
+request_cpus   = 2
+request_memory = 12GB
+request_gpus   = 1
+# b9g57n0009's GPU is unsupported by the LCG_106_cuda torch build ("no kernel image")
+requirements   = (Machine =!= "b9g57n0009.cern.ch")
+
++JobFlavour    = "workday"
+
+# 5-fold cross-fitting: one job per fold model (see ../training.md)
+queue fold in (0 1 2 3 4)

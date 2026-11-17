@@ -283,3 +283,6 @@ What differs from summer26:
   `jetBCdphi`): the activity between the jet and its own beam.
 
 Branches, h5 layout and validation are in [nov26.md](nov26.md).
+The jet networks NNjPF (DeepSets with particle type and charge) and ParTj
+(particle transformer with pairwise features), trained with five-fold
+cross-fitting, are described in [nov26/training.md](nov26/training.md).

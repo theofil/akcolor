@@ -8,10 +8,10 @@ The nov26 friends cover the neutral (Z) channel first. They differ from summer26
 - **Particle type per constituent.** Each constituent carries a CMS-PF-style type and its charge.
 - **Beam connection per jet.** Four new scalars (`bc_in`, `bc_out`, `bc_met`, `bc_dphi`) measure the activity between each jet and its own beam.
 
-Code: [makefriends_nov26.cpp](makefriends_nov26.cpp) (a fork of [makefriends.cpp](makefriends.cpp); `diff makefriends.cpp makefriends_nov26.cpp` lists every change), [run.nov26.sh](run.nov26.sh), [root_to_hdf5_nov26.py](root_to_hdf5_nov26.py). Plots: [nov26/bc_display.py](nov26/bc_display.py) and [nov26/bc_plots.py](nov26/bc_plots.py).
+Code: [makefriends_nov26.cpp](makefriends_nov26.cpp) (a fork of [makefriends.cpp](makefriends.cpp); `diff makefriends.cpp makefriends_nov26.cpp` lists every change), [run.nov26.sh](run.nov26.sh), [root_to_hdf5_nov26.py](root_to_hdf5_nov26.py). Plots: [nov26/bc_display.py](nov26/bc_display.py) and [nov26/bc_plots.py](nov26/bc_plots.py). Jet networks NNjPF and ParTj, with five-fold cross-fitting: [nov26/training.md](nov26/training.md).
 None of the summer26 code or outputs are touched.
 
-**Status (2026-11-17):** the code, including bc, is validated, and the full production is done: `friends/nov26/{VBFZ,QCDZjj}_{herwig,mg5_pythia}.{friend.root,h5}` (see Production).
+**Status (2026-11-17):** the code, including bc, is validated, and the full production is done: `friends/nov26/{VBFZ,QCDZjj}_{herwig,mg5_pythia}.{friend.root,h5}` (see Production). The jet networks NNjPF and ParTj are trained with five-fold cross-fitting, and their out-of-fold scores are in the h5 files ([nov26/training.md](nov26/training.md)).
 
 ---
 
@@ -129,8 +129,10 @@ There is one entry per input event, in input order: entry i is input entry i, an
 | (N, 2, 80) | int8 | `jcsPFType, jcsCharge` |
 | (N,) | float32 | `kWeight, mjj, dYjj, dPhijj, ptjj, bosonM, bosonY, bosonEta, bosonPt, bosonPhi` |
 | (N,) | int32 / int64 / bool | `nJets, nJetsAll, leadJetIndex` / `evIdx` / `gate` |
+| (N, 2) | float32 | `NNjPF`, `ParTj`: out-of-fold jet-tagger score of the jet in each slot, −1 for an empty slot (written by `nov26/save_scores.py`; see [nov26/training.md](nov26/training.md)) |
+| (N,) | int8 | `subfold`: the event's cross-fitting sub-fold (0–9) |
 
-**For downstream code:** these files hold every event, so a loader has to select `gate` (and any mjj/ΔY cut) itself. The summer26 loaders divide `jcsPt` by `jetPt`, which gives NaN for an empty slot.
+**For downstream code:** these files hold every event, so a loader has to select `gate` (and any mjj/ΔY cut) itself. The summer26 loaders divide `jcsPt` by `jetPt`, which gives NaN for an empty slot. Rerunning `root_to_hdf5_nov26.py` drops the `NNjPF`, `ParTj` and `subfold` datasets; rerun `nov26/save_scores.py` afterwards (no retraining needed).
 
 ---
 
