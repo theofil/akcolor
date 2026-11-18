@@ -1,6 +1,8 @@
 # nov26 jet nets: 5-fold cross-fitting (one job per fold model, see training.md) for every net of
 # common.NETS: the NNj baseline, NNjBC (all four beam-connection variables), the add-one nets
-# NNjBC<v> = NNj + v and the drop-one nets NNjBC_no<v> = NNjBC - v.
+# NNjBC<v> = NNj + v, the drop-one nets NNjBC_no<v> = NNjBC - v, and the constituent-free Kj, KjBC.
+# To add nets later, submit a one-off copy whose queue line lists only the new ones (resubmitting
+# this file queues every net again).
 #   source init.source; mkdir -p nov26/logs; condor_submit -name bigbird24.cern.ch nov26/train_gpu.sub
 # $(Step) runs 0..4 for each net: the fold.
 executable     = /eos/home-t/theofil/work/akcolor/makefriends/C/nov26/train_gpu.sh
@@ -19,4 +21,4 @@ require_gpus   = (Capability =!= 8.0) && !regexp("A100|A30", DeviceName)
 
 +JobFlavour    = "workday"
 
-queue 5 net in (NNj NNjBC NNjBCin NNjBCout NNjBCmet NNjBCdphi NNjBC_noin NNjBC_noout NNjBC_nomet NNjBC_nodphi)
+queue 5 net in (NNj NNjBC NNjBCin NNjBCout NNjBCmet NNjBCdphi NNjBC_noin NNjBC_noout NNjBC_nomet NNjBC_nodphi Kj KjBC)

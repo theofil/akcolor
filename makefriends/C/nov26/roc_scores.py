@@ -42,8 +42,11 @@ NETS = tuple(C.NETS)
 GENERATORS = {'Herwig': C.TRAIN_SAMPLES, 'MG5+Pythia': C.TRANSFER_SAMPLES}
 # (net, reference): NNjBC - NNj, add-one gains, drop-one losses
 COMPARISONS = ([('NNjBC', 'NNj')] + [(f'NNjBC{v}', 'NNj') for v in C.BC_VARS]
-               + [('NNjBC', f'NNjBC_no{v}') for v in C.BC_VARS])
-C_NET = {'NNj': '#2a78d6', 'NNjBC': '#eb6834'}                      # categorical slots 1-2
+               + [('NNjBC', f'NNjBC_no{v}') for v in C.BC_VARS]
+               + [('NNj', 'Kj'), ('KjBC', 'Kj'), ('NNjBC', 'KjBC')])   # constituents; bc alone; constituents on top of bc
+# categorical slots 1-3 (pass the palette validator on all pairs); Kj, the kinematics-only
+# reference of gain_curves.py, in neutral ink
+C_NET = {'NNj': '#2a78d6', 'NNjBC': '#eb6834', 'KjBC': '#1baf7a', 'Kj': '#52514e'}
 FIG_NETS = ('NNj', 'NNjBC')
 LS = {'Herwig': '-', 'MG5+Pythia': '--'}
 INK, INK2, RULE, SURFACE = '#0b0b0b', '#52514e', '#c3c2b7', '#fcfcfb'

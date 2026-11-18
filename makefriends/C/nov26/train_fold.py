@@ -8,7 +8,9 @@
 --net is one of common.NETS: NNj (no beam connection), NNjBC (all four bc variables), NNjBC<v>
 (NNj + bc variable v alone) and NNjBC_no<v> (NNjBC without v). All share the DeepSets of
 model.py and the training recipe below; they differ only in the bc inputs appended to the
-jet scalars |eta|, m, pT.
+jet scalars |eta|, m, pT. Kj and KjBC (common.NO_CONSTITUENTS) are NNj and NNjBC without the
+constituent branch: the same recipe, with rho on the jet scalars alone (only the first
+constituent slot is kept in memory, and the model ignores it).
 
 Phase 1 (training): Herwig jets of roles A and C (common.py) in the 7 training sub-folds and
 the validation sub-fold of fold k. A per-fold StandardScaler is fitted on the training jets
@@ -52,8 +54,13 @@ def max_rss_gb():
 # ── data ──────────────────────────────────────────────────────────────────────
 
 def net_inputs(d, net):
-    """Append the net's bc columns to the jet scalars, in place; x_bc is dropped."""
+    """Append the net's bc columns to the jet scalars, in place; x_bc is dropped. For the
+    constituent-free nets only the first constituent slot is kept (the model ignores it; one
+    slot keeps the batching and the scaler fit unchanged)."""
     d['x_jet'] = np.concatenate([d['x_jet'], d.pop('x_bc')[:, C.bc_columns(net)]], axis=1)
+    if net in C.NO_CONSTITUENTS:
+        for k in PER_CONSTITUENT:
+            d[k] = np.ascontiguousarray(d[k][:, :1])
     return d
 
 
@@ -174,7 +181,9 @@ def main():
     torch.manual_seed(C.SEED + k)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     gpu = torch.cuda.get_device_name(0) if device.type == 'cuda' else 'none'
-    log(f'{args.net} fold {k} (bc inputs: {", ".join(C.NETS[args.net]) or "none"}): train sub-folds {train_sub}, '
+    constituents = args.net not in C.NO_CONSTITUENTS
+    log(f'{args.net} fold {k} (bc inputs: {", ".join(C.NETS[args.net]) or "none"}; constituents: '
+        f'{"yes" if constituents else "no"}): train sub-folds {train_sub}, '
         f'validation {val_sub}, inference {infer_sub}; device {device} ({gpu}); config {cfg}')
 
     # ── phase 1: training ─────────────────────────────────────────────────────
@@ -211,8 +220,8 @@ def main():
     n_tr, n_va = len(y_tr), len(y_va)
     del tr, va
 
-    model = JetNN(n_jet_feat, dropout=cfg['dropout']).to(device)
-    log(f'model JetNN: {sum(p.numel() for p in model.parameters())} parameters')
+    model = JetNN(n_jet_feat, dropout=cfg['dropout'], constituents=constituents).to(device)
+    log(f'model JetNN (constituents: {constituents}): {sum(p.numel() for p in model.parameters())} parameters')
     optimizer = torch.optim.Adam(model.parameters(), lr=cfg['lr'])
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.5, patience=cfg['sched_patience'])
     best_path = os.path.join(outdir, f'best_model_fold{k}.pt')

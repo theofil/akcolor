@@ -129,7 +129,7 @@ There is one entry per input event, in input order: entry i is input entry i, an
 | (N, 2, 80) | int8 | `jcsPFType, jcsCharge` |
 | (N,) | float32 | `kWeight, mjj, dYjj, dPhijj, ptjj, bosonM, bosonY, bosonEta, bosonPt, bosonPhi` |
 | (N,) | int32 / int64 / bool | `nJets, nJetsAll, leadJetIndex` / `evIdx` / `gate` |
-| (N, 2) | float32 | `NNj`, `NNjBC`, `NNjBC<v>`, `NNjBC_no<v>` (v = `in`, `out`, `met`, `dphi`): out-of-fold jet-tagger score of the jet in each slot, −1 for an empty slot (written by `nov26/save_scores.py`; see [nov26/training.md](nov26/training.md)) |
+| (N, 2) | float32 | `NNj`, `NNjBC`, `NNjBC<v>`, `NNjBC_no<v>` (v = `in`, `out`, `met`, `dphi`), and the constituent-free `Kj`, `KjBC`: out-of-fold jet-tagger score of the jet in each slot, −1 for an empty slot (written by `nov26/save_scores.py`; see [nov26/training.md](nov26/training.md)) |
 | (N,) | int8 | `subfold`: the event's cross-fitting sub-fold (0–9) |
 
 **For downstream code:** these files hold every event, so a loader has to select `gate` (and any mjj/ΔY cut) itself. The summer26 loaders divide `jcsPt` by `jetPt`, which gives NaN for an empty slot. Rerunning `root_to_hdf5_nov26.py` drops the score and `subfold` datasets; rerun `python3 nov26/save_scores.py --net all` afterwards (no retraining needed).

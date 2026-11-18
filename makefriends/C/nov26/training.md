@@ -1,6 +1,6 @@
 # nov26 jet networks: training sample, five-fold cross-fitting and scores
 
-Jet taggers are trained on the nov26 friends to tell a jet from VBF Z production (signal) from a jet in QCD Z+jj production (background). All of them are the DeepSets net NNj from summer26; they differ only in which beam-connection (bc) values of the jet ([nov26.md](../nov26.md), Definitions) they get on top of NNj's inputs:
+Jet taggers are trained on the nov26 friends to tell a jet from VBF Z production (signal) from a jet in QCD Z+jj production (background). All of them are built from the DeepSets net NNj of summer26. They differ in which beam-connection (bc) values of the jet ([nov26.md](../nov26.md), Definitions) they get on top of NNj's inputs, and two of them, Kj and KjBC, have no constituent branch:
 
 | Net | bc inputs | Purpose |
 |---|---|---|
@@ -8,12 +8,16 @@ Jet taggers are trained on the nov26 friends to tell a jet from VBF Z production
 | **NNjBC** | bc_in, bc_out, bc_met, bc_dphi | NNj + the beam connection |
 | NNjBCin, NNjBCout, NNjBCmet, NNjBCdphi | that one value | add-one: the gain of one value on its own, NNjBC*v* − NNj |
 | NNjBC_noin, NNjBC_noout, NNjBC_nomet, NNjBC_nodphi | the other three | drop-one: what only that value adds, NNjBC − NNjBC_no*v* |
+| **Kj** | none, and no constituents | kinematics-only reference: NNj without the constituent branch, on the jet's \|η\|, m, pT alone |
+| **KjBC** | bc_in, bc_out, bc_met, bc_dphi, and no constituents | Kj + the beam connection |
 
-Each net sees one jet at a time. The jet's inputs are |η|, m and pT, plus its bc values; each constituent contributes the signed Δη (`jcsDEta`), ΔΦ and pT/pT_jet. The nets are trained on Herwig only; MG5+Pythia is used purely to test how well they transfer to another generator.
+Each net sees one jet at a time. The jet's inputs are |η|, m and pT, plus its bc values; each constituent contributes the signed Δη (`jcsDEta`), ΔΦ and pT/pT_jet (not for Kj and KjBC). The nets are trained on Herwig only; MG5+Pythia is used purely to test how well they transfer to another generator.
+
+Kj, KjBC, NNj and NNjBC form a 2 × 2 of constituents (no / yes) × beam connection (no / yes) on the same jets, folds and recipe. Comparing them at equal background efficiency measures what the constituents and the beam connection add beyond the jet kinematics ([roc.summary.md](../roc.summary.md), section 5).
 
 The bc values are correlated (bc_in + bc_out is the total pT in the region, and bc_met ≤ that total), so a value's add-one gain and its drop-one loss bracket its contribution: the first counts what it shares with the others, the second only what none of the others carries.
 
-This note explains how the training sample is built, why it is weighted, and how five-fold cross-fitting gives every event a score that no network has seen. The code is in this folder: `common.py` (sample, folds, weights, bc inputs, the list of nets), `model.py`, `train_fold.py`, `train_gpu.sub`, `save_scores.py`, `roc_scores.py` and `bootstrap_scores.py`.
+This note explains how the training sample is built, why it is weighted, and how five-fold cross-fitting gives every event a score that no network has seen. The code is in this folder: `common.py` (sample, folds, weights, bc inputs, the list of nets), `model.py`, `train_fold.py`, `train_gpu.sub`, `save_scores.py`, `roc_scores.py`, `bootstrap_scores.py` and `gain_curves.py`.
 
 ---
 
@@ -156,9 +160,9 @@ All nets share the recipe of NNj:
 
 | | |
 |---|---|
-| Architecture | DeepSets (`model.py`): φ 3 → 64 → 64 on each constituent, masked sum; ρ (64 + jet inputs) → 128 → 64 → 1 with BatchNorm and dropout 0.3 |
-| Jet inputs | \|η\|, m, pT, then the net's bc inputs: 3 for NNj, 8 for NNjBC |
-| Parameters | 21 825 (NNj) to 22 465 (NNjBC) |
+| Architecture | DeepSets (`model.py`): φ 3 → 64 → 64 on each constituent, masked sum; ρ (64 + jet inputs) → 128 → 64 → 1 with BatchNorm and dropout 0.3. Kj and KjBC: no φ, the same ρ on the jet inputs alone |
+| Jet inputs | \|η\|, m, pT, then the net's bc inputs: 3 for NNj and Kj, 8 for NNjBC and KjBC |
+| Parameters | 21 825 (NNj) to 22 465 (NNjBC); 9 217 (Kj) and 9 857 (KjBC) |
 | Optimiser | Adam, learning rate 1e-3, batch size 512 |
 | Learning-rate schedule | ×0.5 after 5 epochs without improvement |
 | Early stopping | 15 epochs without improvement, at most 100 epochs |
@@ -172,7 +176,8 @@ Common to all nets:
 - Each fold fits its own StandardScaler to its training jets. It covers all jet inputs (bc included) and the constituent features of valid constituents.
 - The loss is binary cross-entropy weighted as in section 3.
 - The constituent axis is trimmed to the largest constituent count in each batch.
-- The nets run as condor GPU jobs, one per net and fold: `source init.source; mkdir -p nov26/logs; condor_submit -name bigbird24.cern.ch nov26/train_gpu.sub` submits all 50 (10 nets × 5 folds).
+- The nets run as condor GPU jobs, one per net and fold: `source init.source; mkdir -p nov26/logs; condor_submit -name bigbird24.cern.ch nov26/train_gpu.sub` submits all 60 (12 nets × 5 folds). Kj and KjBC were added later, from a copy of the file whose queue line lists only them (`queue 5 net in (Kj KjBC)`); resubmitting the full file queues every net again.
+- Kj and KjBC keep only the first constituent slot in memory, and their model ignores it; everything else, including the scaler fit, is unchanged.
 
 Each job writes `<net>/best_model_fold{k}.pt`, `scaler_fold{k}.pkl`, `history_fold{k}.npz` and `scores_fold{k}.npz`, plus a loss curve `figs/nov26/<net>_fold{k}_loss.pdf`; the condor logs go to `nov26/logs/`.
 
@@ -182,7 +187,7 @@ After all five jobs of a net finish, `python3 nov26/save_scores.py --net <net>` 
 
 | Dataset | Shape | Content |
 |---|---|---|
-| one per net: `NNj`, `NNjBC`, `NNjBC<v>`, `NNjBC_no<v>` | (N, 2) float32 | out-of-fold score (sigmoid, 0–1) of the jet in each slot; −1 for an empty slot |
+| one per net: `NNj`, `NNjBC`, `NNjBC<v>`, `NNjBC_no<v>`, `Kj`, `KjBC` | (N, 2) float32 | out-of-fold score (sigmoid, 0–1) of the jet in each slot; −1 for an empty slot |
 | `subfold` | (N,) int8 | the event's sub-fold; network k scored sub-folds 2k and 2k+1 |
 
 Before writing, `save_scores.py` checks that every stored jet was scored exactly once, by the right network.
@@ -251,9 +256,12 @@ All 50 jobs (condor cluster 1648339) finished cleanly, and `save_scores.py --net
 | NNjBC | 61–88 | 0.5849–0.5875 | 10–14 min |
 | NNjBCin / out / met / dphi | 50–99 | 0.6073–0.6102 / 0.5993–0.6023 / 0.5940–0.5968 / 0.6053–0.6079 | 6–19 min |
 | NNjBC_noin / noout / nomet / nodphi | 53–99 | 0.5853–0.5881 / 0.5887–0.5915 / 0.5935–0.5968 / 0.5866–0.5895 | 6–19 min |
+| Kj | 26–51 | 0.6143–0.6171 | 7–11 min |
+| KjBC | 54–88 | 0.5910–0.5939 | 9–12 min |
 
 - The jobs ran on H100 MIG slices and V100s. Each fold model trained on 1.47M jets and was validated on 211k, as in section 2.
 - The validation losses already rank the nets: on every fold NNjBC has the lowest loss. Without bc_in the loss is unchanged, and it rises most without bc_met.
+- Kj and KjBC were trained later, in condor cluster 1649485 (10 jobs, all exit 0), with the same folds and recipe. KjBC's validation loss (0.5910–0.5939) lies below NNj's (0.6088–0.6113) on every fold. The loss includes the gate == 0 jets, where the beam connection helps most, but KjBC also beats NNj on gate jets (AUC 0.7666 vs 0.7624).
 
 ### NNj and NNjBC
 
@@ -298,4 +306,34 @@ Background rejection at fixed signal efficiency (`bootstrap_scores.py`), with NN
 - **It is largest where NNj is weakest.** For the gate == 0 jets, the AUC rises by 0.03 and ε_S(1 %) by 0.034, which is more than half again. For gate jets, NNjBC rejects 4–16 % more background at fixed signal efficiency (10–14 % between 10 % and 50 % signal efficiency), and for VBF-preselected jets up to 32 % more at 5 % signal efficiency on Herwig.
 - **Which bc values carry the gain:** add-one and drop-one results per value are in [roc.summary.md](../roc.summary.md), section 4. In short, bc_met and bc_dphi carry most of it, bc_out adds a Herwig-only gain on its own, and bc_in adds nothing.
 
-ROC curves: `figs/nov26/roc_nets.pdf` (unweighted, NNj and NNjBC, three jet categories with the rejection ratio), `figs/roc_summary.pdf` (event-weighted, with summer26 NNj) and `figs/nov26/bc_ablation.pdf` (the ablation).
+ROC curves: `figs/nov26/roc_nets.pdf` (unweighted, NNj and NNjBC, three jet categories with the rejection ratio), `figs/roc_summary.pdf` (event-weighted, with summer26 NNj), `figs/nov26/bc_ablation.pdf` (the ablation) and `figs/nov26/gain_curves.pdf` (Kj, KjBC, NNj, NNjBC at equal background efficiency).
+
+### Kj and KjBC: the kinematics-only references (2026-11-18)
+
+Unweighted, as above. The event-weighted values, the AUC at fixed jet kinematics and the comparison at equal background efficiency are in [roc.summary.md](../roc.summary.md), section 5.
+
+| Net | Jets | AUC Herwig | AUC MG5+Pythia | ε_S(1 %) Herwig | ε_S(1 %) MG5+Pythia |
+|---|---|---|---|---|---|
+| Kj | gate jets (roles A + B) | 0.7528 | 0.7556 | 0.0839 | 0.0929 |
+| Kj | gate == 0 jets (role C) | 0.7105 | 0.7009 | 0.0573 | 0.0552 |
+| Kj | VBF-preselected gate jets | 0.6630 | 0.6773 | 0.0397 | 0.0452 |
+| KjBC | gate jets (roles A + B) | 0.7666 | 0.7697 | 0.0935 | 0.1043 |
+| KjBC | gate == 0 jets (role C) | 0.7429 | 0.7303 | 0.0872 | 0.0855 |
+| KjBC | VBF-preselected gate jets | 0.6810 | 0.6944 | 0.0498 | 0.0516 |
+
+- **1st vs 2nd jet** (Herwig AUC, roles A / B): Kj 0.7527 / 0.7529, KjBC 0.7667 / 0.7665. No slot bias.
+- **Spread of the five fold models** on their own Herwig gate jets: Kj 0.7514–0.7544 (rms 0.0012), KjBC 0.7641–0.7694 (rms 0.0017).
+
+Paired AUC differences per fold model, on the same jets (mean ± standard error of the five; every fold model gains):
+
+| Difference | Measures | Gate jets, Herwig | Gate jets, MG5+Pythia | Gate == 0, Herwig | Gate == 0, MG5+Pythia | VBF presel., Herwig | VBF presel., MG5+Pythia |
+|---|---|---|---|---|---|---|---|
+| NNj − Kj | the constituents | +0.0096 ± 0.0003 | +0.0075 ± 0.0005 | +0.0070 ± 0.0002 | +0.0070 ± 0.0001 | +0.0201 ± 0.0003 | +0.0172 ± 0.0004 |
+| KjBC − Kj | the beam connection | +0.0138 ± 0.0004 | +0.0141 ± 0.0004 | +0.0324 ± 0.0003 | +0.0295 ± 0.0001 | +0.0180 ± 0.0009 | +0.0172 ± 0.0004 |
+| NNjBC − KjBC | the constituents, given the beam connection | +0.0087 ± 0.0002 | +0.0067 ± 0.0001 | +0.0068 ± 0.0001 | +0.0062 ± 0.0002 | +0.0170 ± 0.0005 | +0.0136 ± 0.0004 |
+| NNjBC − NNj | the beam connection, given the constituents (above) | +0.0129 ± 0.0003 | +0.0133 ± 0.0002 | +0.0322 ± 0.0001 | +0.0287 ± 0.0001 | +0.0148 ± 0.0008 | +0.0136 ± 0.0002 |
+
+- **Kj alone has most of NNj's AUC.** On gate jets the constituents add 0.010 (Herwig) and 0.008 (MG5+Pythia) to Kj's 0.753 and 0.756. The beam connection alone adds more: 0.014 on both generators.
+- **Both gains are larger for the VBF-preselected jets**: +0.020 / +0.017 for the constituents and +0.018 / +0.017 for the beam connection. The preselection has used up part of the kinematic separation, so the rest counts for more.
+- **The two are nearly additive.** On Herwig gate jets, the constituents are worth 0.0087 with the beam connection and 0.0096 without, and the beam connection 0.0129 with the constituents and 0.0138 without.
+- **Signal efficiencies at equal background efficiency:** [roc.summary.md](../roc.summary.md), section 5.

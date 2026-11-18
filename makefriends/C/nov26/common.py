@@ -1,4 +1,5 @@
-"""Inputs and cross-fitting folds shared by the nov26 jet networks (NNj, NNjBC and the bc ablation).
+"""Inputs and cross-fitting folds shared by the nov26 jet networks (NNj, NNjBC, the bc ablation,
+and the constituent-free Kj and KjBC).
 
 One training example is one jet of friends/nov26/<sample>.h5 (trained on Herwig; MG5+Pythia is scored only):
   role A (0): gate == 1, slot 0 (randomly the leading or subleading jet)   -> train / validation
@@ -9,8 +10,9 @@ Fold model k infers on sub-folds {2k, 2k+1}, validates on (2k+2) % 10 and trains
 seven (70 / 10 / 20), so every event is scored once by a model that never saw it.
 
 The nets (NETS) share the NNj DeepSets architecture (model.py) and differ only in which
-beam-connection (bc) variables are appended to the jet scalars |eta|, m, pT. Details and the
-reasoning: nov26/training.md.
+beam-connection (bc) variables are appended to the jet scalars |eta|, m, pT. Kj and KjBC
+(NO_CONSTITUENTS) are NNj and NNjBC without the constituent branch: the same rho on the jet
+scalars alone, the kinematics-only references. Details and the reasoning: nov26/training.md.
 """
 import os
 import time
@@ -43,6 +45,8 @@ N_JET_BASE = 3                                                          # |eta|,
 NETS = {'NNj': (), 'NNjBC': BC_VARS}
 NETS.update({f'NNjBC{v}': (v,) for v in BC_VARS})                       # add-one: NNj + v
 NETS.update({f'NNjBC_no{v}': tuple(u for u in BC_VARS if u != v) for v in BC_VARS})   # drop-one
+NETS.update({'Kj': (), 'KjBC': BC_VARS})                                # NNj, NNjBC without constituents
+NO_CONSTITUENTS = ('Kj', 'KjBC')                                        # nets whose JetNN has no phi branch
 
 
 def bc_columns(net):
