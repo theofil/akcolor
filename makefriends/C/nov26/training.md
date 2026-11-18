@@ -1,13 +1,19 @@
 # nov26 jet networks: training sample, five-fold cross-fitting and scores
 
-Two jet taggers are trained on the nov26 friends to tell a jet from VBF Z production (signal) from a jet in QCD Z+jj production (background):
+Jet taggers are trained on the nov26 friends to tell a jet from VBF Z production (signal) from a jet in QCD Z+jj production (background). All of them are the DeepSets net NNj from summer26; they differ only in which beam-connection (bc) values of the jet ([nov26.md](../nov26.md), Definitions) they get on top of NNj's inputs:
 
-- **NNjPF**: the DeepSets net NNj from summer26, with each constituent's particle type (CMS PF categories) and charge added to its inputs.
-- **ParTj**: a small Particle Transformer. Its attention also uses pairwise features of every pair of constituents.
+| Net | bc inputs | Purpose |
+|---|---|---|
+| **NNj** | none | baseline: NNj trained on the nov26 folds |
+| **NNjBC** | bc_in, bc_out, bc_met, bc_dphi | NNj + the beam connection |
+| NNjBCin, NNjBCout, NNjBCmet, NNjBCdphi | that one value | add-one: the gain of one value on its own, NNjBC*v* − NNj |
+| NNjBC_noin, NNjBC_noout, NNjBC_nomet, NNjBC_nodphi | the other three | drop-one: what only that value adds, NNjBC − NNjBC_no*v* |
 
-Both see one jet at a time. The jet's inputs are |η|, m and pT. Each constituent contributes the signed Δη (`jcsDEta`), ΔΦ, pT/pT_jet, its PF type and its charge. Both nets are trained on Herwig only; MG5+Pythia is used purely to test how well they transfer to another generator.
+Each net sees one jet at a time. The jet's inputs are |η|, m and pT, plus its bc values; each constituent contributes the signed Δη (`jcsDEta`), ΔΦ and pT/pT_jet. The nets are trained on Herwig only; MG5+Pythia is used purely to test how well they transfer to another generator.
 
-This note explains how the training sample is built, why it is weighted, and how five-fold cross-fitting gives every event a score that no network has seen. The code is in this folder: `common.py` (sample, folds, weights), `NNjPF/model.py`, `ParTj/model.py`, `train_fold.py`, `save_scores.py` and `roc_scores.py`.
+The bc values are correlated (bc_in + bc_out is the total pT in the region, and bc_met ≤ that total), so a value's add-one gain and its drop-one loss bracket its contribution: the first counts what it shares with the others, the second only what none of the others carries.
+
+This note explains how the training sample is built, why it is weighted, and how five-fold cross-fitting gives every event a score that no network has seen. The code is in this folder: `common.py` (sample, folds, weights, bc inputs, the list of nets), `model.py`, `train_fold.py`, `train_gpu.sub`, `save_scores.py`, `roc_scores.py` and `bootstrap_scores.py`.
 
 ---
 
@@ -119,7 +125,7 @@ It works like dealing cards:
 
 Every sub-fold then receives a tenth of every group. On the full files the sub-folds of a group differ by at most one event.
 
-The assignment depends only on the file content and the seed, so all jobs and both networks get the same folds. It is stored in the h5 files as `subfold`.
+The assignment depends only on the file content and the seed, so all jobs and all nets get the same folds. It is stored in the h5 files as `subfold`.
 
 ## 6. Five networks, or one network trained on more events?
 
@@ -146,31 +152,37 @@ Each of the five networks trains on 70 % of the events. Would one network traine
 
 ## 7. Training recipe
 
-| | NNjPF | ParTj |
-|---|---|---|
-| Architecture | DeepSets: φ 9 → 64 → 64, masked sum; ρ (64 + 3) → 128 → 64 → 1 | ParT: embedding 9 → 128 → 64; pair features ln kT, ln z, ln ΔR, ln m² → 4 → 32 → 32 → 4 attention biases; 3 particle-attention blocks; 2 class-attention blocks; head (64 + 3) → 64 → 1 |
-| Parameters | 22 209 | 265 421 |
-| Optimiser | Adam, learning rate 1e-3 | AdamW, learning rate 5e-4, weight decay 0.01, gradient clip 1.0 |
-| Batch size | 512 | 256 |
-| Learning-rate schedule | ×0.5 after 5 epochs without improvement | ×0.5 after 3 epochs without improvement |
-| Early stopping | 15 epochs without improvement, at most 100 epochs | 8 epochs, at most 40 epochs |
+All nets share the recipe of NNj:
 
-Common to both:
-- The PF type enters as a one-hot of the 5 categories, and the charge as a number.
-- Each fold fits its own StandardScaler to its training jets. It covers the jet |η|, m and pT, and the continuous constituent features of valid constituents.
+| | |
+|---|---|
+| Architecture | DeepSets (`model.py`): φ 3 → 64 → 64 on each constituent, masked sum; ρ (64 + jet inputs) → 128 → 64 → 1 with BatchNorm and dropout 0.3 |
+| Jet inputs | \|η\|, m, pT, then the net's bc inputs: 3 for NNj, 8 for NNjBC |
+| Parameters | 21 825 (NNj) to 22 465 (NNjBC) |
+| Optimiser | Adam, learning rate 1e-3, batch size 512 |
+| Learning-rate schedule | ×0.5 after 5 epochs without improvement |
+| Early stopping | 15 epochs without improvement, at most 100 epochs |
+
+**The bc inputs** (`common.load_jets`, column `x_bc`):
+- bc_in, bc_out and bc_met enter as log(1 + x / GeV). Their tails reach several hundred GeV.
+- bc_dphi enters as cos and sin, two inputs that count as one value in the ablation. The sign is kept: `jcsDPhi` is not mirrored, so the net can relate the side of the beam-side activity to the constituents.
+- A jet whose bc region is empty (bc_dphi = −99, 0.3–0.6 % of jets) gets cos = sin = 0; its bc_in, bc_out and bc_met are 0.
+
+Common to all nets:
+- Each fold fits its own StandardScaler to its training jets. It covers all jet inputs (bc included) and the constituent features of valid constituents.
 - The loss is binary cross-entropy weighted as in section 3.
 - The constituent axis is trimmed to the largest constituent count in each batch.
-- The networks run as condor GPU jobs: `NNjPF/train_gpu.sub` and `ParTj/train_gpu.sub`, one job per fold.
+- The nets run as condor GPU jobs, one per net and fold: `source init.source; mkdir -p nov26/logs; condor_submit -name bigbird24.cern.ch nov26/train_gpu.sub` submits all 50 (10 nets × 5 folds).
 
-Each job writes `<net>/best_model_fold{k}.pt`, `scaler_fold{k}.pkl`, `history_fold{k}.npz` and `scores_fold{k}.npz`, plus a loss curve `figs/nov26/<net>_fold{k}_loss.pdf`.
+Each job writes `<net>/best_model_fold{k}.pt`, `scaler_fold{k}.pkl`, `history_fold{k}.npz` and `scores_fold{k}.npz`, plus a loss curve `figs/nov26/<net>_fold{k}_loss.pdf`; the condor logs go to `nov26/logs/`.
 
 ## 8. The scores in the h5 files
 
-After all five jobs of a net finish, `python3 nov26/save_scores.py --net <net>` writes into each of the four `friends/nov26/*.h5`:
+After all five jobs of a net finish, `python3 nov26/save_scores.py --net <net>` (or `--net all`) writes into each of the four `friends/nov26/*.h5`:
 
 | Dataset | Shape | Content |
 |---|---|---|
-| `NNjPF`, `ParTj` | (N, 2) float32 | out-of-fold score (sigmoid, 0–1) of the jet in each slot; −1 for an empty slot |
+| one per net: `NNj`, `NNjBC`, `NNjBC<v>`, `NNjBC_no<v>` | (N, 2) float32 | out-of-fold score (sigmoid, 0–1) of the jet in each slot; −1 for an empty slot |
 | `subfold` | (N,) int8 | the event's sub-fold; network k scored sub-folds 2k and 2k+1 |
 
 Before writing, `save_scores.py` checks that every stored jet was scored exactly once, by the right network.
@@ -181,10 +193,10 @@ For example, to get the scores of both jets of the VBF-preselected gate events:
 import h5py, numpy as np
 with h5py.File('friends/nov26/VBFZ_herwig.h5') as f:
     sel = f['gate'][:] & (f['mjj'][:] > 400) & (np.abs(f['dYjj'][:]) > 2.5)
-    s = f['NNjPF'][:][sel]          # (n, 2): both jets of every selected event, all out-of-fold
+    s = f['NNjBC'][:][sel]          # (n, 2): both jets of every selected event, all out-of-fold
 ```
 
-Rerunning `root_to_hdf5_nov26.py` rewrites the h5 files and drops these datasets. Afterwards, rerun `save_scores.py` for each net; no retraining is needed.
+Rerunning `root_to_hdf5_nov26.py` rewrites the h5 files and drops these datasets. Afterwards, rerun `python3 nov26/save_scores.py --net all`; no retraining is needed.
 
 ## 9. Inference for the 1st and the 2nd jet of a gate event
 
@@ -219,7 +231,7 @@ A gate event has two stored jets. The **1st jet** is in slot 0 (role A) and the 
 ```python
 import h5py, numpy as np
 with h5py.File('friends/nov26/VBFZ_herwig.h5') as f:
-    gate, lead, s = f['gate'][:], f['leadJetIndex'][:], f['NNjPF'][:]
+    gate, lead, s = f['gate'][:], f['leadJetIndex'][:], f['NNjBC'][:]
 rows = np.flatnonzero(gate)              # gate events always store two jets
 s_lead = s[rows, lead[rows]]             # score of the pT-leading jet
 s_sub = s[rows, 1 - lead[rows]]          # score of the subleading jet
@@ -227,102 +239,63 @@ s_sub = s[rows, 1 - lead[rows]]          # score of the subleading jet
 
 Both arrays are out-of-fold scores. They can be combined into an event-level score: a product, a mean, or a small second-level model. A second-level model trained on these scores has to reuse the same sub-folds (the `subfold` column) so that it stays honest too.
 
-## 10. Results
+## 10. Results (2026-11-18)
 
-### NNjPF (all five folds finished, 2026-11-17)
+All 50 jobs (condor cluster 1648339) finished cleanly, and `save_scores.py --net all` wrote the ten score columns into the four h5 files, after checking that every stored jet was scored exactly once by the right model. The values in this section are unweighted, as before in this note. The event-weighted values, the comparison with summer26 NNj on the same events and the full ablation tables, with uncertainties, are in [roc.summary.md](../roc.summary.md).
 
-**Training.** Each fold model trained on about 1.47M jets and was validated on about 211k.
+### Training
 
-| Fold | GPU | Stopped at epoch | Best validation loss | Wall time |
-|---|---|---|---|---|
-| 0 | V100S | 60 | 0.6069 | 13 min |
-| 1 | V100S | 96 | 0.6075 | 19 min |
-| 2 | T4 | 61 | 0.6096 | 13 min |
-| 3 | H100 (MIG slice) | 73 | 0.6086 | 15 min |
-| 4 | V100S | 63 | 0.6077 | 12 min |
+| Net | Stopped at epoch | Best validation loss | Wall time per fold |
+|---|---|---|---|
+| NNj | 47–85 | 0.6088–0.6113 | 7–23 min |
+| NNjBC | 61–88 | 0.5849–0.5875 | 10–14 min |
+| NNjBCin / out / met / dphi | 50–99 | 0.6073–0.6102 / 0.5993–0.6023 / 0.5940–0.5968 / 0.6053–0.6079 | 6–19 min |
+| NNjBC_noin / noout / nomet / nodphi | 53–99 | 0.5853–0.5881 / 0.5887–0.5915 / 0.5935–0.5968 / 0.5866–0.5895 | 6–19 min |
 
-"Stopped at epoch" is where early stopping triggered; the best epoch is 15 earlier. Fold 3 ran on a GPU newer than the LCG_106 PyTorch build supports natively, so its kernels were compiled at start-up and its first epoch took 5 minutes instead of 16 s. Its results agree with the other folds.
+- The jobs ran on H100 MIG slices and V100s. Each fold model trained on 1.47M jets and was validated on 211k, as in section 2.
+- The validation losses already rank the nets: on every fold NNjBC has the lowest loss. Without bc_in the loss is unchanged, and it rises most without bc_met.
 
-**Figures of merit.** Every event is scored by the network that never saw it. Two numbers summarise the ROC curve:
-- **AUC**, the area under the ROC curve: the probability that a random VBF jet scores higher than a random QCD jet.
-- **ε_S(1 %)**, the signal efficiency at 1 % background efficiency. Cut on the score so that only 1 % of the QCD jets survive; ε_S(1 %) is the fraction of VBF jets that survive the same cut. It measures the high-purity end of the ROC curve, which the AUC barely weighs.
+### NNj and NNjBC
 
-| Jets | AUC Herwig | AUC MG5+Pythia | ε_S(1 %) Herwig | ε_S(1 %) MG5+Pythia |
-|---|---|---|---|---|
-| Gate jets (roles A + B) | 0.7643 | 0.7637 | 0.0983 | 0.1028 |
-| 1st jet of gate events (role A) | 0.7640 | 0.7634 | 0.0980 | 0.1009 |
-| 2nd jet of gate events (role B) | 0.7646 | 0.7640 | 0.0990 | 0.1044 |
-| Gate == 0 jets (role C) | 0.7199 | 0.7094 | 0.0632 | 0.0596 |
-| Gate jets of VBF-preselected events (mjj > 400, \|ΔY\| > 2.5) | 0.6877 | 0.6961 | 0.0497 | 0.0575 |
+| Net | Jets | AUC Herwig | AUC MG5+Pythia | ε_S(1 %) Herwig | ε_S(1 %) MG5+Pythia |
+|---|---|---|---|---|---|
+| NNj | gate jets (roles A + B) | 0.7624 | 0.7631 | 0.0949 | 0.1017 |
+| NNj | 1st jet of gate events (role A) | 0.7622 | 0.7629 | 0.0940 | 0.1003 |
+| NNj | 2nd jet of gate events (role B) | 0.7627 | 0.7634 | 0.0959 | 0.1031 |
+| NNj | gate == 0 jets (role C) | 0.7175 | 0.7078 | 0.0608 | 0.0586 |
+| NNj | VBF-preselected gate jets | 0.6832 | 0.6946 | 0.0464 | 0.0516 |
+| NNjBC | gate jets (roles A + B) | 0.7754 | 0.7764 | 0.1022 | 0.1098 |
+| NNjBC | 1st jet of gate events (role A) | 0.7752 | 0.7760 | 0.1024 | 0.1095 |
+| NNjBC | 2nd jet of gate events (role B) | 0.7755 | 0.7768 | 0.1021 | 0.1102 |
+| NNjBC | gate == 0 jets (role C) | 0.7497 | 0.7366 | 0.0949 | 0.0910 |
+| NNjBC | VBF-preselected gate jets | 0.6980 | 0.7081 | 0.0579 | 0.0590 |
 
-- **1st vs 2nd jet:** the AUCs agree within 0.0006. For ε_S(1 %) a bootstrap (`nov26/bootstrap_scores.py`, which resamples whole events) gives a statistical uncertainty of about 0.0016 for the 1st or the 2nd jets alone, and 0.0022–0.0024 for their difference. The measured differences are 0.0010 (Herwig, 0.5σ) and 0.0035 (Pythia, 1.5σ). This is the consistency check of section 9: no sign of leakage or of a slot bias.
-- **Spread of the five networks** on their own Herwig gate jets: AUC 0.7632, 0.7665, 0.7659, 0.7634, 0.7627 (rms 0.0016); ε_S(1 %) 0.0969, 0.0980, 0.1010, 0.0988, 0.0952 (rms 0.0019).
-- **Generator transfer:** the Herwig-trained networks lose nothing on Pythia for gate jets.
-- **VBF-preselected events:** the AUC is lower here because the preselection has already removed the easiest kinematic differences.
+- **1st vs 2nd jet:** the AUCs agree within 0.0008 ± 0.0008 for both nets and both generators, and ε_S(1 %) within 1.2σ (`bootstrap_scores.py`). There is no sign of leakage or of a slot bias.
+- **Spread of the five fold models** on their own Herwig gate jets: NNj AUC 0.7603–0.7648 (rms 0.0017), NNjBC 0.7733–0.7777 (rms 0.0016). For ε_S(1 %), the rms is 0.0022 for NNj and 0.0023 for NNjBC.
 
-**Comparison with summer26 NNj.** NNj was trained and tested on slot-0 jets of VBF-preselected events, built from all particles with no pT cut. On a 15 % test split it reached an AUC of 0.685 (Herwig) and 0.699 (MG5+Pythia). NNjPF in the same region gives 0.688 and 0.696.
+### What the beam connection adds
 
-The two are compatible. The statistical uncertainty is about 0.008 for NNj's test set and about 0.002 for the nov26 out-of-fold scores. The setups differ in three ways (particle threshold, PF inputs, training population), so the near-equality does not isolate the value of the PF information.
-
-### ParTj (all five folds finished, 2026-11-17)
-
-**Training.** ParTj used the same folds as NNjPF, so each fold model trained and validated on the same jets as the NNjPF model of that fold.
-
-| Fold | GPU | Stopped at epoch | Best validation loss | Wall time |
-|---|---|---|---|---|
-| 0 | H100 (MIG slice) | 29 | 0.6058 | 51 min |
-| 1 | H100 (MIG slice) | 33 | 0.6062 | 50 min |
-| 2 | H100 NVL | 36 | 0.6083 | 42 min |
-| 3 | H100 NVL | 33 | 0.6072 | 39 min |
-| 4 | T4 | 35 | 0.6065 | 107 min |
-
-- The best epoch is 8 before the stop.
-- An epoch takes about 1 minute on a full H100, 1.5 minutes on a MIG slice and 3 minutes on a T4.
-- In every fold, the best validation loss is 0.0011–0.0014 lower than NNjPF's on the same validation jets.
-
-**Figures of merit.**
-
-| Jets | AUC Herwig | AUC MG5+Pythia | ε_S(1 %) Herwig | ε_S(1 %) MG5+Pythia |
-|---|---|---|---|---|
-| Gate jets (roles A + B) | 0.7656 | 0.7634 | 0.0970 | 0.1015 |
-| 1st jet of gate events (role A) | 0.7653 | 0.7631 | 0.0956 | 0.1005 |
-| 2nd jet of gate events (role B) | 0.7659 | 0.7637 | 0.0984 | 0.1022 |
-| Gate == 0 jets (role C) | 0.7214 | 0.7100 | 0.0650 | 0.0609 |
-| Gate jets of VBF-preselected events (mjj > 400, \|ΔY\| > 2.5) | 0.6913 | 0.6969 | 0.0531 | 0.0589 |
-
-- **1st vs 2nd jet:** the AUCs agree within 0.0006, and ε_S(1 %) within 0.0028 (at most 1.3σ), as for NNjPF.
-- **Spread of the five networks** on their own Herwig gate jets: AUC 0.7649, 0.7674, 0.7675, 0.7643, 0.7640 (rms 0.0015); ε_S(1 %) 0.0956, 0.0945, 0.1018, 0.0974, 0.0964 (rms 0.0025).
-
-### ParTj vs NNjPF
-
-Both nets scored exactly the same jets, so they can be compared jet by jet. This is a *paired* comparison:
-
-- For each fold model k, take the AUC difference ParTj − NNjPF on model k's inference jets.
-- Each AUC on its own fluctuates by about 0.001, from the finite number of jets. The two nets' scores are 98 % correlated, so this fluctuation is nearly the same for both and cancels in the difference.
-- The five inference sets are disjoint, so the five differences are independent. The table gives their mean ± its standard error.
+NNjBC − NNj per fold model, on the same jets (mean ± standard error of the five; every fold model gains):
 
 | Jets | AUC, Herwig | AUC, MG5+Pythia | ε_S(1 %), Herwig | ε_S(1 %), MG5+Pythia |
 |---|---|---|---|---|
-| Gate jets | +0.0013 ± 0.0002 | −0.0003 ± 0.0005 | −0.0008 ± 0.0009 | −0.0009 ± 0.0015 |
-| Gate == 0 jets | +0.0016 ± 0.0002 | +0.0006 ± 0.0003 | +0.0019 ± 0.0004 | +0.0013 ± 0.0004 |
-| Gate jets of VBF-preselected events | +0.0036 ± 0.0003 | +0.0008 ± 0.0006 | +0.0047 ± 0.0016 | +0.0022 ± 0.0014 |
+| Gate jets | +0.0129 ± 0.0003 | +0.0133 ± 0.0002 | +0.0073 ± 0.0010 | +0.0087 ± 0.0014 |
+| Gate == 0 jets | +0.0322 ± 0.0001 | +0.0287 ± 0.0001 | +0.0341 ± 0.0011 | +0.0325 ± 0.0004 |
+| Gate jets of VBF-preselected events | +0.0148 ± 0.0008 | +0.0136 ± 0.0002 | +0.0117 ± 0.0015 | +0.0086 ± 0.0022 |
 
-**ROC curves** (`figs/nov26/roc_nets.pdf`): one column each for the gate jets, the gate == 0 jets and the VBF-preselected gate jets.
-- Top panels: background rejection 1/ε_B against signal efficiency, for both nets and both generators. A dotted line marks ε_B = 1 %, and the legends give the AUC and ε_S(1 %).
-- Lower panels: the ratio of the two nets' rejections at equal signal efficiency.
-
-Background rejection of the VBF-preselected gate jets at fixed signal efficiency:
+Background rejection at fixed signal efficiency (`bootstrap_scores.py`), with NNjBC / NNj as the ratio:
 
 | Signal efficiency | 5 % | 10 % | 20 % | 30 % | 50 % | 70 % | 90 % |
 |---|---|---|---|---|---|---|---|
-| NNjPF rejection, Herwig | 97.8 | 41.0 | 15.7 | 8.8 | 4.1 | 2.3 | 1.4 |
-| ParTj / NNjPF, Herwig | 1.116 | 1.054 | 1.029 | 1.022 | 1.015 | 1.011 | 1.007 |
-| NNjPF rejection, MG5+Pythia | 120.2 | 45.3 | 17.3 | 9.5 | 4.3 | 2.4 | 1.4 |
-| ParTj / NNjPF, MG5+Pythia | 1.022 | 1.022 | 1.007 | 1.002 | 0.999 | 1.002 | 1.002 |
+| NNj rejection, gate jets, Herwig | 249 | 92.6 | 32.0 | 16.3 | 6.6 | 3.2 | 1.6 |
+| NNjBC / NNj, gate jets, Herwig | 1.08 | 1.11 | 1.13 | 1.13 | 1.10 | 1.08 | 1.04 |
+| NNjBC / NNj, gate jets, MG5+Pythia | 1.16 | 1.12 | 1.14 | 1.13 | 1.10 | 1.08 | 1.04 |
+| NNj rejection, VBF-preselected, Herwig | 93.3 | 37.6 | 14.7 | 8.5 | 4.0 | 2.3 | 1.4 |
+| NNjBC / NNj, VBF-preselected, Herwig | 1.32 | 1.18 | 1.18 | 1.13 | 1.08 | 1.05 | 1.03 |
+| NNjBC / NNj, VBF-preselected, MG5+Pythia | 1.17 | 1.17 | 1.15 | 1.10 | 1.08 | 1.05 | 1.03 |
 
-- **On Herwig**, the generator both nets were trained on, ParTj has the higher AUC in all five fold models and for all three groups of jets. The gain is small. Its largest relative size is at high purity for the VBF-preselected jets: +12 % rejection at 5 % signal efficiency. Only about 450 background jets survive there, so that point is the least precise.
-- **At the 1 % working point** ParTj keeps a gain for the gate == 0 jets and the VBF-preselected jets, but not for the gate jets as a whole (−0.0008 ± 0.0009).
-- **On MG5+Pythia** most of the gain disappears. This suggests that much of what ParTj adds through the constituent pairs is specific to how Herwig showers and hadronises, rather than a VBF-vs-QCD difference that both generators share.
-- **Cost:** ParTj has 12 times more parameters (265k vs 22k). It took 39–107 minutes per fold, against 12–19 for NNjPF (on different GPUs).
+- **The gain transfers to the other generator.** The AUC gain on gate jets is the same on MG5+Pythia as on Herwig (+0.013). For scale: the particle type and charge of the discontinued NNjPF were worth about 0.002 (Herwig) and 0.0006 (MG5+Pythia) on the same gate jets (NNjPF 0.7643 and 0.7637).
+- **It is largest where NNj is weakest.** For the gate == 0 jets, the AUC rises by 0.03 and ε_S(1 %) by 0.034, which is more than half again. For gate jets, NNjBC rejects 4–16 % more background at fixed signal efficiency (10–14 % between 10 % and 50 % signal efficiency), and for VBF-preselected jets up to 32 % more at 5 % signal efficiency on Herwig.
+- **Which bc values carry the gain:** add-one and drop-one results per value are in [roc.summary.md](../roc.summary.md), section 4. In short, bc_met and bc_dphi carry most of it, bc_out adds a Herwig-only gain on its own, and bc_in adds nothing.
 
-**Scores in the h5.** Both nets' scores are now in the four `friends/nov26/*.h5`: datasets `NNjPF`, `ParTj` and `subfold` (section 8). They were written after all ten jobs had finished. Read back, they are identical to the fold files.
+ROC curves: `figs/nov26/roc_nets.pdf` (unweighted, NNj and NNjBC, three jet categories with the rejection ratio), `figs/roc_summary.pdf` (event-weighted, with summer26 NNj) and `figs/nov26/bc_ablation.pdf` (the ablation).

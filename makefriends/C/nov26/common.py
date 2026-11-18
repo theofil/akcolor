@@ -1,17 +1,16 @@
-"""Inputs and cross-fitting folds shared by the nov26 jet networks (NNjPF, ParTj).
+"""Inputs and cross-fitting folds shared by the nov26 jet networks (NNj, NNjBC and the bc ablation).
 
-One training example is one jet of friends/nov26/<sample>.h5 (Herwig; MG5+Pythia with set_train_gen):
+One training example is one jet of friends/nov26/<sample>.h5 (trained on Herwig; MG5+Pythia is scored only):
   role A (0): gate == 1, slot 0 (randomly the leading or subleading jet)   -> train / validation
   role B (1): gate == 1, slot 1 (the "unbiased 2nd jet")                   -> never trained on, scored only
   role C (2): gate == 0, every stored jet                                  -> train / validation
 Every event gets one of 10 sub-folds (fixed seed), stratified within (sample, gate, nJets).
 Fold model k infers on sub-folds {2k, 2k+1}, validates on (2k+2) % 10 and trains on the other
 seven (70 / 10 / 20), so every event is scored once by a model that never saw it.
-Details and the reasoning: nov26/training.md.
 
-The same code serves the fall26 campaign (Fall2026 samples, fall26.md): set_campaign('fall26')
-switches the friends, output and figure folders and turns on event weights (kWeight) in the
-training loss and in the metrics; see fall26/training.md. The default campaign is nov26.
+The nets (NETS) share the NNj DeepSets architecture (model.py) and differ only in which
+beam-connection (bc) variables are appended to the jet scalars |eta|, m, pT. Details and the
+reasoning: nov26/training.md.
 """
 import os
 import time
@@ -21,53 +20,34 @@ import h5py
 import numpy as np
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))     # makefriends/C
-# per campaign: friends (h5 inputs), out (<out>/<net>/: models, scores, logs), figs, and whether
-# the event weights kWeight enter the loss and the metrics
-CAMPAIGNS = {
-    'nov26':  dict(friends=os.path.join(BASE, 'friends', 'nov26'), out=os.path.join(BASE, 'nov26'),
-                   figs=os.path.join(BASE, 'figs', 'nov26'), event_weights=False),
-    'fall26': dict(friends=os.path.join(BASE, 'friends', 'fall26'), out=os.path.join(BASE, 'fall26'),
-                   figs=os.path.join(BASE, 'figs', 'fall26'), event_weights=True),
-}
-CAMPAIGN = 'nov26'
-FRIENDS, OUT, FIGS, EVENT_WEIGHTS = (CAMPAIGNS[CAMPAIGN][k] for k in ('friends', 'out', 'figs', 'event_weights'))
+FRIENDS = os.path.join(BASE, 'friends', 'nov26')                        # h5 inputs (and score columns)
+OUT = os.path.join(BASE, 'nov26')                                       # nov26/<net>/: models, scores
+FIGS = os.path.join(BASE, 'figs', 'nov26')
 
-
-def set_campaign(name):
-    """Point this module (h5_path, output and figure folders, event weights) at one campaign."""
-    global CAMPAIGN, FRIENDS, OUT, FIGS, EVENT_WEIGHTS
-    c = CAMPAIGNS[name]
-    CAMPAIGN, FRIENDS, OUT, FIGS, EVENT_WEIGHTS = name, c['friends'], c['out'], c['figs'], c['event_weights']
-
-
-LABEL ={'VBFZ_herwig': 1, 'QCDZjj_herwig': 0, 'VBFZ_mg5_pythia': 1, 'QCDZjj_mg5_pythia': 0}
-GEN_SAMPLES = {'herwig': ('VBFZ_herwig', 'QCDZjj_herwig'),               # (signal, background)
-               'pythia': ('VBFZ_mg5_pythia', 'QCDZjj_mg5_pythia')}
-# training generator: Herwig by default. set_train_gen('pythia') trains on MG5+Pythia instead
-# (the generator-swap test, fall26/training.md); its outputs carry the suffix '_py': folder
-# <campaign>/<net>_py/ and h5 column <net>_py. The sub-folds are per sample, so either way
-# every jet of all four files is scored by a model that never saw it.
-TRAIN_GEN = 'herwig'
-TRAIN_SAMPLES, TRANSFER_SAMPLES = GEN_SAMPLES['herwig'], GEN_SAMPLES['pythia']
-NET_SUFFIX = {'herwig': '', 'pythia': '_py'}
-
-
-def set_train_gen(gen):
-    """Train on `gen` ('herwig' or 'pythia'); the other generator becomes the transfer test."""
-    global TRAIN_GEN, TRAIN_SAMPLES, TRANSFER_SAMPLES
-    other = 'pythia' if gen == 'herwig' else 'herwig'
-    TRAIN_GEN, TRAIN_SAMPLES, TRANSFER_SAMPLES = gen, GEN_SAMPLES[gen], GEN_SAMPLES[other]
-
-
-def net_name(net, gen=None):
-    """Folder and h5-column name of `net` trained on `gen` (default: the current TRAIN_GEN)."""
-    return net + NET_SUFFIX[gen or TRAIN_GEN]
-
+LABEL = {'VBFZ_herwig': 1, 'QCDZjj_herwig': 0, 'VBFZ_mg5_pythia': 1, 'QCDZjj_mg5_pythia': 0}
+TRAIN_SAMPLES = ('VBFZ_herwig', 'QCDZjj_herwig')                        # (signal, background)
+TRANSFER_SAMPLES = ('VBFZ_mg5_pythia', 'QCDZjj_mg5_pythia')
 
 ROLE_A, ROLE_B, ROLE_C = 0, 1, 2
 ROLE_NAMES = {ROLE_A: 'A (gate, slot 0)', ROLE_B: 'B (gate, slot 1)', ROLE_C: 'C (gate == 0)'}
 NC_MAX = 80
 N_SUB, N_FOLDS, SEED = 10, 5, 2026
+
+# ── beam connection and the nets ──────────────────────────────────────────────
+# x_bc columns (load_jets): log1p(jetBCin), log1p(jetBCout), log1p(jetBCmet) (GeV), and
+# cos, sin of jetBCdphi; an empty bc region (jetBCdphi = -99) gives cos = sin = 0.
+BC_VARS = ('in', 'out', 'met', 'dphi')
+BC_COLS = {'in': [0], 'out': [1], 'met': [2], 'dphi': [3, 4]}
+N_JET_BASE = 3                                                          # |eta|, m, pT
+
+NETS = {'NNj': (), 'NNjBC': BC_VARS}
+NETS.update({f'NNjBC{v}': (v,) for v in BC_VARS})                       # add-one: NNj + v
+NETS.update({f'NNjBC_no{v}': tuple(u for u in BC_VARS if u != v) for v in BC_VARS})   # drop-one
+
+
+def bc_columns(net):
+    """Columns of x_bc that `net` appends to the jet scalars."""
+    return [c for v in NETS[net] for c in BC_COLS[v]]
 
 
 def h5_path(sample):
@@ -82,7 +62,7 @@ def assign_subfolds(sample, gate, n_jets, seed=SEED):
     Within each (gate, nJets) group the events are shuffled with a seed derived from
     (seed, sample, group) and dealt out round-robin, so every sub-fold receives a tenth of
     each group (to within one event). Depends only on the file content, hence identical in
-    every job and for both nets."""
+    every job and for every net."""
     gate = np.asarray(gate).astype(np.int64)
     n_jets = np.asarray(n_jets).astype(np.int64)
     sub = np.full(len(gate), -1, dtype=np.int8)
@@ -107,18 +87,15 @@ def fold_sets(k):
 
 # ── jets ──────────────────────────────────────────────────────────────────────
 
-def load_jets(sample, subfolds=None, roles=(ROLE_A, ROLE_B, ROLE_C), with_p4=False, entry_stop=None):
+def load_jets(sample, subfolds=None, roles=(ROLE_A, ROLE_B, ROLE_C), entry_stop=None):
     """Per-jet arrays for the stored jets of `sample` whose role is in `roles` and whose event
     is in one of `subfolds` (None = all). Jets come in (event, slot) order.
 
     x_jet  (n, 3)       |jetEta|, jetM, jetPt
+    x_bc   (n, 5)       log1p(bc_in), log1p(bc_out), log1p(bc_met), cos(bc_dphi), sin(bc_dphi)
+                        (empty bc region: cos = sin = 0)
     x_jcs  (n, 80, 3)   jcsDEta (signed, = dEtas), jcsDPhi, jcsPt / jetPt     [not standardised]
-    jcs_pf (n, 80) int8 PF type 1 h+-, 2 e, 3 mu, 4 gamma, 5 h0; 0 = empty slot
-    jcs_q  (n, 80) int8 charge
     mask   (n, 80) bool jcsPt > 0
-    jcs_p4 (n, 80, 4)   with_p4 only: (px, py, pz, E) from pT, eta = |jetEta| + jcsDEta,
-                        phi = jcsDPhi, m = jcsM (event reflected to put the jet at eta > 0 and
-                        rotated to its phi: pair invariants unchanged); zero for empty slots
     kweight, ev, slot, role, sub, label  (n,)"""
     with h5py.File(h5_path(sample), 'r') as f:
         gate_all, nj_all = f['gate'][:], f['nJets'][:]
@@ -141,12 +118,16 @@ def load_jets(sample, subfolds=None, roles=(ROLE_A, ROLE_B, ROLE_C), with_p4=Fal
 
         eta, jet_m, jet_pt = per_jet('jetEta'), per_jet('jetM'), per_jet('jetPt')
         jcs_pt = per_jet('jcsPt')
+        dphi = per_jet('jetBCdphi')
+        empty = dphi < -10                                               # -99: no particle in the region
         out = dict(
             x_jet=np.stack([np.abs(eta), jet_m, jet_pt], axis=1).astype(np.float32),
+            x_bc=np.stack([np.log1p(per_jet('jetBCin')), np.log1p(per_jet('jetBCout')),
+                           np.log1p(per_jet('jetBCmet')),
+                           np.where(empty, 0., np.cos(dphi)), np.where(empty, 0., np.sin(dphi))],
+                          axis=1).astype(np.float32),
             x_jcs=np.stack([per_jet('jcsDEta'), per_jet('jcsDPhi'), jcs_pt / jet_pt[:, None]],
                            axis=2).astype(np.float32),
-            jcs_pf=per_jet('jcsPFType').astype(np.int8),
-            jcs_q=per_jet('jcsCharge').astype(np.int8),
             mask=jcs_pt > 0,
             kweight=f['kWeight'][:n][rows].astype(np.float32),
             ev=f['evIdx'][:n][rows].astype(np.int64),
@@ -155,12 +136,6 @@ def load_jets(sample, subfolds=None, roles=(ROLE_A, ROLE_B, ROLE_C), with_p4=Fal
             sub=sub[rows],
             label=np.full(len(rows), LABEL[sample], np.int8),
         )
-        if with_p4:
-            deta, dphi, m = out['x_jcs'][..., 0], out['x_jcs'][..., 1], per_jet('jcsM')
-            eta_c = np.abs(eta)[:, None] + deta
-            px, py, pz = jcs_pt * np.cos(dphi), jcs_pt * np.sin(dphi), jcs_pt * np.sinh(eta_c)
-            e = np.sqrt(px * px + py * py + pz * pz + m * m)
-            out['jcs_p4'] = (np.stack([px, py, pz, e], axis=2) * out['mask'][..., None]).astype(np.float32)
     return out
 
 
@@ -174,30 +149,21 @@ def take(d, sel):
     return {k: v[sel] for k, v in d.items()}
 
 
-def class_balance_weights(label, role, kweight=None):
+def class_balance_weights(label, role):
     """Per-jet training weight that removes the population-dependent class prior.
 
     The populations are the gate jets (roles A, B) and the gate == 0 jets (role C). Within
     population P each jet of class c gets w = N_P / (2 N_{P,c}): the two classes then carry
-    equal weight inside P, and P keeps its total weight N_P (mean weight 1).
-
-    With event weights (kweight, the fall26 campaign) a jet gets
-        w = kWeight * N_P / (2 * sum of kWeight over the jets of class c in P):
-    the class and population totals are the same as above, and inside a class the jets keep
-    the relative weights of their events (the generator's weights are not replaced by 1)."""
+    equal weight inside P, and P keeps its total weight N_P (mean weight 1)."""
     pop = (np.asarray(role) == ROLE_C).astype(np.int64)
     label = np.asarray(label)
-    kw = None if kweight is None else np.asarray(kweight, np.float64)
     w = np.zeros(len(label), np.float32)
     for p in (0, 1):
         in_p = pop == p
         for c in (0, 1):
             m = in_p & (label == c)
             if m.any():
-                if kw is None:
-                    w[m] = in_p.sum() / (2.0 * m.sum())
-                else:
-                    w[m] = kw[m] * in_p.sum() / (2.0 * kw[m].sum())
+                w[m] = in_p.sum() / (2.0 * m.sum())
     return w
 
 

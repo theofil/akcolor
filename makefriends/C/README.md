@@ -311,13 +311,17 @@ What differs from summer26:
   `jetBCdphi`): the activity between the jet and its own beam.
 
 Branches, h5 layout and validation are in [nov26.md](nov26.md).
-The jet networks NNjPF (DeepSets with particle type and charge) and ParTj
-(particle transformer with pairwise features), trained with five-fold
-cross-fitting, are described in [nov26/training.md](nov26/training.md).
+The jet networks, trained with five-fold cross-fitting, are NNj (the summer26
+DeepSets) and NNjBC (NNj + the four beam-connection values), with an add-one /
+drop-one ablation of the bc values; see [nov26/training.md](nov26/training.md)
+and [roc.summary.md](roc.summary.md).
 
 ---
 
 ## fall26 campaign: the Fall2026 collaborator samples (Z channel first)
+
+**Paused (2026-11-18).** Friends and h5 files are produced and validated; no
+networks are trained on them.
 
 The Fall2026 samples (13.6 TeV, Herwig 7.3 and MG5+Pythia 8.3) are run through
 the nov26 pipeline by `makefriends_fall26` (`make makefriends_fall26`) and
@@ -334,5 +338,3 @@ What differs from nov26:
 - New branches: `chunk`, `chunkEntry`, `bosonCharge`.
 
 Samples, validation and production numbers are in [fall26.md](fall26.md).
-The jet networks are trained on these samples with event weights; see
-[fall26/training.md](fall26/training.md).

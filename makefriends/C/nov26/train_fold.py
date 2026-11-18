@@ -1,27 +1,25 @@
 #!/usr/bin/env python3
 """Train fold model k of a nov26 jet network, then score the jets of its inference sub-folds.
 
-    python3 train_fold.py --net NNjPF --fold 0                          # condor GPU job
-    python3 train_fold.py --net ParTj --fold 3 --smoke --outdir <dir>    # quick CPU check
-    python3 train_fold.py --net ParTj --fold 0 --load-only               # data loading and memory only
-    python3 train_fold.py --campaign fall26 --net NNjPF --fold 0        # Fall2026 samples, event weights
-    python3 train_fold.py --campaign fall26 --net NNjPF --fold 0 --train-gen pythia   # -> fall26/NNjPF_py/
+    python3 train_fold.py --net NNjBC --fold 0                           # condor GPU job
+    python3 train_fold.py --net NNjBCdphi --fold 3 --smoke --outdir <dir>  # quick CPU check
+    python3 train_fold.py --net NNj --fold 0 --load-only                 # data loading and memory only
 
---campaign (default nov26) selects the friends, the output folder <campaign>/<net>/ and the figure
-folder; fall26 also weights the loss and the logged AUCs with the event weights (common.py).
---train-gen pythia trains on MG5+Pythia instead of Herwig (outputs <campaign>/<net>_py/, common.py).
+--net is one of common.NETS: NNj (no beam connection), NNjBC (all four bc variables), NNjBC<v>
+(NNj + bc variable v alone) and NNjBC_no<v> (NNjBC without v). All share the DeepSets of
+model.py and the training recipe below; they differ only in the bc inputs appended to the
+jet scalars |eta|, m, pT.
 
-Phase 1 (training): Herwig (or --train-gen) jets of roles A and C (common.py) in the 7 training sub-folds and
+Phase 1 (training): Herwig jets of roles A and C (common.py) in the 7 training sub-folds and
 the validation sub-fold of fold k. A per-fold StandardScaler is fitted on the training jets
-(jet scalars; continuous constituent features of valid constituents only). The loss is
-BCEWithLogits weighted per jet with common.class_balance_weights; early stopping on the
-validation loss.
+(jet scalars incl. the bc inputs; continuous constituent features of valid constituents only).
+The loss is BCEWithLogits weighted per jet with common.class_balance_weights; early stopping
+on the validation loss.
 Phase 2 (inference): the best model scores every stored jet (roles A, B, C) of the two
 inference sub-folds, in the Herwig and the MG5+Pythia files -> <outdir>/scores_fold{k}.npz,
 merged into the h5 files by save_scores.py. See training.md.
 """
 import argparse
-import importlib
 import os
 import pickle
 import resource
@@ -35,18 +33,11 @@ import torch.nn.functional as F
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import common as C  # noqa: E402
+from model import JetNN  # noqa: E402
 
-CONFIG = {
-    'NNjPF': dict(cls='JetPFNN', kwargs=dict(dropout=0.3), with_p4=False, batch=512, infer_batch=4096,
-                  optimizer='adam', lr=1e-3, weight_decay=0.0, max_epochs=100, patience=15,
-                  sched_patience=5, clip=None),
-    'ParTj': dict(cls='ParticleTransformerJet', kwargs=dict(), with_p4=True, batch=256, infer_batch=512,
-                  optimizer='adamw', lr=5e-4, weight_decay=0.01, max_epochs=40, patience=8,
-                  sched_patience=3, clip=1.0),
-}
-INPUTS = {'NNjPF': ('x_jet', 'x_jcs', 'jcs_pf', 'jcs_q', 'mask'),
-          'ParTj': ('x_jet', 'x_jcs', 'jcs_pf', 'jcs_q', 'jcs_p4', 'mask')}
-PER_CONSTITUENT = ('x_jcs', 'jcs_pf', 'jcs_q', 'jcs_p4', 'mask')
+CFG = dict(dropout=0.3, batch=512, infer_batch=4096, lr=1e-3, max_epochs=100, patience=15, sched_patience=5)
+KEYS = ('x_jet', 'x_jcs', 'mask')
+PER_CONSTITUENT = ('x_jcs', 'mask')
 T0 = time.time()
 
 
@@ -60,10 +51,16 @@ def max_rss_gb():
 
 # ── data ──────────────────────────────────────────────────────────────────────
 
-def load(samples, subfolds, roles, with_p4, entry_stop):
+def net_inputs(d, net):
+    """Append the net's bc columns to the jet scalars, in place; x_bc is dropped."""
+    d['x_jet'] = np.concatenate([d['x_jet'], d.pop('x_bc')[:, C.bc_columns(net)]], axis=1)
+    return d
+
+
+def load(samples, subfolds, roles, net, entry_stop):
     parts = []
     for s in samples:
-        p = C.load_jets(s, subfolds=subfolds, roles=roles, with_p4=with_p4, entry_stop=entry_stop)
+        p = net_inputs(C.load_jets(s, subfolds=subfolds, roles=roles, entry_stop=entry_stop), net)
         log(f'  {s}: {len(p["label"])} jets, roles A/B/C = {np.bincount(p["role"], minlength=3).tolist()}')
         parts.append(p)
     return C.concat(parts)
@@ -81,68 +78,65 @@ def apply_scalers(d, sc):
     d['x_jcs'] /= sc['jcs'].scale_.astype(np.float32)
 
 
-def to_device(d, keys, device):
-    return {k: torch.from_numpy(np.ascontiguousarray(d[k])).to(device) for k in keys}
+def to_device(d, device):
+    return {k: torch.from_numpy(np.ascontiguousarray(d[k])).to(device) for k in KEYS}
 
 
-def get_batch(t, idx, keys):
+def get_batch(t, idx):
     """Rows idx, with the constituent axis trimmed to the largest constituent count in the batch
     (constituents are pT-ordered and zero-padded at the end, so this drops only padding)."""
-    b = {k: t[k][idx] for k in keys}
+    b = {k: t[k][idx] for k in KEYS}
     n = max(int(b['mask'].sum(1).max()), 1)
     for k in PER_CONSTITUENT:
-        if k in b:
-            b[k] = b[k][:, :n]
+        b[k] = b[k][:, :n]
     return b
 
 
 # ── training / scoring ────────────────────────────────────────────────────────
 
-def run_epoch(model, t, y, w, order, keys, cfg, optimizer=None, max_batches=None):
+def run_epoch(model, t, y, w, order, optimizer=None, max_batches=None):
     """Weighted mean BCE over `order`; trains when an optimizer is given."""
     training = optimizer is not None
     model.train(training)
     tot, wsum = 0.0, 0.0
     with torch.set_grad_enabled(training):
-        for ib, i in enumerate(range(0, len(order), cfg['batch'])):
+        for ib, i in enumerate(range(0, len(order), CFG['batch'])):
             if max_batches is not None and ib >= max_batches:
                 break
-            idx = order[i:i + cfg['batch']]
+            idx = order[i:i + CFG['batch']]
             if training and len(idx) < 2:                        # BatchNorm needs > 1 jet
                 continue
-            b = get_batch(t, idx, keys)
-            logit = model(*[b[k] for k in keys]).squeeze(1)
+            b = get_batch(t, idx)
+            logit = model(*[b[k] for k in KEYS]).squeeze(1)
             wb = w[idx]
             loss = (F.binary_cross_entropy_with_logits(logit, y[idx], reduction='none') * wb).sum() / wb.sum()
             if training:
                 optimizer.zero_grad(set_to_none=True)
                 loss.backward()
-                if cfg['clip']:
-                    torch.nn.utils.clip_grad_norm_(model.parameters(), cfg['clip'])
                 optimizer.step()
             tot += loss.item() * wb.sum().item()
             wsum += wb.sum().item()
     return tot / wsum
 
 
-def score(model, d, keys, device, batch):
-    t = to_device(d, keys, device)
+def score(model, d, device):
+    t = to_device(d, device)
     model.eval()
     out = []
     with torch.no_grad():
-        for i in range(0, len(d['label']), batch):
-            idx = torch.arange(i, min(i + batch, len(d['label'])), device=device)
-            b = get_batch(t, idx, keys)
-            out.append(torch.sigmoid(model(*[b[k] for k in keys]).squeeze(1)).float().cpu().numpy())
+        for i in range(0, len(d['label']), CFG['infer_batch']):
+            idx = torch.arange(i, min(i + CFG['infer_batch'], len(d['label'])), device=device)
+            b = get_batch(t, idx)
+            out.append(torch.sigmoid(model(*[b[k] for k in KEYS]).squeeze(1)).float().cpu().numpy())
     return np.concatenate(out) if out else np.zeros(0, np.float32)
 
 
-def auc(label, s, w=None):
+def auc(label, s):
     from sklearn.metrics import roc_auc_score
-    return float(roc_auc_score(label, s, sample_weight=w)) if len(np.unique(label)) == 2 else float('nan')
+    return float(roc_auc_score(label, s)) if len(np.unique(label)) == 2 else float('nan')
 
 
-def save_loss_curve(hist, path, title, ylabel='class-balanced BCE'):
+def save_loss_curve(hist, path, title):
     import matplotlib
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
@@ -151,7 +145,7 @@ def save_loss_curve(hist, path, title, ylabel='class-balanced BCE'):
     ax.plot(ep, hist['train'], color='#2a78d6', lw=2, label='train')
     ax.plot(ep, hist['val'], color='#eb6834', lw=2, ls='--', label='validation')
     ax.set_xlabel('epoch')
-    ax.set_ylabel(ylabel)
+    ax.set_ylabel('class-balanced BCE')
     ax.set_title(title, fontsize=10)
     ax.legend(frameon=False)
     fig.tight_layout()
@@ -161,22 +155,15 @@ def save_loss_curve(hist, path, title, ylabel='class-balanced BCE'):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument('--net', required=True, choices=sorted(CONFIG))
+    ap.add_argument('--net', required=True, choices=list(C.NETS))
     ap.add_argument('--fold', required=True, type=int, choices=range(C.N_FOLDS))
-    ap.add_argument('--campaign', default='nov26', choices=sorted(C.CAMPAIGNS))
-    ap.add_argument('--train-gen', default='herwig', choices=sorted(C.GEN_SAMPLES),
-                    help='generator of the training jets (default herwig)')
-    ap.add_argument('--outdir', default=None, help='default: <campaign>/<net>, <campaign>/<net>_py for pythia')
+    ap.add_argument('--outdir', default=None, help='default: nov26/<net>')
     ap.add_argument('--smoke', action='store_true', help='3000 entries per sample, 2 batches, 1 epoch')
     ap.add_argument('--load-only', action='store_true', help='load the training data, report memory, exit')
     args = ap.parse_args()
-    C.set_campaign(args.campaign)
-    C.set_train_gen(args.train_gen)
-    net_tag = C.net_name(args.net)                    # NNjPF, or NNjPF_py when trained on pythia
 
-    cfg = dict(CONFIG[args.net])
-    keys = INPUTS[args.net]
-    outdir = args.outdir or os.path.join(C.OUT, net_tag)
+    cfg = dict(CFG)
+    outdir = args.outdir or os.path.join(C.OUT, args.net)
     os.makedirs(outdir, exist_ok=True)
     entry_stop = 3000 if args.smoke else None
     max_batches = 2 if args.smoke else None
@@ -187,12 +174,12 @@ def main():
     torch.manual_seed(C.SEED + k)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     gpu = torch.cuda.get_device_name(0) if device.type == 'cuda' else 'none'
-    log(f'{args.net} fold {k} ({C.CAMPAIGN}, trained on {C.TRAIN_GEN}, event weights {C.EVENT_WEIGHTS}): train sub-folds {train_sub}, '
+    log(f'{args.net} fold {k} (bc inputs: {", ".join(C.NETS[args.net]) or "none"}): train sub-folds {train_sub}, '
         f'validation {val_sub}, inference {infer_sub}; device {device} ({gpu}); config {cfg}')
 
     # ── phase 1: training ─────────────────────────────────────────────────────
-    log(f'loading {C.TRAIN_GEN} training/validation jets (roles A, C): {", ".join(C.TRAIN_SAMPLES)}')
-    d = load(C.TRAIN_SAMPLES, train_sub + val_sub, (C.ROLE_A, C.ROLE_C), cfg['with_p4'], entry_stop)
+    log(f'loading Herwig training/validation jets (roles A, C): {", ".join(C.TRAIN_SAMPLES)}')
+    d = load(C.TRAIN_SAMPLES, train_sub + val_sub, (C.ROLE_A, C.ROLE_C), args.net, entry_stop)
     is_train = np.isin(d['sub'], train_sub)
     tr, va = C.take(d, is_train), C.take(d, ~is_train)
     del d
@@ -201,16 +188,14 @@ def main():
         log(f'  {name}: {len(lab)} jets | VBF A/C = {int(((lab == 1) & (rol == 0)).sum())}/'
             f'{int(((lab == 1) & (rol == 2)).sum())}, QCD A/C = {int(((lab == 0) & (rol == 0)).sum())}/'
             f'{int(((lab == 0) & (rol == 2)).sum())}')
+    n_jet_feat = tr['x_jet'].shape[1]
+    log(f'jet scalars: {n_jet_feat} (|eta|, m, pT + bc columns {C.bc_columns(args.net)}); '
+        f'finite: {bool(np.isfinite(tr["x_jet"]).all() and np.isfinite(va["x_jet"]).all())}')
     scalers = fit_scalers(tr)
     apply_scalers(tr, scalers)
     apply_scalers(va, scalers)
-    w_tr = C.class_balance_weights(tr['label'], tr['role'], tr['kweight'] if C.EVENT_WEIGHTS else None)
-    w_va = C.class_balance_weights(va['label'], va['role'], va['kweight'] if C.EVENT_WEIGHTS else None)
-    if C.EVENT_WEIGHTS:
-        for lab, cls in ((1, 'VBF'), (0, 'QCD')):
-            for rol, rname in ((C.ROLE_A, 'A'), (C.ROLE_C, 'C')):
-                m = (tr['label'] == lab) & (tr['role'] == rol)
-                log(f'  train {cls} {rname}: {int(m.sum())} jets, N_eff {C.n_eff(w_tr[m]):.0f}')
+    w_tr = C.class_balance_weights(tr['label'], tr['role'])
+    w_va = C.class_balance_weights(va['label'], va['role'])
     log(f'data ready; max RSS {max_rss_gb():.2f} GB')
     if args.load_only:
         nbytes = sum(v.nbytes for v in tr.values()) + sum(v.nbytes for v in va.values())
@@ -219,28 +204,24 @@ def main():
     with open(os.path.join(outdir, f'scaler_fold{k}.pkl'), 'wb') as fh:
         pickle.dump(scalers, fh)
 
-    t_tr, t_va = to_device(tr, keys, device), to_device(va, keys, device)
+    t_tr, t_va = to_device(tr, device), to_device(va, device)
     y_tr = torch.from_numpy(tr['label'].astype(np.float32)).to(device)
     y_va = torch.from_numpy(va['label'].astype(np.float32)).to(device)
     ww_tr, ww_va = torch.from_numpy(w_tr).to(device), torch.from_numpy(w_va).to(device)
     n_tr, n_va = len(y_tr), len(y_va)
     del tr, va
 
-    model = getattr(importlib.import_module(f'{args.net}.model'), cfg['cls'])(**cfg['kwargs']).to(device)
-    log(f'model {cfg["cls"]}: {sum(p.numel() for p in model.parameters())} parameters')
-    if cfg['optimizer'] == 'adamw':
-        optimizer = torch.optim.AdamW(model.parameters(), lr=cfg['lr'], weight_decay=cfg['weight_decay'])
-    else:
-        optimizer = torch.optim.Adam(model.parameters(), lr=cfg['lr'])
+    model = JetNN(n_jet_feat, dropout=cfg['dropout']).to(device)
+    log(f'model JetNN: {sum(p.numel() for p in model.parameters())} parameters')
+    optimizer = torch.optim.Adam(model.parameters(), lr=cfg['lr'])
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.5, patience=cfg['sched_patience'])
     best_path = os.path.join(outdir, f'best_model_fold{k}.pt')
     best, wait, hist = float('inf'), 0, {'train': [], 'val': []}
     val_order = torch.arange(n_va, device=device)
     for epoch in range(1, cfg['max_epochs'] + 1):
         te = time.time()
-        loss_tr = run_epoch(model, t_tr, y_tr, ww_tr, torch.randperm(n_tr, device=device), keys, cfg,
-                            optimizer, max_batches)
-        loss_va = run_epoch(model, t_va, y_va, ww_va, val_order, keys, cfg, None, max_batches)
+        loss_tr = run_epoch(model, t_tr, y_tr, ww_tr, torch.randperm(n_tr, device=device), optimizer, max_batches)
+        loss_va = run_epoch(model, t_va, y_va, ww_va, val_order, None, max_batches)
         hist['train'].append(loss_tr)
         hist['val'].append(loss_va)
         scheduler.step(loss_va)
@@ -258,39 +239,31 @@ def main():
     np.savez(os.path.join(outdir, f'history_fold{k}.npz'), train=hist['train'], val=hist['val'])
     figdir = outdir if args.smoke else C.FIGS
     os.makedirs(figdir, exist_ok=True)
-    save_loss_curve(hist, os.path.join(figdir, f'{net_tag}_fold{k}_loss.pdf'),
-                    f'{args.net}, fold {k}, trained on {C.TRAIN_GEN}',
-                    'event-weighted, class-balanced BCE' if C.EVENT_WEIGHTS else 'class-balanced BCE')
+    save_loss_curve(hist, os.path.join(figdir, f'{args.net}_fold{k}_loss.pdf'), f'{args.net}, fold {k}')
     del t_tr, t_va, y_tr, y_va, ww_tr, ww_va
     if device.type == 'cuda':
         torch.cuda.empty_cache()
 
     # ── phase 2: score every stored jet of the inference sub-folds ───────────
     model.load_state_dict(torch.load(best_path, map_location=device))
-    out = {'net': args.net, 'fold': k, 'train_gen': C.TRAIN_GEN, 'infer_subfolds': np.array(infer_sub)}
+    out = {'net': args.net, 'fold': k, 'infer_subfolds': np.array(infer_sub)}
     for sample in C.TRAIN_SAMPLES + C.TRANSFER_SAMPLES:
-        d = C.load_jets(sample, subfolds=infer_sub, with_p4=cfg['with_p4'], entry_stop=entry_stop)
+        d = net_inputs(C.load_jets(sample, subfolds=infer_sub, entry_stop=entry_stop), args.net)
         apply_scalers(d, scalers)
-        s = score(model, d, keys, device, cfg['infer_batch'])
+        s = score(model, d, device)
         out[f'{sample}__ev'], out[f'{sample}__slot'], out[f'{sample}__score'] = d['ev'], d['slot'], s
         out[f'{sample}__role'] = d['role']
         out[f'{sample}__kweight'] = d['kweight']
         log(f'scored {sample}: {len(s)} jets')
-    for gen, (sig, bkg) in C.GEN_SAMPLES.items():
+    for gen, (sig, bkg) in (('herwig', C.TRAIN_SAMPLES), ('pythia', C.TRANSFER_SAMPLES)):
         for name, roles in (('gate jets (A+B)', (C.ROLE_A, C.ROLE_B)), ('role B', (C.ROLE_B,)),
                             ('gate==0 jets (C)', (C.ROLE_C,))):
             ms = np.isin(out[f'{sig}__role'], roles)
             mb = np.isin(out[f'{bkg}__role'], roles)
-            lab = np.r_[np.ones(ms.sum()), np.zeros(mb.sum())]
-            sc = np.r_[out[f'{sig}__score'][ms], out[f'{bkg}__score'][mb]]
-            a = auc(lab, sc)
+            a = auc(np.r_[np.ones(ms.sum()), np.zeros(mb.sum())],
+                    np.r_[out[f'{sig}__score'][ms], out[f'{bkg}__score'][mb]])
             out[f'auc_{gen}_{name.split()[0].replace("==", "eq")}'] = a
-            if C.EVENT_WEIGHTS:
-                aw = auc(lab, sc, np.r_[out[f'{sig}__kweight'][ms], out[f'{bkg}__kweight'][mb]])
-                out[f'aucw_{gen}_{name.split()[0].replace("==", "eq")}'] = aw
-                log(f'AUC {gen:6s} {name:17s}: {aw:.4f} event-weighted ({a:.4f} unweighted)')
-            else:
-                log(f'AUC {gen:6s} {name:17s}: {a:.4f}')
+            log(f'AUC {gen:6s} {name:17s}: {a:.4f}')
     path = os.path.join(outdir, f'scores_fold{k}.npz')
     np.savez(path, **out)
     log(f'wrote {path}; max RSS {max_rss_gb():.2f} GB')

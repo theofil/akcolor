@@ -1,12 +1,14 @@
 # fall26: friends from the Fall2026 samples (Z channel first)
 
-The Fall2026 samples are a new, common production by the collaborator. This campaign runs them through the nov26 pipeline: inclusive friends, h5 files, and the jet networks NNjPF and ParTj.
+The Fall2026 samples are a new, common production by the collaborator. This campaign runs them through the nov26 pipeline: inclusive friends and h5 files.
+
+**Status: paused (2026-11-18).** The friends and h5 files are produced and validated (below). No networks are trained on them; the nov26 network code reads only the nov26 friends.
 
 - **Scope:** the Z channel first (VBFZ and QCDZjj, Herwig and MG5+Pythia). The code already handles W and H.
 - **Physics definitions:** the same as nov26 (particles, jets, gate, PF type, bc; see [nov26.md](nov26.md)). The changes are in how the inputs are read and normalised.
-- **Untouched code:** none of the summer26 or nov26 friends code or outputs is changed. The nov26 network scripts gained a `--campaign` switch; their default (nov26) reproduces the nov26 numbers exactly.
+- **Untouched code:** none of the summer26 or nov26 friends code or outputs is changed.
 
-Code: [makefriends_fall26.cpp](makefriends_fall26.cpp) (a fork of [makefriends_nov26.cpp](makefriends_nov26.cpp); `diff makefriends_nov26.cpp makefriends_fall26.cpp` lists every change), [fall26/manifest.py](fall26/manifest.py), [run.fall26.sh](run.fall26.sh), [root_to_hdf5_fall26.py](root_to_hdf5_fall26.py), [fall26/validate.py](fall26/validate.py). Networks: [fall26/training.md](fall26/training.md).
+Code: [makefriends_fall26.cpp](makefriends_fall26.cpp) (a fork of [makefriends_nov26.cpp](makefriends_nov26.cpp); `diff makefriends_nov26.cpp makefriends_fall26.cpp` lists every change), [fall26/manifest.py](fall26/manifest.py), [run.fall26.sh](run.fall26.sh), [root_to_hdf5_fall26.py](root_to_hdf5_fall26.py), [fall26/validate.py](fall26/validate.py).
 
 ---
 
@@ -142,23 +144,3 @@ All 54 branches they share are identical, apart from `kWeight`, which is normali
   - nov26: 19.2 % of the QCD cross section passed the gate, against 14.4 % for Herwig.
   - fall26: 13.0 % passes, against 14.4 % for Herwig.
   - The VBF gate fractions agree between the generators in both campaigns (37–38 %).
-
----
-
-## Jet networks
-
-NNjPF and ParTj are trained on these friends as in nov26, but with the event weights in the loss and in the metrics. Both are done (2026-11-18), and their out-of-fold scores are in `friends/fall26/*.h5`. NNjPF was also trained on MG5+Pythia, to find where the generator transfer loss comes from; its scores are the column `NNjPF_py`. Details and all numbers are in [fall26/training.md](fall26/training.md).
-
-Event-weighted results for the gate jets, with statistical uncertainties (bootstrap). ε_S(1 %) is the signal efficiency at 1 % background efficiency.
-
-| Net (trained on) | AUC Herwig | AUC MG5+Pythia | ε_S(1 %) Herwig | ε_S(1 %) MG5+Pythia |
-|---|---|---|---|---|
-| NNjPF (Herwig) | 0.7666 ± 0.0008 | 0.7530 ± 0.0006 | 0.1006 ± 0.0018 | 0.0908 ± 0.0012 |
-| ParTj (Herwig) | 0.7686 ± 0.0008 | 0.7544 ± 0.0006 | 0.1015 ± 0.0019 | 0.0908 ± 0.0012 |
-| NNjPF (MG5+Pythia) | 0.7654 ± 0.0009 | 0.7603 ± 0.0006 | 0.1002 ± 0.0020 | 0.1019 ± 0.0012 |
-
-- **ParTj vs NNjPF:** both nets scored the same jets, so their difference is known much better than either number. ParTj's AUC is higher by 0.0021 ± 0.0003 (Herwig) and 0.0014 ± 0.0004 (MG5+Pythia). At ε_S(1 %) the two are equal within the uncertainties.
-- **Generator transfer:** the Herwig-trained nets lose 0.014 in AUC and 0.010–0.011 in ε_S(1 %) on MG5+Pythia. The nov26 nets showed no such loss. NNjPF trained on MG5+Pythia shows where this loss comes from ([fall26/training.md](fall26/training.md), section 6):
-  - **At the working point it is a transfer loss.** Trained on MG5+Pythia, NNjPF reaches ε_S(1 %) = 0.1019 ± 0.0012 on MG5+Pythia, as high as the Herwig-trained net on Herwig.
-  - **In AUC about half is transfer** (0.0073 ± 0.0002). The other half (0.0063 ± 0.0010) remains when each generator has its own training: in AUC, MG5+Pythia gate jets are a little harder to separate.
-  - **The transfer is asymmetric:** the Pythia-trained net loses only 0.0011 in AUC on Herwig, and nothing in ε_S(1 %). It also had 4.7 times more effective VBF training jets (constant weights), which may contribute.
