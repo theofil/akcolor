@@ -16,25 +16,26 @@ FIGS.mkdir(parents=True, exist_ok=True)
 
 CAMPAIGN23 = pathlib.Path('/eos/user/a/apapaefs/Projects/Pull/summer2026-hwsim-campaign-runner/campaigns/campaign-00023/merged')
 CAMPAIGN30 = pathlib.Path('/eos/user/a/apapaefs/Projects/Pull/summer2026-hwsim-campaign-runner/campaigns/campaign-00030/merged')
-CAMPAIGN31 = pathlib.Path('/eos/user/a/apapaefs/Projects/Pull/summer2026-hwsim-campaign-runner/campaigns/campaign-00031/merged')
+# MG5+Pythia: pythia-dipole-recoil re-shower (replaces the buggy campaign-00023/00031 files)
+PYDIPOLE   = pathlib.Path('/eos/user/a/apapaefs/Projects/Pull/pythia-dipole-recoil/merged')
 
 EW_SAMPLES_BY_PROC = {
     'H': [
-        ('QCDHjj_mg5_pythia', CAMPAIGN31 / 'QCDHjj_mg5_pythia.root', 'QCD H  MG5+Pythia'),
+        ('QCDHjj_mg5_pythia', PYDIPOLE / 'QCDHjj' / 'QCDHjj_mg5_pythia_dipolerecoil.root', 'QCD H  MG5+Pythia'),
         ('QCDHjj_herwig',     CAMPAIGN30 / 'QCDHjj_herwig.root',     'QCD H  Herwig'),
-        ('VBFH_mg5_pythia',   CAMPAIGN23 / 'VBFH_mg5_pythia.root',   'VBF H  MG5+Pythia'),
+        ('VBFH_mg5_pythia',   PYDIPOLE / 'VBFH' / 'VBFH_mg5_pythia_dipolerecoil.root',   'VBF H  MG5+Pythia'),
         ('VBFH_herwig',       CAMPAIGN23 / 'VBFH_herwig.root',       'VBF H  Herwig'),
     ],
     'W': [
-        ('QCDWjj_mg5_pythia', CAMPAIGN23 / 'QCDWjj_mg5_pythia.root', 'QCD W  MG5+Pythia'),
+        ('QCDWjj_mg5_pythia', PYDIPOLE / 'QCDWjj' / 'QCDWjj_mg5_pythia_dipolerecoil.root', 'QCD W  MG5+Pythia'),
         ('QCDWjj_herwig',     CAMPAIGN23 / 'QCDWjj_herwig.root',     'QCD W  Herwig'),
-        ('VBFW_mg5_pythia',   CAMPAIGN23 / 'VBFW_mg5_pythia.root',   'VBF W  MG5+Pythia'),
+        ('VBFW_mg5_pythia',   PYDIPOLE / 'VBFW' / 'VBFW_mg5_pythia_dipolerecoil.root',   'VBF W  MG5+Pythia'),
         ('VBFW_herwig',       CAMPAIGN23 / 'VBFW_herwig.root',       'VBF W  Herwig'),
     ],
     'Z': [
-        ('QCDZjj_mg5_pythia', CAMPAIGN23 / 'QCDZjj_mg5_pythia.root', 'QCD Z  MG5+Pythia'),
+        ('QCDZjj_mg5_pythia', PYDIPOLE / 'QCDZjj' / 'QCDZjj_mg5_pythia_dipolerecoil.root', 'QCD Z  MG5+Pythia'),
         ('QCDZjj_herwig',     CAMPAIGN23 / 'QCDZjj_herwig.root',     'QCD Z  Herwig'),
-        ('VBFZ_mg5_pythia',   CAMPAIGN23 / 'VBFZ_mg5_pythia.root',   'VBF Z  MG5+Pythia'),
+        ('VBFZ_mg5_pythia',   PYDIPOLE / 'VBFZ' / 'VBFZ_mg5_pythia_dipolerecoil.root',   'VBF Z  MG5+Pythia'),
         ('VBFZ_herwig',       CAMPAIGN23 / 'VBFZ_herwig.root',       'VBF Z  Herwig'),
     ],
 }

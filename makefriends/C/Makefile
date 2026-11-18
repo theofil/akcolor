@@ -17,5 +17,9 @@ makefriends: makefriends.cpp
 makefriends_nov26: makefriends_nov26.cpp
 	$(CXX) $(CXXFLAGS) -o $@ $< $(LDFLAGS)
 
+# fall26 campaign fork (see fall26.md); build with `make makefriends_fall26`
+makefriends_fall26: makefriends_fall26.cpp
+	$(CXX) $(CXXFLAGS) -o $@ $< $(LDFLAGS)
+
 clean:
-	rm -f makefriends makefriends_nov26
+	rm -f makefriends makefriends_nov26 makefriends_fall26

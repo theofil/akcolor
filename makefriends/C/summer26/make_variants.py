@@ -24,6 +24,9 @@ VARIANTS = [
     ('NNjjBj', 'NNjjBj_W', 'W'),
     ('NNkin',  'NNkin_H',  'H'),
     ('NNkin',  'NNkin_W',  'W'),
+    ('KjB',    'KjB_W',    'W'),
+    ('KjjBj',  'KjjBj_W',  'W'),
+    ('Kj',     'Kj_W',     'W'),
 ]
 
 

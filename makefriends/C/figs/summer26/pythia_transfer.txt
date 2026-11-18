@@ -1,0 +1,21 @@
+# summer26 Pythia generator-transfer estimate (Kj/KjB/KjjBj/NNj/NNjB/NNjjBj)
+# L = 300 fb^-1 = 300000 pb^-1
+# Same NN-score cut as each net's Herwig S/sqrt(B)-optimal operating
+#   point (sb_estimate.analyze_one), applied unchanged to the full
+#   MG5+Pythia sample -- no retraining, no re-optimization.
+# BR rescale applied to S and B alike (see summer26.md):
+#   H factor = 0.00227   Z factor = 1.00935   W factor = 1.87522
+#
+net       ch     cut  eff_sig  eff_bkg            S            B    rawS    rawB  S/sqrt(B)   S/(S+B)
+Kj         Z  0.3638   0.8373   0.6203     57 215.1  1 809 397.0  174018   18888     42.535    0.0307
+NNj        Z  0.4420   0.6772   0.3914     46 270.8  1 141 698.1  140731   11918     43.304    0.0389
+KjB        Z  0.5422   0.6461   0.2247     44 151.7    655 628.6  134286    6844     54.528    0.0631
+NNjB       Z  0.6633   0.4213   0.0963     28 788.7    280 970.0   87560    2933     54.312    0.0929
+KjjBj      Z  0.9111   0.1983   0.0090     13 551.4     26 248.1   41216     274     83.644    0.3405
+NNjjBj     Z  0.9101   0.1869   0.0071     12 769.2     20 787.8   38837     217     88.564    0.3805
+Kj         W  0.3846   0.8093   0.6031    579 071.8 16 042 120.0  142898   17316    144.578    0.0348
+NNj        W  0.4022   0.7813   0.5409    559 045.1 14 387 510.0  137956   15530    147.385    0.0374
+KjB        W  0.5672   0.6032   0.2069    431 594.8  5 503 014.1  106505    5940    183.982    0.0727
+NNjB       W  0.5847   0.5614   0.1768    401 708.8  4 702 575.7   99130    5076    185.244    0.0787
+KjjBj      W  0.9437   0.1265   0.0046     90 521.2    123 215.6   22338     133    257.880    0.4235
+NNjjBj     W  0.9361   0.1359   0.0042     97 264.3    111 172.0   24002     120    291.713    0.4666

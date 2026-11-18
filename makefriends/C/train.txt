@@ -16,3 +16,9 @@ condor_submit -name bigbird24.cern.ch summer26/NNjjB_W/train_gpu.sub
 condor_submit -name bigbird24.cern.ch summer26/NNjjBj/train_gpu.sub
 condor_submit -name bigbird24.cern.ch summer26/NNjjBj_H/train_gpu.sub
 condor_submit -name bigbird24.cern.ch summer26/NNjjBj_W/train_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/Kj/train_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/KjB/train_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/KjB_W/train_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/KjjBj/train_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/KjjBj_W/train_gpu.sub
+condor_submit -name bigbird24.cern.ch summer26/Kj_W/train_gpu.sub

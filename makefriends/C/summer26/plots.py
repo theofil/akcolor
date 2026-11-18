@@ -14,6 +14,11 @@ import h5py
 sys.path.insert(0, '/afs/cern.ch/user/t/theofil/work/akcolor/analysis/Winter25/python/NN')
 from style import apply_style, FIG_SIZE, LABEL_SIZE, TITLE_SIZE, TICK_SIZE
 
+# Reused only to place the S/√B-optimal point (★) on the Herwig ROC summary
+# curves below -- single source of truth for that operating point, shared
+# with the "Signal/background estimation from ROC curves" table in summer26.md.
+from sb_estimate import analyze_one as sb_analyze_one
+
 def separation_power(p, q, bin_width):
     """<S^2> = 0.5 * integral[(p-q)^2/(p+q)] dx for two normalized PDFs."""
     denom = p + q
@@ -623,6 +628,7 @@ NN_BASE = pathlib.Path(__file__).parent
 for proc in SAMPLES_BY_PROC:
     fig, ax = plt.subplots(figsize=FIG_SIZE)
     n_curves = 0
+    any_star = False
     for nn, color in NN_SUMMARY:
         nn_dir = NN_BASE / (nn if proc == 'Z' else f'{nn}_{proc}')
         npz_path = nn_dir / f'roc_data_{proc}.npz'
@@ -635,17 +641,31 @@ for proc in SAMPLES_BY_PROC:
         ax.plot(d['fpr_mg5'], d['tpr_mg5'], linewidth=2, color=color, linestyle='--',
                 label=f'{nn} Pythia  AUC={float(d["auc_mg5"]):.3f}')
         n_curves += 2
+        # Star the S/sqrt(B)-optimal operating point on this net's Herwig curve
+        # (same point reported in summer26.md's "Signal/background estimation
+        # from ROC curves" table).
+        try:
+            pt = sb_analyze_one(nn, proc)
+            ax.plot(pt['eff_bkg'], pt['eff_sig'], marker='*', markersize=16,
+                    color=color, markeredgecolor='black', markeredgewidth=0.6,
+                    linestyle='None', zorder=5)
+            any_star = True
+        except (FileNotFoundError, OSError, KeyError) as e:
+            print(f'  roc_summary_{proc}: no S/sqrt(B)-optimal point for {nn} ({e}), skipping star')
     if n_curves == 0:
         plt.close(fig)
         continue
     ax.plot([0, 1], [0, 1], color='gray', linewidth=1, linestyle='--')
+    if any_star:
+        ax.plot([], [], marker='*', markersize=16, color='black', linestyle='None',
+                label='best S/√B (Herwig)')
     apply_style(ax,
                 xlabel='Background efficiency',
                 ylabel='Signal efficiency',
                 title='',
                 xlim=(0, 1), ylim=(0, 1),
                 legend_loc='lower right')
-    ax.legend(loc='lower right', frameon=False, fontsize=10)  # 12 entries: shrink
+    ax.legend(loc='lower right', frameon=False, fontsize=10)  # up to 13 entries: shrink
     plt.tight_layout()
     outpath = str(FIGS / f'roc_summary_{proc}.pdf')
     fig.savefig(outpath, bbox_inches='tight')

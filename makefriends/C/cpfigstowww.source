@@ -3,3 +3,4 @@ python summer26/make_html.py
 rm ~/www/files/akcolor/*.pdf
 # cp figs/summer25/* ~/www/files/akcolor/def/
 cp figs/summer26/* ~/www/files/akcolor/
+cp -r figs/summer26/precoprob ~/www/files/akcolor/

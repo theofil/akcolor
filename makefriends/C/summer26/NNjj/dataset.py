@@ -3,10 +3,11 @@ DijetDataset for NNjj: loads QCDZjj_herwig.h5 + VBFZ_herwig.h5.
 Raw low-level features for both the leading (index 0)
 and sub-leading (index 1) jets.
 
-Jet features (3 per jet, both jets):
+Jet features (4 per jet, both jets):
   [0]  jetEta — signed pseudorapidity
   [1]  jetM   — jet mass (GeV)
   [2]  jetPt  — transverse momentum (GeV)
+  [3]  jetPhi — azimuthal angle
 
 Constituent features per jet (NC_MAX=80, 3 per constituent):
   [0]  jcsDEtaRaw — raw Δη relative to jet axis
@@ -21,10 +22,10 @@ import h5py
 import torch
 from torch.utils.data import Dataset
 
-JET_FEATURES     = ['jetEta', 'jetM', 'jetPt']
+JET_FEATURES     = ['jetEta', 'jetM', 'jetPt', 'jetPhi']
 CONSTIT_FEATURES = ['jcsDEtaRaw', 'jcsDPhi', 'jcsPt']
 
-N_JET_FEAT     = len(JET_FEATURES)      # 3
+N_JET_FEAT     = len(JET_FEATURES)      # 4
 N_CONSTIT_FEAT = len(CONSTIT_FEATURES)  # 3
 NC_MAX         = 80
 
@@ -33,7 +34,7 @@ SIG_FILE = '../../friends/summer26/VBFZ_herwig.h5'
 
 
 def load_features(h5path):
-    """Return x_jet0 (N,3), x_jet1 (N,3), x_jcs0 (N,80,3), x_jcs1 (N,80,3), kWeight (N,)."""
+    """Return x_jet0 (N,4), x_jet1 (N,4), x_jcs0 (N,80,3), x_jcs1 (N,80,3), kWeight (N,)."""
     with h5py.File(h5path, 'r') as f:
         jets0 = {k: f[k][:, 0].astype(np.float32)       for k in JET_FEATURES}
         jets1 = {k: f[k][:, 1].astype(np.float32)       for k in JET_FEATURES}
@@ -41,8 +42,8 @@ def load_features(h5path):
         jcs1  = {k: f[k][:, 1, :].astype(np.float32)    for k in CONSTIT_FEATURES}
         kw    = f['kWeight'][:].astype(np.float32)
 
-    x_jet0 = np.stack([jets0[k] for k in JET_FEATURES], axis=1)   # (N, 3)
-    x_jet1 = np.stack([jets1[k] for k in JET_FEATURES], axis=1)   # (N, 3)
+    x_jet0 = np.stack([jets0[k] for k in JET_FEATURES], axis=1)   # (N, 4)
+    x_jet1 = np.stack([jets1[k] for k in JET_FEATURES], axis=1)   # (N, 4)
     x_jcs0 = np.stack([jcs0[k]  for k in CONSTIT_FEATURES], axis=2)  # (N, 80, 3)
     x_jcs1 = np.stack([jcs1[k]  for k in CONSTIT_FEATURES], axis=2)  # (N, 80, 3)
 

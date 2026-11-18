@@ -4,8 +4,14 @@
     python3 train_fold.py --net NNjPF --fold 0                          # condor GPU job
     python3 train_fold.py --net ParTj --fold 3 --smoke --outdir <dir>    # quick CPU check
     python3 train_fold.py --net ParTj --fold 0 --load-only               # data loading and memory only
+    python3 train_fold.py --campaign fall26 --net NNjPF --fold 0        # Fall2026 samples, event weights
+    python3 train_fold.py --campaign fall26 --net NNjPF --fold 0 --train-gen pythia   # -> fall26/NNjPF_py/
 
-Phase 1 (training): Herwig jets of roles A and C (common.py) in the 7 training sub-folds and
+--campaign (default nov26) selects the friends, the output folder <campaign>/<net>/ and the figure
+folder; fall26 also weights the loss and the logged AUCs with the event weights (common.py).
+--train-gen pythia trains on MG5+Pythia instead of Herwig (outputs <campaign>/<net>_py/, common.py).
+
+Phase 1 (training): Herwig (or --train-gen) jets of roles A and C (common.py) in the 7 training sub-folds and
 the validation sub-fold of fold k. A per-fold StandardScaler is fitted on the training jets
 (jet scalars; continuous constituent features of valid constituents only). The loss is
 BCEWithLogits weighted per jet with common.class_balance_weights; early stopping on the
@@ -131,12 +137,12 @@ def score(model, d, keys, device, batch):
     return np.concatenate(out) if out else np.zeros(0, np.float32)
 
 
-def auc(label, s):
+def auc(label, s, w=None):
     from sklearn.metrics import roc_auc_score
-    return float(roc_auc_score(label, s)) if len(np.unique(label)) == 2 else float('nan')
+    return float(roc_auc_score(label, s, sample_weight=w)) if len(np.unique(label)) == 2 else float('nan')
 
 
-def save_loss_curve(hist, path, title):
+def save_loss_curve(hist, path, title, ylabel='class-balanced BCE'):
     import matplotlib
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
@@ -145,7 +151,7 @@ def save_loss_curve(hist, path, title):
     ax.plot(ep, hist['train'], color='#2a78d6', lw=2, label='train')
     ax.plot(ep, hist['val'], color='#eb6834', lw=2, ls='--', label='validation')
     ax.set_xlabel('epoch')
-    ax.set_ylabel('class-balanced BCE')
+    ax.set_ylabel(ylabel)
     ax.set_title(title, fontsize=10)
     ax.legend(frameon=False)
     fig.tight_layout()
@@ -157,14 +163,20 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('--net', required=True, choices=sorted(CONFIG))
     ap.add_argument('--fold', required=True, type=int, choices=range(C.N_FOLDS))
-    ap.add_argument('--outdir', default=None, help='default: nov26/<net>')
+    ap.add_argument('--campaign', default='nov26', choices=sorted(C.CAMPAIGNS))
+    ap.add_argument('--train-gen', default='herwig', choices=sorted(C.GEN_SAMPLES),
+                    help='generator of the training jets (default herwig)')
+    ap.add_argument('--outdir', default=None, help='default: <campaign>/<net>, <campaign>/<net>_py for pythia')
     ap.add_argument('--smoke', action='store_true', help='3000 entries per sample, 2 batches, 1 epoch')
     ap.add_argument('--load-only', action='store_true', help='load the training data, report memory, exit')
     args = ap.parse_args()
+    C.set_campaign(args.campaign)
+    C.set_train_gen(args.train_gen)
+    net_tag = C.net_name(args.net)                    # NNjPF, or NNjPF_py when trained on pythia
 
     cfg = dict(CONFIG[args.net])
     keys = INPUTS[args.net]
-    outdir = args.outdir or os.path.join(HERE, args.net)
+    outdir = args.outdir or os.path.join(C.OUT, net_tag)
     os.makedirs(outdir, exist_ok=True)
     entry_stop = 3000 if args.smoke else None
     max_batches = 2 if args.smoke else None
@@ -175,11 +187,11 @@ def main():
     torch.manual_seed(C.SEED + k)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     gpu = torch.cuda.get_device_name(0) if device.type == 'cuda' else 'none'
-    log(f'{args.net} fold {k}: train sub-folds {train_sub}, validation {val_sub}, inference {infer_sub}; '
-        f'device {device} ({gpu}); config {cfg}')
+    log(f'{args.net} fold {k} ({C.CAMPAIGN}, trained on {C.TRAIN_GEN}, event weights {C.EVENT_WEIGHTS}): train sub-folds {train_sub}, '
+        f'validation {val_sub}, inference {infer_sub}; device {device} ({gpu}); config {cfg}')
 
     # ── phase 1: training ─────────────────────────────────────────────────────
-    log('loading Herwig training/validation jets (roles A, C)')
+    log(f'loading {C.TRAIN_GEN} training/validation jets (roles A, C): {", ".join(C.TRAIN_SAMPLES)}')
     d = load(C.TRAIN_SAMPLES, train_sub + val_sub, (C.ROLE_A, C.ROLE_C), cfg['with_p4'], entry_stop)
     is_train = np.isin(d['sub'], train_sub)
     tr, va = C.take(d, is_train), C.take(d, ~is_train)
@@ -192,8 +204,13 @@ def main():
     scalers = fit_scalers(tr)
     apply_scalers(tr, scalers)
     apply_scalers(va, scalers)
-    w_tr = C.class_balance_weights(tr['label'], tr['role'])
-    w_va = C.class_balance_weights(va['label'], va['role'])
+    w_tr = C.class_balance_weights(tr['label'], tr['role'], tr['kweight'] if C.EVENT_WEIGHTS else None)
+    w_va = C.class_balance_weights(va['label'], va['role'], va['kweight'] if C.EVENT_WEIGHTS else None)
+    if C.EVENT_WEIGHTS:
+        for lab, cls in ((1, 'VBF'), (0, 'QCD')):
+            for rol, rname in ((C.ROLE_A, 'A'), (C.ROLE_C, 'C')):
+                m = (tr['label'] == lab) & (tr['role'] == rol)
+                log(f'  train {cls} {rname}: {int(m.sum())} jets, N_eff {C.n_eff(w_tr[m]):.0f}')
     log(f'data ready; max RSS {max_rss_gb():.2f} GB')
     if args.load_only:
         nbytes = sum(v.nbytes for v in tr.values()) + sum(v.nbytes for v in va.values())
@@ -239,32 +256,41 @@ def main():
                 break
     log(f'best validation loss {best:.5f}')
     np.savez(os.path.join(outdir, f'history_fold{k}.npz'), train=hist['train'], val=hist['val'])
-    figdir = outdir if args.smoke else os.path.join(C.BASE, 'figs', 'nov26')
+    figdir = outdir if args.smoke else C.FIGS
     os.makedirs(figdir, exist_ok=True)
-    save_loss_curve(hist, os.path.join(figdir, f'{args.net}_fold{k}_loss.pdf'), f'{args.net}, fold {k}')
+    save_loss_curve(hist, os.path.join(figdir, f'{net_tag}_fold{k}_loss.pdf'),
+                    f'{args.net}, fold {k}, trained on {C.TRAIN_GEN}',
+                    'event-weighted, class-balanced BCE' if C.EVENT_WEIGHTS else 'class-balanced BCE')
     del t_tr, t_va, y_tr, y_va, ww_tr, ww_va
     if device.type == 'cuda':
         torch.cuda.empty_cache()
 
     # ── phase 2: score every stored jet of the inference sub-folds ───────────
     model.load_state_dict(torch.load(best_path, map_location=device))
-    out = {'net': args.net, 'fold': k, 'infer_subfolds': np.array(infer_sub)}
+    out = {'net': args.net, 'fold': k, 'train_gen': C.TRAIN_GEN, 'infer_subfolds': np.array(infer_sub)}
     for sample in C.TRAIN_SAMPLES + C.TRANSFER_SAMPLES:
         d = C.load_jets(sample, subfolds=infer_sub, with_p4=cfg['with_p4'], entry_stop=entry_stop)
         apply_scalers(d, scalers)
         s = score(model, d, keys, device, cfg['infer_batch'])
         out[f'{sample}__ev'], out[f'{sample}__slot'], out[f'{sample}__score'] = d['ev'], d['slot'], s
         out[f'{sample}__role'] = d['role']
+        out[f'{sample}__kweight'] = d['kweight']
         log(f'scored {sample}: {len(s)} jets')
-    for gen, (sig, bkg) in (('herwig', C.TRAIN_SAMPLES), ('pythia', C.TRANSFER_SAMPLES)):
+    for gen, (sig, bkg) in C.GEN_SAMPLES.items():
         for name, roles in (('gate jets (A+B)', (C.ROLE_A, C.ROLE_B)), ('role B', (C.ROLE_B,)),
                             ('gate==0 jets (C)', (C.ROLE_C,))):
             ms = np.isin(out[f'{sig}__role'], roles)
             mb = np.isin(out[f'{bkg}__role'], roles)
             lab = np.r_[np.ones(ms.sum()), np.zeros(mb.sum())]
-            a = auc(lab, np.r_[out[f'{sig}__score'][ms], out[f'{bkg}__score'][mb]])
+            sc = np.r_[out[f'{sig}__score'][ms], out[f'{bkg}__score'][mb]]
+            a = auc(lab, sc)
             out[f'auc_{gen}_{name.split()[0].replace("==", "eq")}'] = a
-            log(f'AUC {gen:6s} {name:17s}: {a:.4f}')
+            if C.EVENT_WEIGHTS:
+                aw = auc(lab, sc, np.r_[out[f'{sig}__kweight'][ms], out[f'{bkg}__kweight'][mb]])
+                out[f'aucw_{gen}_{name.split()[0].replace("==", "eq")}'] = aw
+                log(f'AUC {gen:6s} {name:17s}: {aw:.4f} event-weighted ({a:.4f} unweighted)')
+            else:
+                log(f'AUC {gen:6s} {name:17s}: {a:.4f}')
     path = os.path.join(outdir, f'scores_fold{k}.npz')
     np.savez(path, **out)
     log(f'wrote {path}; max RSS {max_rss_gb():.2f} GB')

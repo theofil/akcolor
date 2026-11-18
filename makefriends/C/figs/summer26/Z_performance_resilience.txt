@@ -1,0 +1,25 @@
+# summer26 Z-only performance & resilience (Herwig vs Pythia)
+# performance = eff_sig/sqrt(eff_bkg) -- pure efficiency ratio, independent
+#   of cross-section normalization (unlike S/sqrt(B) in pythia_transfer.txt).
+# no-tagging baseline (eff_sig=eff_bkg=1, any generator): performance = 1.00.
+# Herwig operating point = the point of the net's Herwig test-split ROC grid
+#   (roc_data_Z.npz) maximizing performance, at raw B >= 20 (raised from the
+#   usual 10). floor: 1 if this floor changed the unconstrained optimum.
+#   same_sqrtB: 1 if it is also the S/sqrt(B)-max grid point (expected:
+#   S/sqrt(B) = performance x a constant of the sample).
+# cut: the NN-score cut (score >= cut) defining that point, applied unchanged
+#   to the re-scored Herwig test split (_hw) and to the full MG5+Pythia sample
+#   (_py) -- no re-optimization on Pythia.
+# resilience = { 0.5 * [ ((effS_hw-effS_py)/(effS_hw+effS_py))^2 +
+#   ((effB_hw-effB_py)/(effB_hw+effB_py))^2 ] }^-1/2 -- larger = more resilient.
+# errors: binomial sqrt(eff*(1-eff)/N) on eff_sig/eff_bkg (N = raw MC population
+#   in that generator's signal/background sample), propagated to performance/
+#   resilience via the delta method (numerical partial derivatives).
+#
+net             cut floor same_sqrtB eff_sig_hw d_eff_sig_hw eff_sig_py d_eff_sig_py eff_bkg_hw d_eff_bkg_hw eff_bkg_py d_eff_bkg_py  perf_hw d_perf_hw  perf_py d_perf_py resilience d_resilience
+Kj         0.363839     0          1     0.8694       0.0019     0.8373       0.0008     0.6857       0.0079     0.6203       0.0028    1.050     0.007    1.063     0.003      26.44         2.87
+NNj        0.441981     0          1     0.7495       0.0025     0.6772       0.0010     0.4782       0.0085     0.3914       0.0028    1.084     0.010    1.082     0.004      12.62         0.96
+KjB        0.542229     0          1     0.6746       0.0027     0.6461       0.0010     0.2658       0.0076     0.2247       0.0024    1.308     0.019    1.363     0.008      16.35         2.76
+NNjB       0.663312     0          1     0.4706       0.0028     0.4213       0.0011     0.1262       0.0057     0.0963       0.0017    1.325     0.031    1.358     0.012       9.74         1.47
+KjjBj      0.911120     0          1     0.2427       0.0024     0.1983       0.0009     0.0117       0.0018     0.0090       0.0005    2.245     0.178    2.091     0.064       8.60         3.43
+NNjjBj     0.910102     0          1     0.2429       0.0024     0.1869       0.0009     0.0099       0.0017     0.0071       0.0005    2.437     0.209    2.214     0.076       6.74         2.25

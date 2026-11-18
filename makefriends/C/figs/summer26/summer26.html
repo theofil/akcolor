@@ -63,7 +63,7 @@ strong{color:#0f172a;font-weight:600;}
 </nav>
 <main>
 <h1 id="summer26-analysis-vbf-h-inv-vs-qcd-dijet">summer26 analysis — VBF H→inv vs QCD dijet</h1>
-<p>Analysis code for the summer26 campaign (MadGraph5+Pythia samples, campaign-00022).</p>
+<p>Analysis code for the summer26 campaign (Herwig: campaign-00023/00030; MadGraph5+Pythia: pythia-dipole-recoil, since 2026-09-27).</p>
 <p>Prerequisite: complete Steps 1–3 from <a href="README.md">README.md</a> to build <code>makefriends</code></p>
 <p>and produce <code>friends/summer26/*.{friend.root,h5}</code>.</p>
 <hr>
@@ -72,18 +72,18 @@ strong{color:#0f172a;font-weight:600;}
 <ul>
 <li>campaign-00023: <code>/eos/user/a/apapaefs/Projects/Pull/summer2026-hwsim-campaign-runner/campaigns/campaign-00023/merged/</code></li>
 <li>campaign-00030: <code>/eos/user/a/apapaefs/Projects/Pull/summer2026-hwsim-campaign-runner/campaigns/campaign-00030/merged/</code> (QCDHjj Herwig only)</li>
-<li>campaign-00031: <code>/eos/user/a/apapaefs/Projects/Pull/summer2026-hwsim-campaign-runner/campaigns/campaign-00031/merged/</code> (QCDHjj MG5+Pythia only)</li>
+<li>pythia-dipole-recoil: <code>/eos/user/a/apapaefs/Projects/Pull/pythia-dipole-recoil/merged/&lt;PROC&gt;/&lt;PROC&gt;_mg5_pythia_dipolerecoil.root</code> — <strong>all six MG5+Pythia samples</strong> since 2026-09-27 (see changelog below); replaces the buggy campaign-00023/00031 Pythia files</li>
 </ul>
 <div class="tbl-wrap"><table>
 <tr><th>Process</th><th>σ Herwig (pb)</th><th>σ MG5+Pythia (pb)</th><th>Herwig file</th><th>MG5+Pythia file</th></tr>
-<tr><td>VBF H→inv</td><td>2.97189 ± 0.00325</td><td>2.88990 ± 0.00083</td><td><code>VBFH_herwig.root</code> (camp-00023)</td><td><code>VBFH_mg5_pythia.root</code> (camp-00023)</td></tr>
-<tr><td>VBF W→inv</td><td>7.494 ± 0.00632</td><td>7.20333 ± 0.00198</td><td><code>VBFW_herwig.root</code> (camp-00023)</td><td><code>VBFW_mg5_pythia.root</code> (camp-00023)</td></tr>
-<tr><td>VBF Z→inv</td><td>1.099 ± 0.00126</td><td>1.08581 ± 0.00030</td><td><code>VBFZ_herwig.root</code> (camp-00023)</td><td><code>VBFZ_mg5_pythia.root</code> (camp-00023)</td></tr>
-<tr><td>QCD H+jj</td><td>5.06051 ± 0.06030</td><td>4.982 ± 0.0008692</td><td><code>QCDHjj_herwig.root</code> (camp-00030)</td><td><code>QCDHjj_mg5_pythia.root</code> (camp-00031)</td></tr>
-<tr><td>QCD W+jj</td><td>1733.3 ± 1.84</td><td>1646.805 ± 0.510</td><td><code>QCDWjj_herwig.root</code> (camp-00023)</td><td><code>QCDWjj_mg5_pythia.root</code> (camp-00023)</td></tr>
-<tr><td>QCD Z+jj</td><td>340.2 ± 0.316</td><td>316.363 ± 0.098</td><td><code>QCDZjj_herwig.root</code> (camp-00023)</td><td><code>QCDZjj_mg5_pythia.root</code> (camp-00023)</td></tr>
+<tr><td>VBF H→inv</td><td>2.97189 ± 0.00325</td><td>2.88990 ± 0.00083</td><td><code>VBFH_herwig.root</code> (camp-00023)</td><td><code>VBFH_mg5_pythia.root</code> (dipole-recoil)</td></tr>
+<tr><td>VBF W→inv</td><td>7.494 ± 0.00632</td><td>7.20333 ± 0.00198</td><td><code>VBFW_herwig.root</code> (camp-00023)</td><td><code>VBFW_mg5_pythia.root</code> (dipole-recoil)</td></tr>
+<tr><td>VBF Z→inv</td><td>1.099 ± 0.00126</td><td>1.08581 ± 0.00030</td><td><code>VBFZ_herwig.root</code> (camp-00023)</td><td><code>VBFZ_mg5_pythia.root</code> (dipole-recoil)</td></tr>
+<tr><td>QCD H+jj</td><td>5.06051 ± 0.06030</td><td>4.982 ± 0.0008692</td><td><code>QCDHjj_herwig.root</code> (camp-00030)</td><td><code>QCDHjj_mg5_pythia.root</code> (dipole-recoil)</td></tr>
+<tr><td>QCD W+jj</td><td>1733.3 ± 1.84</td><td>1646.805 ± 0.510</td><td><code>QCDWjj_herwig.root</code> (camp-00023)</td><td><code>QCDWjj_mg5_pythia.root</code> (dipole-recoil)</td></tr>
+<tr><td>QCD Z+jj</td><td>340.2 ± 0.316</td><td>316.363 ± 0.098</td><td><code>QCDZjj_herwig.root</code> (camp-00023)</td><td><code>QCDZjj_mg5_pythia.root</code> (dipole-recoil)</td></tr>
 </table></div>
-<p>All 12 files available. <code>QCDHjj_mg5_pythia</code> comes from campaign-00031 (xs = 4.982 ± 0.0008692 pb).</p>
+<p>All 12 files available. The dipole-recoil Pythia files contain the same events with the same <code>evweight</code> normalization as the campaign-00023/00031 files they replace (<code>validation.json</code>: <code>normalization_matches_original: true</code>), so all cross sections are unchanged. <code>QCDHjj_mg5_pythia</code> has 409 621 events (xs = 4.982 ± 0.0008692 pb).</p>
 <hr>
 <h2 id="jet2-boson-4-vector-branches-added-2026-07-06">jet2 + boson 4-vector branches (added 2026-07-06)</h2>
 <p>The friend trees and h5 files were extended with the 3rd pt-ordered jet (&quot;jet2&quot;) and the</p>
@@ -142,17 +142,65 @@ strong{color:#0f172a;font-weight:600;}
 <p>more aggressive on background than signal, as expected for a VBF topology</p>
 <p>cut — QCD weighted efficiency drops to <strong>~2.3–5.3%</strong> (was ~15–26%), VBF</p>
 <p>signal efficiency to <strong>~14.7–22.1%</strong> (was ~26–42%).</p>
-<p><strong>Effect on NN significance</strong> (counter-intuitive): the per-net/channel</p>
-<p>significance estimates in &quot;Results&quot; below are *lower* than under the old</p>
-<p>inclusive selection, even though signal purity <code>S/(S+B)</code> improved</p>
-<p>substantially. At the significance-maximizing operating point signal already</p>
-<p>dominates background (S≫B), so significance is close to</p>
-<p>signal-count-limited (∝√S) rather than background-limited; the</p>
-<p>preselection&#x27;s ~30–40% loss of raw signal (removed as an unavoidable side</p>
-<p>effect of removing far more background) costs more significance than the</p>
-<p>much larger background rejection recovers. This is a real effect of trading</p>
-<p>some peak toy significance for a cleaner, more physically realistic</p>
-<p>VBF-topology sample — not a regression.</p>
+<p><strong>Effect on raw signal statistics</strong>: the preselection&#x27;s ~30–40% loss of raw</p>
+<p>signal (removed as an unavoidable side effect of removing far more</p>
+<p>background — see <code>raw S₀</code> in &quot;Results&quot; below for the post-preselection</p>
+<p>counts) is a real cost, not a bug. This is a real effect of trading some raw</p>
+<p>signal statistics for a cleaner, more physically realistic VBF-topology</p>
+<p>sample — not a regression.</p>
+<hr>
+<h2 id="pythia-dipole-recoil-fix-all-mg5-pythia-samples-replaced-2026-09-27">pythia-dipole-recoil fix: all MG5+Pythia samples replaced (2026-09-27)</h2>
+<p>A bug was found in all six MG5+Pythia samples (campaign-00023 and, for</p>
+<p>QCDHjj, campaign-00031). They are replaced by the <strong>pythia-dipole-recoil</strong></p>
+<p>re-shower of the same events (<code>/eos/user/a/apapaefs/Projects/Pull/pythia-dipole-recoil/merged/</code>, also reachable as</p>
+<p>the <code>friends/summer26/pythia-dipole-recoil</code> symlink). Every entry count and</p>
+<p>Σ<code>evweight</code> matches the old files, so all <code>--xs</code>/<code>--boson</code> values are unchanged.</p>
+<p><strong>What was redone:</strong></p>
+<ul>
+<li>The 6 <code>*_mg5_pythia.{friend.root,h5}</code> files, rebuilt with</li>
+</ul>
+<p>  <code>./run.summer26.sh --pythiaOnly</code>. The old buggy files are kept in</p>
+<p>  <code>friends/summer26/pythia_prefix_bug/</code>.</p>
+<ul>
+<li>All Pythia inference, <strong>with no retraining</strong> (all nets are Herwig-trained):</li>
+</ul>
+<p>  every <code>infer_gpu.sub</code> (incl. <code>Kj_W</code>, now added to <code>infer.txt</code>), plus the</p>
+<p>  <code>NNj_jet*</code>/<code>NNjB</code>/<code>NNjjBj</code> score columns in the Pythia h5 files.</p>
+<ul>
+<li>Every plot, <code>checksum.txt</code>, <code>pythia_transfer.txt</code> and</li>
+</ul>
+<p>  <code>Z_performance_resilience.txt</code>.</p>
+<p>The Herwig friends/h5 files and their score columns were not touched.</p>
+<p><strong>Effect:</strong></p>
+<ul>
+<li>Fewer Pythia events pass the preselection: 5–17% fewer than with the old</li>
+</ul>
+<p>  files (e.g. VBFH 171 085 → 142 565, QCDZjj 32 309 → 30 452; see</p>
+<p>  <code>checksum.txt</code>).</p>
+<ul>
+<li>The Herwig-trained nets transfer noticeably better when they use the 3rd</li>
+</ul>
+<p>  jet. Pythia AUC for <code>NNjjBj</code>: Z 0.837→0.867, W 0.827→0.864, H 0.869→0.896</p>
+<p>  (Herwig 0.870/0.875/0.927); <code>KjjBj</code> Z 0.828→0.864.</p>
+<ul>
+<li>Nets that see only the two leading jets move down slightly (e.g. <code>NNj_H</code></li>
+</ul>
+<p>  0.773→0.757, <code>NNkin_H</code> 0.804→0.786).</p>
+<ul>
+<li>The Pythia-transfer and resilience tables below were regenerated.</li>
+</ul>
+<p><strong>Herwig results are unchanged:</strong> every Herwig AUC is identical. The one</p>
+<p>visible Herwig change is a GPU-nondeterminism artifact. Re-running</p>
+<p>inference reproduces each Herwig AUC to ~1e-8, but the decimated</p>
+<p>(≤5000-point) ROC grid in <code>roc_data_*.npz</code> moves by a few points. For</p>
+<p><code>KjB</code>-Z only, the S/√B scan therefore lands on a neighbouring grid point:</p>
+<p>58.50 → 58.48, raw S/B 20789/911 → 20771/910. All other rows of</p>
+<p><code>SB_estimate.txt</code> are identical.</p>
+<p>To reproduce the Pythia side only:</p>
+<p><code>./run.summer26.sh --pythiaOnly</code>, which stages into <code>friends/summer26/pythia_stage/</code>.</p>
+<p>Move the staged files into <code>friends/summer26/</code> by hand. The staging step is</p>
+<p>needed because <code>root_to_hdf5.py</code> rewrites every h5 in its folder and would</p>
+<p>drop the Herwig score columns. Then rerun the <code>infer.txt</code> jobs.</p>
 <hr>
 <h2 id="step-2-run-event-reconstruction">Step 2 — Run event reconstruction</h2>
 <h3 id="quick-test-100-events-per-sample-foreground">Quick test (100 events per sample, foreground)</h3>
@@ -160,7 +208,9 @@ strong{color:#0f172a;font-weight:600;}
 # or a custom number of events:
 ./run.summer26.sh --goFast 500</code></pre>
 <h3 id="full-production-20-parallel-jobs-50k-events-then-hadd">Full production (20 parallel jobs × 50k events, then hadd)</h3>
-<pre><code>./run.summer26.sh</code></pre>
+<pre><code>./run.summer26.sh
+# MG5+Pythia samples only, staged in friends/summer26/pythia_stage/:
+./run.summer26.sh --pythiaOnly</code></pre>
 <p><strong>Output</strong> (all 12 files):</p>
 <div class="tbl-wrap"><table>
 <tr><th>File</th><th>Description</th></tr>
@@ -178,8 +228,8 @@ strong{color:#0f172a;font-weight:600;}
 <tr><td><code>friends/summer26/VBFZ_mg5_pythia.h5</code></td><td>VBF Z MG5+Pythia HDF5</td></tr>
 <tr><td><code>friends/summer26/QCDHjj_herwig.friend.root</code></td><td>QCD H+jj Herwig friend tree</td></tr>
 <tr><td><code>friends/summer26/QCDHjj_herwig.h5</code></td><td>QCD H+jj Herwig HDF5</td></tr>
-<tr><td><code>friends/summer26/QCDHjj_mg5_pythia.friend.root</code></td><td>QCD H+jj MG5+Pythia friend tree (from camp-00031, xs=4.982 ± 0.0008692 pb)</td></tr>
-<tr><td><code>friends/summer26/QCDHjj_mg5_pythia.h5</code></td><td>QCD H+jj MG5+Pythia HDF5 (from camp-00031)</td></tr>
+<tr><td><code>friends/summer26/QCDHjj_mg5_pythia.friend.root</code></td><td>QCD H+jj MG5+Pythia friend tree (dipole-recoil, xs=4.982 ± 0.0008692 pb)</td></tr>
+<tr><td><code>friends/summer26/QCDHjj_mg5_pythia.h5</code></td><td>QCD H+jj MG5+Pythia HDF5 (dipole-recoil)</td></tr>
 <tr><td><code>friends/summer26/QCDWjj_herwig.friend.root</code></td><td>QCD W+jj Herwig friend tree</td></tr>
 <tr><td><code>friends/summer26/QCDWjj_herwig.h5</code></td><td>QCD W+jj Herwig HDF5</td></tr>
 <tr><td><code>friends/summer26/QCDWjj_mg5_pythia.friend.root</code></td><td>QCD W+jj MG5+Pythia friend tree</td></tr>
@@ -238,13 +288,13 @@ cd summer26/NNjjBj  &amp;&amp; python train.py</code></pre>
 <p>jet-level scalars. <code>bosonM</code> is excluded (on-shell generation artifact in the</p>
 <p>Herwig QCD Z/W samples — see tuesday.md); only the <code>_H</code> variant keeps it</p>
 <p>(harmless constant 125).</p>
-<p><strong>Jet-level scalars</strong> (6 = 3 jet + 3 boson): |η|, m, pT, boson pT, boson η, boson φ<br></p>
+<p><strong>Jet-level scalars</strong> (7 = 4 jet + 3 boson): |η|, m, pT, φ, boson pT, boson η, boson φ<br></p>
 <p><strong>Constituent features</strong> (80 max × 3): Δη, ΔΦ, pT/pT_jet</p>
 <p>Architecture:</p>
 <ul>
 <li><strong>phi MLP</strong>: 3 → 64 → 64 (ReLU, shared across constituents)</li>
 <li>masked-sum pooling → (B, 64)</li>
-<li><strong>rho MLP</strong>: 70 → 128 → 64 → 1 (BatchNorm + ReLU + Dropout(0.3)); 71 in <code>_H</code> (bosonM kept)</li>
+<li><strong>rho MLP</strong>: 71 → 128 → 64 → 1 (BatchNorm + ReLU + Dropout(0.3)); 72 in <code>_H</code> (bosonM kept)</li>
 </ul>
 <p>Trained on <strong>QCDZjj_herwig + VBFZ_herwig</strong>.</p>
 <h3 id="nnjj-summer26-nnjj">NNjj (<code>summer26/NNjj/</code>)</h3>
@@ -252,14 +302,14 @@ cd summer26/NNjjBj  &amp;&amp; python train.py</code></pre>
 <p>(index 1) jets, using only raw low-level features — no pull-vector scalars, no</p>
 <p>constituent weight, and signed η (not |η|). The phi MLP is shared across all</p>
 <p>constituents from both jets.</p>
-<p><strong>Jet scalars</strong> (3 per jet × 2 jets = 6 total): η (signed), m, pT<br></p>
+<p><strong>Jet scalars</strong> (4 per jet × 2 jets = 8 total): η (signed), m, pT, φ<br></p>
 <p><strong>Constituent features</strong> (80 max × 3 per jet): Δη_raw, ΔΦ, pT/pT_jet</p>
 <p>Architecture:</p>
 <ul>
 <li><strong>phi MLP</strong> (shared): 3 → 64 → 64 (ReLU, applied independently per jet)</li>
 <li>masked-sum pooling per jet → pool₀ (B, 64), pool₁ (B, 64)</li>
-<li>concat [pool₀, pool₁, jet₀ scalars, jet₁ scalars] → (B, 134)</li>
-<li><strong>rho MLP</strong>: 134 → 128 → 64 → 1 (BatchNorm + ReLU + Dropout(0.3))</li>
+<li>concat [pool₀, pool₁, jet₀ scalars, jet₁ scalars] → (B, 136)</li>
+<li><strong>rho MLP</strong>: 136 → 128 → 64 → 1 (BatchNorm + ReLU + Dropout(0.3))</li>
 </ul>
 <p>Trained on <strong>QCDZjj_herwig + VBFZ_herwig</strong>.</p>
 <h3 id="nnjjb-summer26-nnjjb">NNjjB (<code>summer26/NNjjB/</code>)</h3>
@@ -267,15 +317,15 @@ cd summer26/NNjjBj  &amp;&amp; python train.py</code></pre>
 <p>scalars. <code>bosonM</code> is excluded (on-shell generation artifact in the Herwig QCD</p>
 <p>Z/W samples — see tuesday.md); only the <code>_H</code> variant keeps it (harmless</p>
 <p>constant 125).</p>
-<p><strong>Jet scalars</strong> (3 per jet × 2 jets = 6 total): η (signed), m, pT<br></p>
+<p><strong>Jet scalars</strong> (4 per jet × 2 jets = 8 total): η (signed), m, pT, φ<br></p>
 <p><strong>Boson scalars</strong> (3, event-level): boson pT, η, φ<br></p>
 <p><strong>Constituent features</strong> (80 max × 3 per jet): Δη_raw, ΔΦ, pT/pT_jet</p>
 <p>Architecture:</p>
 <ul>
 <li><strong>phi MLP</strong> (shared): 3 → 64 → 64 (ReLU, applied independently per jet)</li>
 <li>masked-sum pooling per jet → pool₀ (B, 64), pool₁ (B, 64)</li>
-<li>concat [pool₀, pool₁, jet₀ scalars, jet₁ scalars, boson scalars] → (B, 137)</li>
-<li><strong>rho MLP</strong>: 137 → 128 → 64 → 1 (BatchNorm + ReLU + Dropout(0.3)); 138 in <code>_H</code> (bosonM kept)</li>
+<li>concat [pool₀, pool₁, jet₀ scalars, jet₁ scalars, boson scalars] → (B, 139)</li>
+<li><strong>rho MLP</strong>: 139 → 128 → 64 → 1 (BatchNorm + ReLU + Dropout(0.3)); 140 in <code>_H</code> (bosonM kept)</li>
 </ul>
 <p>Trained on <strong>QCDZjj_herwig + VBFZ_herwig</strong>.</p>
 <h3 id="nnjjbj-summer26-nnjjbj">NNjjBj (<code>summer26/NNjjBj/</code>)</h3>
@@ -287,7 +337,7 @@ cd summer26/NNjjBj  &amp;&amp; python train.py</code></pre>
 <p>rows so absence maps to a constant code, the jet-2 constituent mask is all-False</p>
 <p>(zero pooled vector), and the jcsPt/jetPt division is guarded against 0/0.</p>
 <p><code>bosonM</code> is excluded as in NNjjB; only the <code>_H</code> variant keeps it.</p>
-<p><strong>Jet scalars</strong> (3 per jet × 2 jets = 6 total): η (signed), m, pT</p>
+<p><strong>Jet scalars</strong> (4 per jet × 2 jets = 8 total): η (signed), m, pT, φ</p>
 <p><strong>3rd-jet scalars</strong> (4, event-level): η (signed), m, φ, pT — zeros when absent</p>
 <p><strong>Boson scalars</strong> (3, event-level): boson pT, η, φ</p>
 <p><strong>Constituent features</strong> (80 max × 3 per jet, all 3 jets): Δη_raw, ΔΦ, pT/pT_jet</p>
@@ -295,8 +345,8 @@ cd summer26/NNjjBj  &amp;&amp; python train.py</code></pre>
 <ul>
 <li><strong>phi MLP</strong> (shared): 3 → 64 → 64 (ReLU, applied independently per jet, all 3 jets)</li>
 <li>masked-sum pooling per jet → pool₀, pool₁, pool₂ (B, 64) each; pool₂ = 0 when no 3rd jet</li>
-<li>concat [pool₀, pool₁, pool₂, jet₀ scalars, jet₁ scalars, jet₂ scalars, boson scalars] → (B, 205)</li>
-<li><strong>rho MLP</strong>: 205 → 128 → 64 → 1 (BatchNorm + ReLU + Dropout(0.3)); 206 in <code>_H</code> (bosonM kept)</li>
+<li>concat [pool₀, pool₁, pool₂, jet₀ scalars, jet₁ scalars, jet₂ scalars, boson scalars] → (B, 207)</li>
+<li><strong>rho MLP</strong>: 207 → 128 → 64 → 1 (BatchNorm + ReLU + Dropout(0.3)); 208 in <code>_H</code> (bosonM kept)</li>
 </ul>
 <p>Trained on <strong>QCDZjj_herwig + VBFZ_herwig</strong>.</p>
 <p><strong>Outputs saved by training</strong> (all NNs use <code>_{W/Z/H}</code> suffix matching <code>PROCESS</code>):</p>
@@ -350,7 +400,9 @@ condor_submit -name bigbird24.cern.ch summer26/NNjjBj_W/save_scores.sub</code></
 <p>saves the model ROC curves (decimated to ≤5000 points) to <code>roc_data_{W,Z,H}.npz</code> in</p>
 <p>its own directory; <code>summer26/plots.py</code> reads these to draw the all-NN summary</p>
 <p>comparison <code>figs/summer26/roc_summary_{W,Z,H}.pdf</code> (model curves only, no</p>
-<p>single-observable baselines).</p>
+<p>single-observable baselines). Each net&#x27;s Herwig curve is marked with a ★ at its</p>
+<p><code>S/√B</code>-optimal operating point (see &quot;Signal/background estimation from ROC</p>
+<p>curves&quot; below).</p>
 <hr>
 <h2 id="kweight-factors-and-run-3-statistical-uncertainty">kWeight factors and Run 3 statistical uncertainty</h2>
 <h3 id="where-evweight-lives">Where <code>evweight</code> lives</h3>
@@ -358,20 +410,22 @@ condor_submit -name bigbird24.cern.ch summer26/NNjjBj_W/save_scores.sub</code></
 <div class="tbl-wrap"><table>
 <tr><th>Sample</th><th>EOS file</th></tr>
 <tr><td><code>VBFH_herwig</code></td><td><code>campaign-00023/merged/VBFH_herwig.root</code></td></tr>
-<tr><td><code>VBFH_mg5_pythia</code></td><td><code>campaign-00023/merged/VBFH_mg5_pythia.root</code></td></tr>
+<tr><td><code>VBFH_mg5_pythia</code></td><td><code>pythia-dipole-recoil/merged/VBFH/VBFH_mg5_pythia_dipolerecoil.root</code></td></tr>
 <tr><td><code>VBFW_herwig</code></td><td><code>campaign-00023/merged/VBFW_herwig.root</code></td></tr>
-<tr><td><code>VBFW_mg5_pythia</code></td><td><code>campaign-00023/merged/VBFW_mg5_pythia.root</code></td></tr>
+<tr><td><code>VBFW_mg5_pythia</code></td><td><code>pythia-dipole-recoil/merged/VBFW/VBFW_mg5_pythia_dipolerecoil.root</code></td></tr>
 <tr><td><code>VBFZ_herwig</code></td><td><code>campaign-00023/merged/VBFZ_herwig.root</code></td></tr>
-<tr><td><code>VBFZ_mg5_pythia</code></td><td><code>campaign-00023/merged/VBFZ_mg5_pythia.root</code></td></tr>
+<tr><td><code>VBFZ_mg5_pythia</code></td><td><code>pythia-dipole-recoil/merged/VBFZ/VBFZ_mg5_pythia_dipolerecoil.root</code></td></tr>
 <tr><td><code>QCDWjj_herwig</code></td><td><code>campaign-00023/merged/QCDWjj_herwig.root</code></td></tr>
-<tr><td><code>QCDWjj_mg5_pythia</code></td><td><code>campaign-00023/merged/QCDWjj_mg5_pythia.root</code></td></tr>
+<tr><td><code>QCDWjj_mg5_pythia</code></td><td><code>pythia-dipole-recoil/merged/QCDWjj/QCDWjj_mg5_pythia_dipolerecoil.root</code></td></tr>
 <tr><td><code>QCDZjj_herwig</code></td><td><code>campaign-00023/merged/QCDZjj_herwig.root</code></td></tr>
-<tr><td><code>QCDZjj_mg5_pythia</code></td><td><code>campaign-00023/merged/QCDZjj_mg5_pythia.root</code></td></tr>
+<tr><td><code>QCDZjj_mg5_pythia</code></td><td><code>pythia-dipole-recoil/merged/QCDZjj/QCDZjj_mg5_pythia_dipolerecoil.root</code></td></tr>
 <tr><td><code>QCDHjj_herwig</code></td><td><code>campaign-00030/merged/QCDHjj_herwig.root</code></td></tr>
-<tr><td><code>QCDHjj_mg5_pythia</code></td><td><code>campaign-00031/merged/QCDHjj_mg5_pythia.root</code></td></tr>
+<tr><td><code>QCDHjj_mg5_pythia</code></td><td><code>pythia-dipole-recoil/merged/QCDHjj/QCDHjj_mg5_pythia_dipolerecoil.root</code></td></tr>
 </table></div>
-<p>where <code>campaign-00023</code>, <code>campaign-00030</code>, <code>campaign-00031</code> are all under</p>
-<p><code>/eos/user/a/apapaefs/Projects/Pull/summer2026-hwsim-campaign-runner/campaigns/</code>.</p>
+<p>where <code>campaign-00023</code>, <code>campaign-00030</code> are under</p>
+<p><code>/eos/user/a/apapaefs/Projects/Pull/summer2026-hwsim-campaign-runner/campaigns/</code></p>
+<p>and <code>pythia-dipole-recoil</code> is <code>/eos/user/a/apapaefs/Projects/Pull/pythia-dipole-recoil/</code></p>
+<p>(replaces the buggy campaign-00023/00031 Pythia files since 2026-09-27).</p>
 <h3 id="kweight-formula">kWeight formula</h3>
 <p><code>makefriends</code> computes <code>kWeight</code> for each event (line 308 of <code>makefriends.cpp</code>):</p>
 <pre><code>kWeight_i = evweight_i × σ / sumWtot</code></pre>
@@ -395,21 +449,22 @@ condor_submit -name bigbird24.cern.ch summer26/NNjjBj_W/save_scores.sub</code></
 <p>Post-selection (<code>N sel.</code>, <code>kWeight mean</code>, <code>kWeight std</code>) columns reflect the</p>
 <p>current <code>mjj&gt;400 GeV</code> + <code>|ΔY_jj|&gt;2.5</code> preselection (added 2026-09-01); <code>evweight</code></p>
 <p>columns are selection-independent (computed over all events before any cut) and</p>
-<p>unchanged from before.</p>
+<p>unchanged from before. MG5+Pythia rows updated 2026-09-27 for the</p>
+<p>dipole-recoil samples (same <code>evweight</code>, fewer events pass the preselection).</p>
 <div class="tbl-wrap"><table>
 <tr><th>Sample</th><th>N events</th><th>σ `--xs` (pb)</th><th>evweight min</th><th>evweight max</th><th>evweight mean</th><th>evweight std</th><th>N sel.</th><th>kWeight mean</th><th>kWeight std</th></tr>
 <tr><td><code>VBFH_herwig</code></td><td>1 000 000</td><td>2.97189</td><td>1.000</td><td>424.94</td><td>1.0056</td><td>0.622</td><td>146 901</td><td>2.9668e-06</td><td>1.3108e-06</td></tr>
-<tr><td><code>VBFH_mg5_pythia</code></td><td>1 000 000</td><td>2.88990</td><td>2.8870</td><td>2.8920</td><td>2.8900</td><td>0.0015</td><td>171 085</td><td>2.8899e-06</td><td>1.4685e-09</td></tr>
+<tr><td><code>VBFH_mg5_pythia</code></td><td>1 000 000</td><td>2.88990</td><td>2.8870</td><td>2.8920</td><td>2.8900</td><td>0.0015</td><td>142 565</td><td>2.8899e-06</td><td>1.466e-09</td></tr>
 <tr><td><code>VBFW_herwig</code></td><td>1 000 000</td><td>7.494</td><td>1.000</td><td>91.604</td><td>1.0060</td><td>0.192</td><td>176 406</td><td>7.4755e-06</td><td>9.3813e-07</td></tr>
-<tr><td><code>VBFW_mg5_pythia</code></td><td>1 000 000</td><td>7.20333</td><td>7.1962</td><td>7.2120</td><td>7.2033</td><td>0.0051</td><td>191 379</td><td>7.2033e-06</td><td>5.0483e-09</td></tr>
+<tr><td><code>VBFW_mg5_pythia</code></td><td>1 000 000</td><td>7.20333</td><td>7.1962</td><td>7.2120</td><td>7.2033</td><td>0.0051</td><td>176 575</td><td>7.2033e-06</td><td>5.0422e-09</td></tr>
 <tr><td><code>VBFZ_herwig</code></td><td>1 000 000</td><td>1.099</td><td>1.000</td><td>46.794</td><td>1.0183</td><td>0.194</td><td>205 250</td><td>1.1017e-06</td><td>2.182e-07</td></tr>
-<tr><td><code>VBFZ_mg5_pythia</code></td><td>1 000 000</td><td>1.08581</td><td>1.0846</td><td>1.0868</td><td>1.0856</td><td>0.00058</td><td>220 628</td><td>1.0858e-06</td><td>5.7927e-10</td></tr>
+<tr><td><code>VBFZ_mg5_pythia</code></td><td>1 000 000</td><td>1.08581</td><td>1.0846</td><td>1.0868</td><td>1.0856</td><td>0.00058</td><td>207 827</td><td>1.0858e-06</td><td>5.7941e-10</td></tr>
 <tr><td><code>QCDHjj_herwig</code></td><td>1 000 000</td><td>5.06051</td><td>1.000</td><td>12.842</td><td>1.0002</td><td>0.026</td><td>23 340</td><td>5.0596e-06</td><td>~0</td></tr>
-<tr><td><code>QCDHjj_mg5_pythia</code></td><td>409 621</td><td>4.982</td><td>4.9818</td><td>4.9818</td><td>4.9818</td><td>~0</td><td>21 818</td><td>1.2162e-05</td><td>0</td></tr>
+<tr><td><code>QCDHjj_mg5_pythia</code></td><td>409 621</td><td>4.982</td><td>4.9818</td><td>4.9818</td><td>4.9818</td><td>~0</td><td>19 945</td><td>1.2162e-05</td><td>0</td></tr>
 <tr><td><code>QCDWjj_herwig</code></td><td>1 000 000</td><td>1733.3</td><td>0.00146</td><td>6.3698</td><td>0.11363</td><td>0.011</td><td>22 603</td><td>0.0017315</td><td>4.4768e-05</td></tr>
-<tr><td><code>QCDWjj_mg5_pythia</code></td><td>1 000 000</td><td>1646.805</td><td>1644.5</td><td>1649.8</td><td>1646.8</td><td>1.73</td><td>30 340</td><td>0.0016468</td><td>1.7338e-06</td></tr>
+<tr><td><code>QCDWjj_mg5_pythia</code></td><td>1 000 000</td><td>1646.805</td><td>1644.5</td><td>1649.8</td><td>1646.8</td><td>1.73</td><td>28 712</td><td>0.0016468</td><td>1.7307e-06</td></tr>
 <tr><td><code>QCDZjj_herwig</code></td><td>1 000 000</td><td>340.2</td><td>0.06666</td><td>19.326</td><td>0.06679</td><td>0.025</td><td>22 821</td><td>0.00033969</td><td>6.7361e-06</td></tr>
-<tr><td><code>QCDZjj_mg5_pythia</code></td><td>1 000 000</td><td>316.363</td><td>316.00</td><td>316.72</td><td>316.37</td><td>0.232</td><td>32 309</td><td>0.00031636</td><td>2.3195e-07</td></tr>
+<tr><td><code>QCDZjj_mg5_pythia</code></td><td>1 000 000</td><td>316.363</td><td>316.00</td><td>316.72</td><td>316.37</td><td>0.232</td><td>30 452</td><td>0.00031636</td><td>2.3191e-07</td></tr>
 </table></div>
 <h3 id="character-of-the-weights-by-generator">Character of the weights by generator</h3>
 <p><strong>MG5+Pythia</strong>: <code>evweight</code> is essentially constant across events and equals the process</p>
@@ -436,16 +491,21 @@ condor_submit -name bigbird24.cern.ch summer26/NNjjBj_W/save_scores.sub</code></
 <hr>
 <h2 id="signal-background-estimation-from-roc-curves">Signal/background estimation from ROC curves</h2>
 <p>Script: <code>summer26/sb_estimate.py</code> (numpy + h5py only, no ROOT/torch/matplotlib needed).</p>
-<p>For every (net, channel) combination — the same 18 <code>roc_data_{H,W,Z}.npz</code> files used by</p>
-<p>the <code>roc_summary_{H,W,Z}.pdf</code> figures — the script scans the net&#x27;s own ROC curve</p>
-<p>(signal efficiency <code>tpr</code> vs background efficiency <code>fpr</code>, no additional mjj/ΔYjj cuts) and</p>
-<p>picks the operating point that <strong>maximizes significance <code>S/√(S+B)</code></strong> at <strong>L = 300 fb⁻¹</strong>,</p>
-<p>subject to a <code>raw B ≥ 10</code> statistical-validity floor (same guard convention as the removed</p>
+<p><strong>Herwig only</strong> — every net is trained on Herwig, and this table does not evaluate</p>
+<p>MadGraph5+Pythia at all (no generator-transfer numbers are computed here). The only</p>
+<p>figure of merit used is the background-dominated significance <code>S/√B</code>. For every (net, channel)</p>
+<p>combination — the same 18 <code>roc_data_{H,W,Z}.npz</code> files used by the</p>
+<p><code>roc_summary_{H,W,Z}.pdf</code> figures — the script scans the net&#x27;s own Herwig ROC</p>
+<p>curve (signal efficiency <code>tpr</code> vs background efficiency <code>fpr</code>, no additional</p>
+<p>mjj/ΔYjj cuts) and reports two operating points per row, at <strong>L = 300 fb⁻¹</strong>: the</p>
+<p>*initial*, unoptimized point at the trivial no-NN-cut baseline (<code>_0</code>), and the</p>
+<p>*final* point — the ROC operating point that <strong>maximizes <code>S/√B</code></strong>, subject to a</p>
+<p><code>raw B ≥ 10</code> statistical-validity floor (same guard convention as the removed</p>
 <p><code>SR_optimization.txt</code> study). <code>S</code> and <code>B</code> come from each sample&#x27;s post-selection</p>
-<p><code>Σ kWeight</code> (pb, see kWeight section above) × <code>L</code> × the ROC efficiency at that point. Both</p>
-<p>the Herwig held-out test split (training domain) and the full MG5+Pythia dataset</p>
-<p>(independent generator-transfer test) are scanned and reported side by side. Raw output:</p>
-<p><code>figs/summer26/SB_estimate.txt</code>.</p>
+<p><code>Σ kWeight</code> (pb, see kWeight section above) × <code>L</code> × the ROC efficiency at that point.</p>
+<p><code>analyze_one(net, channel)</code> is imported directly by <code>plots.py</code>, which marks the</p>
+<p>*final* point with a ★ on the corresponding Herwig curve in <code>roc_summary_{H,W,Z}.pdf</code></p>
+<p>(see &quot;Step 6&quot; above). Raw output: <code>figs/summer26/SB_estimate.txt</code>.</p>
 <h3 id="branching-ratio-rescale-decay-chain-aware">Branching-ratio rescale (decay-chain-aware)</h3>
 <p>The samples were generated with the boson decayed in an &quot;invisible-like&quot; mode: H is kept</p>
 <p>fully <strong>stable</strong> (BSM-invisible-Higgs convention — its tabulated cross section is</p>
@@ -466,18 +526,17 @@ condor_submit -name bigbird24.cern.ch summer26/NNjjBj_W/save_scores.sub</code></
 <p>also decays to that same final state.</p>
 <p><strong>Rescale-invariance caveat:</strong> because the identical factor multiplies <code>S</code> and <code>B</code> within</p>
 <p>a channel, it cancels exactly in the <code>S/B</code> ratio and does not shift which ROC point</p>
-<p>maximizes significance (<code>significance_final = √factor × significance_unrescaled</code> at every</p>
+<p>maximizes <code>S/√B</code> (<code>significance_final = √factor × significance_unrescaled</code> at every</p>
 <p>point, so the argmax is unchanged — verified numerically by <code>sb_estimate.py</code>&#x27;s</p>
 <p><code>verify_rescale_invariance()</code>). The scan therefore runs once on the un-rescaled yields;</p>
 <p>the rescale is applied only to the winning point&#x27;s final <code>S</code>, <code>B</code> before display. In other</p>
 <p>words, this whole exercise changes the absolute event counts to a physically realistic</p>
 <p>decay channel, but says nothing about which NN or working point is best — that ordering</p>
 <p>is exactly what it would be without any BR at all.</p>
-<p><strong>Statistical floor caveat:</strong> the <code>raw B ≥ 10</code> guard never actually binds for any of the</p>
-<p>36 rows below (<code>floor</code> column in <code>SB_estimate.txt</code> is 0 throughout) — unlike the old</p>
-<p>S/(S+B)-purity-optimized table (which sat at this floor almost everywhere), a significance</p>
-<p>objective doesn&#x27;t push toward the tightest possible cut, so the guard is inactive here by</p>
-<p>construction rather than by coincidence.</p>
+<p><strong>Statistical floor caveat:</strong> <code>S/√B</code> has no <code>+S</code> term discouraging a near-zero-background</p>
+<p>cut, so the scan does push there — the <code>raw B ≥ 10</code> guard binds for 6 of the 18 rows below</p>
+<p>(<code>NNkin</code>-H, <code>NNjjB</code>-H, <code>NNjjBj</code>-H, <code>NNjjB</code>-W, <code>NNjjB</code>-Z, <code>NNjjBj</code>-Z), each marked <code>†</code> on</p>
+<p><code>raw B</code> in the table below.</p>
 <p><strong>Decimated-ROC-grid caveat:</strong> <code>roc_data_{H,W,Z}.npz</code> stores only the decimated</p>
 <p>(≤5000-point) <code>fpr</code>/<code>tpr</code> arrays saved by each net&#x27;s <code>inference.py</code> — the underlying</p>
 <p>sklearn <code>roc_curve</code> <strong>threshold values are discarded and never saved</strong>. The table below</p>
@@ -491,43 +550,370 @@ condor_submit -name bigbird24.cern.ch summer26/NNjjBj_W/save_scores.sub</code></
 <p>for W→lν). The resulting significance values (up to a few hundred for the W/Z channels,</p>
 <p>driven by their much larger QCD cross sections) are <strong>not</strong> discovery-significance</p>
 <p>estimates for a real search — they measure the NNs&#x27; relative discrimination power only.</p>
-<h3 id="results-18-nets-2-generators-best-roc-operating-point-at-l-300-fb">Results (18 nets × 2 generators, best ROC operating point at L = 300 fb⁻¹)</h3>
-<p>Regenerated 2026-09-01 under the <code>mjj&gt;400 GeV</code> + <code>|ΔY_jj|&gt;2.5</code> preselection</p>
-<p>(see the changelog section near the top of this document); numbers below are</p>
-<p><strong>not</strong> comparable to the pre-2026-09-01 version of this table (S, B, and</p>
-<p>significance all shift because the preselected sample is smaller — see the</p>
-<p>&quot;Effect on NN significance&quot; note in the changelog).</p>
+<h3 id="results-6-nets-3-channels-herwig-only-s-b-initial-vs-final-at-l-300-fb">Results (6 nets × 3 channels, Herwig only, S/√B initial vs. final at L = 300 fb⁻¹)</h3>
+<p>Regenerated 2026-09-02. Two points are</p>
+<p>reported per row: <code>_0</code> (initial, the unoptimized no-NN-cut baseline, identical</p>
+<p>across the 6 nets within a channel) and the unsuffixed *final* columns (the</p>
+<p><code>S/√B</code>-maximizing ROC operating point). The underlying <code>mjj&gt;400 GeV</code> +</p>
+<p><code>|ΔY_jj|&gt;2.5</code> preselection and yields are unchanged from the 2026-09-01 version —</p>
+<p>only the table&#x27;s shape changed. The *final* point of each</p>
+<p>row is also marked with a ★ on the corresponding Herwig curve in</p>
+<p><code>roc_summary_{H,W,Z}.pdf</code> (see &quot;Step 6&quot; above).</p>
+<p>Subscript legend: <code>_0</code> = initial, unoptimized baseline (full preselected sample, no</p>
+<p>NN cut, same for every net within a channel); unsuffixed columns = final, the ROC</p>
+<p>operating point maximizing <code>S/√B</code> — the only optimization objective. <code>†</code> on</p>
+<p><code>raw B</code> marks a row where the <code>raw B ≥ 10</code> floor changed the unconstrained</p>
+<p>optimum.</p>
 <div class="tbl-wrap"><table>
-<tr><th>Net</th><th>Ch</th><th>AUC (HW)</th><th>ε_sig* (HW)</th><th>ε_bkg* (HW)</th><th>S (HW)</th><th>B (HW)</th><th>S/(S+B) (HW)</th><th>S/√(S+B) (HW)</th><th>raw S (HW)</th><th>raw B (HW)</th><th>AUC (MG5)</th><th>ε_sig* (MG5)</th><th>ε_bkg* (MG5)</th><th>S (MG5)</th><th>B (MG5)</th><th>S/(S+B) (MG5)</th><th>S/√(S+B) (MG5)</th><th>raw S (MG5)</th><th>raw B (MG5)</th></tr>
-<tr><td><code>NNkin</code></td><td><strong>H</strong></td><td>0.8558</td><td>0.961</td><td>0.632</td><td>285.1</td><td>50.8</td><td>0.849</td><td><strong>15.56</strong></td><td>21171</td><td>2212</td><td>0.8037</td><td>0.934</td><td>0.627</td><td>314.6</td><td>113.3</td><td>0.735</td><td><strong>15.21</strong></td><td>159839</td><td>13679</td></tr>
-<tr><td><code>NNj</code></td><td><strong>H</strong></td><td>0.8153</td><td>0.978</td><td>0.800</td><td>290.2</td><td>64.4</td><td>0.818</td><td><strong>15.41</strong></td><td>21547</td><td>2802</td><td>0.7733</td><td>0.953</td><td>0.739</td><td>320.7</td><td>133.5</td><td>0.706</td><td><strong>15.05</strong></td><td>162978</td><td>16118</td></tr>
-<tr><td><code>NNjB</code></td><td><strong>H</strong></td><td>0.8278</td><td>0.974</td><td>0.749</td><td>289.1</td><td>60.3</td><td>0.828</td><td><strong>15.47</strong></td><td>21464</td><td>2623</td><td>0.7825</td><td>0.951</td><td>0.716</td><td>320.0</td><td>129.3</td><td>0.712</td><td><strong>15.10</strong></td><td>162625</td><td>15617</td></tr>
-<tr><td><code>NNjj</code></td><td><strong>H</strong></td><td>0.9019</td><td>0.959</td><td>0.473</td><td>284.6</td><td>38.0</td><td>0.882</td><td><strong>15.84</strong></td><td>21129</td><td>1655</td><td>0.8566</td><td>0.924</td><td>0.459</td><td>311.0</td><td>82.9</td><td>0.790</td><td><strong>15.67</strong></td><td>158029</td><td>10011</td></tr>
-<tr><td><code>NNjjB</code></td><td><strong>H</strong></td><td>0.9104</td><td>0.949</td><td>0.396</td><td>281.6</td><td>31.9</td><td>0.898</td><td><strong>15.90</strong></td><td>20906</td><td>1388</td><td>0.8652</td><td>0.922</td><td>0.434</td><td>310.4</td><td>78.4</td><td>0.798</td><td><strong>15.74</strong></td><td>157739</td><td>9470</td></tr>
-<tr><td><code>NNjjBj</code></td><td><strong>H</strong></td><td>0.9284</td><td>0.967</td><td>0.421</td><td>287.0</td><td>33.8</td><td>0.895</td><td><strong>16.02</strong></td><td>21307</td><td>1473</td><td>0.8692</td><td>0.913</td><td>0.428</td><td>307.3</td><td>77.3</td><td>0.799</td><td><strong>15.67</strong></td><td>156153</td><td>9331</td></tr>
-<tr><td><code>NNkin</code></td><td><strong>W</strong></td><td>0.7241</td><td>0.748</td><td>0.429</td><td>555 175.6</td><td>9 453 682.2</td><td>0.055</td><td><strong>175.48</strong></td><td>19802</td><td>1456</td><td>0.7400</td><td>0.611</td><td>0.257</td><td>473 707.7</td><td>7 211 371.9</td><td>0.062</td><td><strong>170.88</strong></td><td>116897</td><td>7784</td></tr>
-<tr><td><code>NNj</code></td><td><strong>W</strong></td><td>0.6842</td><td>0.844</td><td>0.619</td><td>626 023.4</td><td>13 622 132.8</td><td>0.044</td><td><strong>165.85</strong></td><td>22329</td><td>2098</td><td>0.6886</td><td>0.799</td><td>0.554</td><td>619 296.5</td><td>15 567 817.8</td><td>0.038</td><td><strong>153.93</strong></td><td>152824</td><td>16804</td></tr>
-<tr><td><code>NNjB</code></td><td><strong>W</strong></td><td>0.7821</td><td>0.641</td><td>0.231</td><td>475 187.9</td><td>5 090 444.3</td><td>0.085</td><td><strong>201.42</strong></td><td>16949</td><td>784</td><td>0.7800</td><td>0.634</td><td>0.231</td><td>491 817.6</td><td>6 486 899.6</td><td>0.070</td><td><strong>186.17</strong></td><td>121366</td><td>7002</td></tr>
-<tr><td><code>NNjj</code></td><td><strong>W</strong></td><td>0.7515</td><td>0.561</td><td>0.201</td><td>416 255.5</td><td>4 434 660.0</td><td>0.086</td><td><strong>188.99</strong></td><td>14847</td><td>683</td><td>0.7572</td><td>0.519</td><td>0.164</td><td>402 597.0</td><td>4 616 426.8</td><td>0.080</td><td><strong>179.71</strong></td><td>99349</td><td>4983</td></tr>
-<tr><td><code>NNjjB</code></td><td><strong>W</strong></td><td>0.8412</td><td>0.477</td><td>0.070</td><td>354 127.0</td><td>1 545 313.4</td><td>0.186</td><td><strong>256.95</strong></td><td>12631</td><td>238</td><td>0.8384</td><td>0.523</td><td>0.092</td><td>405 287.8</td><td>2 581 975.0</td><td>0.136</td><td><strong>234.49</strong></td><td>100013</td><td>2787</td></tr>
-<tr><td><code>NNjjBj</code></td><td><strong>W</strong></td><td>0.8755</td><td>0.465</td><td>0.047</td><td>345 015.2</td><td>1 038 866.2</td><td>0.249</td><td><strong>293.28</strong></td><td>12306</td><td>160</td><td>0.8260</td><td>0.414</td><td>0.057</td><td>321 448.7</td><td>1 602 733.0</td><td>0.167</td><td><strong>231.73</strong></td><td>79324</td><td>1730</td></tr>
-<tr><td><code>NNkin</code></td><td><strong>Z</strong></td><td>0.7458</td><td>0.581</td><td>0.228</td><td>39 807.8</td><td>534 209.0</td><td>0.069</td><td><strong>52.54</strong></td><td>17899</td><td>779</td><td>0.7630</td><td>0.560</td><td>0.187</td><td>40 599.2</td><td>577 654.5</td><td>0.066</td><td><strong>51.63</strong></td><td>123481</td><td>6030</td></tr>
-<tr><td><code>NNj</code></td><td><strong>Z</strong></td><td>0.6847</td><td>0.780</td><td>0.518</td><td>53 385.5</td><td>1 216 542.7</td><td>0.042</td><td><strong>47.37</strong></td><td>24004</td><td>1774</td><td>0.7045</td><td>0.739</td><td>0.450</td><td>53 589.3</td><td>1 391 639.7</td><td>0.037</td><td><strong>44.58</strong></td><td>162990</td><td>14527</td></tr>
-<tr><td><code>NNjB</code></td><td><strong>Z</strong></td><td>0.7679</td><td>0.585</td><td>0.207</td><td>40 081.4</td><td>486 205.6</td><td>0.076</td><td><strong>55.25</strong></td><td>18022</td><td>709</td><td>0.7822</td><td>0.671</td><td>0.255</td><td>48 652.8</td><td>787 928.4</td><td>0.058</td><td><strong>53.19</strong></td><td>147976</td><td>8225</td></tr>
-<tr><td><code>NNjj</code></td><td><strong>Z</strong></td><td>0.7609</td><td>0.624</td><td>0.235</td><td>42 719.1</td><td>552 724.6</td><td>0.072</td><td><strong>55.36</strong></td><td>19208</td><td>806</td><td>0.7741</td><td>0.536</td><td>0.157</td><td>38 884.9</td><td>486 072.8</td><td>0.074</td><td><strong>53.67</strong></td><td>118267</td><td>5074</td></tr>
-<tr><td><code>NNjjB</code></td><td><strong>Z</strong></td><td>0.8324</td><td>0.564</td><td>0.111</td><td>38 618.0</td><td>259 904.0</td><td>0.129</td><td><strong>70.68</strong></td><td>17364</td><td>379</td><td>0.8463</td><td>0.469</td><td>0.065</td><td>34 039.8</td><td>200 406.8</td><td>0.145</td><td><strong>70.30</strong></td><td>103531</td><td>2092</td></tr>
-<tr><td><code>NNjjBj</code></td><td><strong>Z</strong></td><td>0.8707</td><td>0.446</td><td>0.040</td><td>30 515.9</td><td>93 263.7</td><td>0.247</td><td><strong>86.74</strong></td><td>13721</td><td>136</td><td>0.8381</td><td>0.375</td><td>0.038</td><td>27 218.8</td><td>117 734.2</td><td>0.188</td><td><strong>71.49</strong></td><td>82785</td><td>1229</td></tr>
+<tr><th>Net</th><th>Ch</th><th>S/√B₀</th><th>S₀</th><th>B₀</th><th>raw S₀</th><th>raw B₀</th><th>S/√B</th><th>S</th><th>B</th><th>raw S</th><th>raw B</th></tr>
+<tr><td><code>NNkin</code></td><td><strong>H</strong></td><td>33.10</td><td>296.8</td><td>80.4</td><td>22036</td><td>3501</td><td><strong>97.90</strong></td><td>53.5</td><td>0.3</td><td>3972</td><td>13†</td></tr>
+<tr><td><code>NNj</code></td><td><strong>H</strong></td><td>33.10</td><td>296.8</td><td>80.4</td><td>22036</td><td>3501</td><td><strong>56.53</strong></td><td>133.8</td><td>5.6</td><td>9937</td><td>244</td></tr>
+<tr><td><code>NNjB</code></td><td><strong>H</strong></td><td>33.10</td><td>296.8</td><td>80.4</td><td>22036</td><td>3501</td><td><strong>61.84</strong></td><td>40.9</td><td>0.4</td><td>3033</td><td>19</td></tr>
+<tr><td><code>NNjj</code></td><td><strong>H</strong></td><td>33.10</td><td>296.8</td><td>80.4</td><td>22036</td><td>3501</td><td><strong>119.73</strong></td><td>72.6</td><td>0.4</td><td>5389</td><td>16</td></tr>
+<tr><td><code>NNjjB</code></td><td><strong>H</strong></td><td>33.10</td><td>296.8</td><td>80.4</td><td>22036</td><td>3501</td><td><strong>131.48</strong></td><td>82.2</td><td>0.4</td><td>6100</td><td>17†</td></tr>
+<tr><td><code>NNjjBj</code></td><td><strong>H</strong></td><td>33.10</td><td>296.8</td><td>80.4</td><td>22036</td><td>3501</td><td><strong>155.10</strong></td><td>74.3</td><td>0.2</td><td>5519</td><td>10†</td></tr>
+<tr><td><code>NNkin</code></td><td><strong>W</strong></td><td>158.10</td><td>741 869.6</td><td>22 017 470.1</td><td>26461</td><td>3391</td><td><strong>180.77</strong></td><td>526 410.3</td><td>8 479 745.2</td><td>18776</td><td>1306</td></tr>
+<tr><td><code>NNj</code></td><td><strong>W</strong></td><td>158.10</td><td>741 869.6</td><td>22 017 470.1</td><td>26461</td><td>3391</td><td><strong>169.62</strong></td><td>626 023.4</td><td>13 622 132.8</td><td>22329</td><td>2098</td></tr>
+<tr><td><code>NNjB</code></td><td><strong>W</strong></td><td>158.10</td><td>741 869.6</td><td>22 017 470.1</td><td>26461</td><td>3391</td><td><strong>218.54</strong></td><td>455 478.4</td><td>4 343 759.2</td><td>16246</td><td>669</td></tr>
+<tr><td><code>NNjj</code></td><td><strong>W</strong></td><td>158.10</td><td>741 869.6</td><td>22 017 470.1</td><td>26461</td><td>3391</td><td><strong>198.73</strong></td><td>407 956.8</td><td>4 213 900.9</td><td>14551</td><td>649</td></tr>
+<tr><td><code>NNjjB</code></td><td><strong>W</strong></td><td>158.10</td><td>741 869.6</td><td>22 017 470.1</td><td>26461</td><td>3391</td><td><strong>281.25</strong></td><td>379 892.4</td><td>1 824 508.7</td><td>13550</td><td>281†</td></tr>
+<tr><td><code>NNjjBj</code></td><td><strong>W</strong></td><td>158.10</td><td>741 869.6</td><td>22 017 470.1</td><td>26461</td><td>3391</td><td><strong>377.13</strong></td><td>142 536.8</td><td>142 844.1</td><td>5084</td><td>22†</td></tr>
+<tr><td><code>NNkin</code></td><td><strong>Z</strong></td><td>44.69</td><td>68 473.3</td><td>2 347 365.1</td><td>30788</td><td>3423</td><td><strong>54.46</strong></td><td>39 807.8</td><td>534 209.0</td><td>17899</td><td>779</td></tr>
+<tr><td><code>NNj</code></td><td><strong>Z</strong></td><td>44.69</td><td>68 473.3</td><td>2 347 365.1</td><td>30788</td><td>3423</td><td><strong>48.44</strong></td><td>51 321.6</td><td>1 122 593.3</td><td>23076</td><td>1637</td></tr>
+<tr><td><code>NNjB</code></td><td><strong>Z</strong></td><td>44.69</td><td>68 473.3</td><td>2 347 365.1</td><td>30788</td><td>3423</td><td><strong>59.20</strong></td><td>32 223.9</td><td>296 249.4</td><td>14489</td><td>432</td></tr>
+<tr><td><code>NNjj</code></td><td><strong>Z</strong></td><td>44.69</td><td>68 473.3</td><td>2 347 365.1</td><td>30788</td><td>3423</td><td><strong>57.75</strong></td><td>40 550.7</td><td>493 063.3</td><td>18233</td><td>719</td></tr>
+<tr><td><code>NNjjB</code></td><td><strong>Z</strong></td><td>44.69</td><td>68 473.3</td><td>2 347 365.1</td><td>30788</td><td>3423</td><td><strong>76.84</strong></td><td>31 941.5</td><td>172 812.2</td><td>14362</td><td>252</td></tr>
+<tr><td><code>NNjjBj</code></td><td><strong>Z</strong></td><td>44.69</td><td>68 473.3</td><td>2 347 365.1</td><td>30788</td><td>3423</td><td><strong>108.93</strong></td><td>16 633.5</td><td>23 315.9</td><td>7479</td><td>34</td></tr>
 </table></div>
-<p><code>NNjjBj</code> has the best significance in 4 of the 6 channel/generator blocks</p>
-<p>(H-Herwig 16.02, W-Herwig 293.28, Z-Herwig 86.74, Z-MG5 71.49); <code>NNjjB</code> edges</p>
-<p>it out in the other 2 (H-MG5: 15.74 vs 15.67, a 0.4% difference; W-MG5:</p>
-<p>234.49 vs 231.73, a 1.2% difference). In every channel the ranking broadly</p>
-<p>tracks AUC: the boson-aware, both-jets nets (<code>NNjjB</code>, <code>NNjjBj</code>) consistently</p>
-<p>beat the single-jet nets (<code>NNkin</code>, <code>NNj</code>, <code>NNjB</code>). Compared to the old</p>
-<p>inclusive-selection table, absolute significance is lower across the board</p>
-<p>(e.g. H-Herwig <code>NNjjBj</code>: 19.82 → 16.02) even though purity <code>S/(S+B)</code></p>
-<p>improved (same cell: 0.852 → 0.895) — see the &quot;Effect on NN significance&quot;</p>
-<p>note in the preselection changelog above for why.</p>
+<p><code>NNjjBj</code> has the best final <code>S/√B</code> in every channel (H: 155.10, W: 377.13,</p>
+<p>Z: 108.93), and the ranking broadly tracks AUC: the boson-aware, both-jets nets</p>
+<p>(<code>NNjjB</code>, <code>NNjjBj</code>) consistently beat the single-jet nets (<code>NNkin</code>, <code>NNj</code>, <code>NNjB</code>).</p>
+<p>The gain from <code>_0</code> (no cut) to the best net&#x27;s final point is largest, in relative</p>
+<p>terms, for <strong>H</strong> (33.10 → 155.10, ×4.7) even though H&#x27;s baseline background is</p>
+<p>already the smallest of the three in absolute terms (<code>B₀</code>=80.4 pb-equivalent</p>
+<p>yield) — <code>S/√B</code> has no <code>+S</code> term capping the payoff of driving <code>B</code> further toward</p>
+<p>zero, and H&#x27;s NN can push <code>B</code> from 80.4 down to 0.2 while keeping a meaningful</p>
+<p>fraction of signal. <strong>W</strong> (158.10 → 377.13, ×2.4) and <strong>Z</strong> (44.69 → 108.93, ×2.4)</p>
+<p>gain less in relative terms because their much larger baseline background</p>
+<p>(<code>B₀</code> in the millions) can&#x27;t be suppressed to quite the same relative degree</p>
+<p>without eating unacceptably far into signal too.</p>
+<h3 id="z-only-table-value-of-the-jet-constituents-z-channel">Z_only_table: value of the jet constituents (Z channel)</h3>
+<p>Added 2026-09-02: <code>Kj</code> is a Z-channel-only, feedforward net on just the</p>
+<p>leading jet&#x27;s own four-momentum <code>(|η|, m, φ, pT)</code> — no constituents, no</p>
+<p>second jet, no event-level kinematics. It is trained and evaluated exactly</p>
+<p>like the other nets above and inserted just above <code>NNj</code> (which consumes the</p>
+<p>same jet plus its ≤80 constituents), isolating what the constituent</p>
+<p>information is actually worth. This Z-channel-only comparison is referred to</p>
+<p>as the <code>Z_only_table</code> from here on.</p>
+<p>Extended 2026-09-03 with <code>KjB</code> and <code>KjjBj</code> — the same feedforward,</p>
+<p>no-constituents idea applied one level up the family: <code>KjB</code> uses exactly</p>
+<p><code>NNjB</code>&#x27;s jet-level + boson scalars (<code>|η|, m, pT, φ</code> of jet 0 plus</p>
+<p><code>bosonPt, bosonEta, bosonPhi</code>, 7 inputs) with no constituent branch, and</p>
+<p><code>KjjBj</code> uses exactly <code>NNjjBj</code>&#x27;s scalars (both leading jets&#x27; four-momenta,</p>
+<p>the 3rd jet&#x27;s four-momentum zero-padded when absent, and the boson scalars,</p>
+<p>15 inputs total) with no constituent branches at all. Each is inserted</p>
+<p>directly above its DeepSets counterpart (<code>KjB</code> above <code>NNjB</code>, <code>KjjBj</code> above</p>
+<p><code>NNjjBj</code>), trained for both Z and W (not H).</p>
+<p>Narrowed 2026-09-07 to just the constituent-ablation family (<code>Kj</code>/<code>NNj</code>,</p>
+<p><code>KjB</code>/<code>NNjB</code>, <code>KjjBj</code>/<code>NNjjBj</code>) — <code>NNkin</code>, <code>NNjj</code>, <code>NNjjB</code> dropped from this</p>
+<p>table since they duplicate the main Results table above and add nothing to</p>
+<p>the constituents comparison; <code>S/(S+B)</code> (purity) and <code>eff_sig</code>/<code>eff_bkg</code></p>
+<p>added as context columns.</p>
+<p>The <code>_0</code> unoptimized baseline (full preselected sample, no NN cut,</p>
+<p><code>eff_sig=eff_bkg=1</code>) is identical for every net in the Z channel, so it is</p>
+<p>given once here rather than repeated per row: S/√B₀ = 44.69,</p>
+<p>S₀ = 68 473.3, B₀ = 2 347 365.1, raw S₀ = 30788, raw B₀ = 3423.</p>
+<div class="tbl-wrap"><table>
+<tr><th>Net</th><th>S/√B</th><th>S/(S+B)</th><th>eff_sig</th><th>eff_bkg</th><th>S</th><th>B</th><th>raw S</th><th>raw B</th></tr>
+<tr><td><code>Kj</code></td><td><strong>46.93</strong></td><td>0.036</td><td>0.8694</td><td>0.6857</td><td>59 532.7</td><td>1 609 484.7</td><td>26768</td><td>2347</td></tr>
+<tr><td><code>NNj</code></td><td><strong>48.44</strong></td><td>0.044</td><td>0.7495</td><td>0.4782</td><td>51 321.6</td><td>1 122 593.3</td><td>23076</td><td>1637</td></tr>
+<tr><td><code>KjB</code></td><td><strong>58.48</strong></td><td>0.069</td><td>0.6746</td><td>0.2658</td><td>46 195.2</td><td>624 043.9</td><td>20771</td><td>910</td></tr>
+<tr><td><code>NNjB</code></td><td><strong>59.20</strong> (was 57.48)</td><td>0.098</td><td>0.4706</td><td>0.1262</td><td>32 223.9</td><td>296 249.4</td><td>14489</td><td>432</td></tr>
+<tr><td><code>KjjBj</code></td><td><strong>100.35</strong></td><td>0.377</td><td>0.2427</td><td>0.0117</td><td>16 620.1</td><td>27 430.5</td><td>7473</td><td>40</td></tr>
+<tr><td><code>NNjjBj</code></td><td><strong>108.93</strong> (was 102.09)</td><td>0.416</td><td>0.2429</td><td>0.0099</td><td>16 633.5</td><td>23 315.9</td><td>7479</td><td>34</td></tr>
+</table></div>
+<p><code>S/√B</code>, <code>S</code>, <code>B</code>, <code>raw S</code>, <code>raw B</code> are all at the ROC operating point</p>
+<p>maximizing <code>S/√B</code> (the only optimization objective); <code>S/(S+B)</code> (purity) and</p>
+<p><code>eff_sig</code>/<code>eff_bkg</code> are shown for context only. <code>raw S</code>/<code>raw B</code> are the</p>
+<p>raw MC event counts actually passing the cut in the signal region (Herwig</p>
+<p>test split). <code>†</code> on <code>raw B</code></p>
+<p>marks a row where the <code>raw B ≥ 10</code> statistical-validity floor changed the</p>
+<p>unconstrained optimum — the floor is a check on the *total* raw background</p>
+<p>count passing the chosen operating point, not a per-bin requirement on any</p>
+<p>downstream histogram (e.g. the pull-angle plots below).</p>
+<p><strong>Added jet-φ (2026-09-03):</strong> <code>NNjB</code>, <code>NNjj</code>, <code>NNjjB</code>, <code>NNjjBj</code> were extended</p>
+<p>with each leading jet&#x27;s own azimuthal angle <code>jetPhi</code> as a jet-level scalar</p>
+<p>(<code>NNj</code> and <code>Kj</code> deliberately excluded — <code>Kj</code> already had it, <code>NNj</code> stays a</p>
+<p>minimal single-jet, no-φ baseline) and retrained from scratch. The</p>
+<p>per-constituent Δη convention was investigated at the same time</p>
+<p>(<code>jcsDEta</code>/<code>jcsDEtaRaw</code>, sign-flipped for single-jet nets vs. raw for</p>
+<p>multi-jet nets, matching the sign convention used when filling the</p>
+<p><code>jetShape</code>/<code>jetShapeRaw</code> diagnostic histograms) and confirmed to already be</p>
+<p>exactly as intended — no change made there. The <code>(was ...)</code> values above are</p>
+<p>each net&#x27;s pre-φ <code>S/√B</code> from the previous table, so the retraining</p>
+<p>effect is entirely attributable to φ. All four improve: <code>NNjB</code> sees the</p>
+<p>largest relative gain (57.48→59.20), and for</p>
+<p><code>NNjjB</code>/<code>NNjjBj</code> the extra discriminating power also relaxes the raw-B floor</p>
+<p>constraint — both previously carried a <code>†</code> (315→252 raw B for <code>NNjjB</code>,</p>
+<p>41→34 for <code>NNjjBj</code>) and no longer need it, meaning the unconstrained</p>
+<p><code>S/√B</code>-optimal cut now naturally lands above the statistical-validity floor.</p>
+<p>Constituents clearly help: <code>Kj</code> (no constituents) trails <code>NNj</code> (same leading</p>
+<p>jet, plus its ≤80 constituents) on final <code>S/√B</code> (46.93 vs 48.44) despite</p>
+<p>starting from the same jet four-momentum — the constituent information is</p>
+<p>worth a real, if modest, gain.</p>
+<p>The same pattern holds one level up: <code>KjB</code> (58.48) trails <code>NNjB</code> (59.20), and</p>
+<p><code>KjjBj</code> (100.35) trails <code>NNjjBj</code> (108.93) — small, consistent gaps, since</p>
+<p><code>KjB</code>/<code>KjjBj</code> already start from richer inputs (boson scalars, and for</p>
+<p><code>KjjBj</code> a second and third jet too) than <code>Kj</code>/<code>NNj</code> do, so there is less</p>
+<p>headroom left for the constituents to add on top.</p>
+<h3 id="z-only-table-pythia-transfer-no-retraining">Z_only_table (Pythia transfer, no retraining)</h3>
+<p>Added 2026-09-07: <code>summer26/pythia_transfer.py</code> supplements the</p>
+<p><code>Z_only_table</code> above with a true generator-transfer test. For each net, the</p>
+<p>exact NN-score threshold that produced its tabulated Herwig <code>S/√B</code>-optimal</p>
+<p><code>(eff_sig, eff_bkg)</code> operating point is recovered (<code>roc_data_{channel}.npz</code></p>
+<p>only stores a decimated ROC curve, not thresholds, so the cut is recovered</p>
+<p>by re-scoring the Herwig test split at full resolution and matching the</p>
+<p>tabulated operating point — same technique as the pull-vector-angle section</p>
+<p>below), then that *same, unchanged* score cut is applied to the full</p>
+<p>MG5+Pythia sample (never seen in training, and never used to pick the cut).</p>
+<p>No retraining and no re-optimization on Pythia: this tests whether the</p>
+<p>working point chosen on Herwig alone still holds up when the same events</p>
+<p>are generated by a different generator.</p>
+<div class="tbl-wrap"><table>
+<tr><th>Net</th><th>S/√B</th><th>S/(S+B)</th><th>eff_sig</th><th>eff_bkg</th><th>S</th><th>B</th><th>raw S</th><th>raw B</th></tr>
+<tr><td><code>Kj</code></td><td><strong>42.54</strong></td><td>0.031</td><td>0.8373</td><td>0.6203</td><td>57 215.1</td><td>1 809 397.0</td><td>174018</td><td>18888</td></tr>
+<tr><td><code>NNj</code></td><td><strong>43.30</strong></td><td>0.039</td><td>0.6772</td><td>0.3914</td><td>46 270.8</td><td>1 141 698.1</td><td>140731</td><td>11918</td></tr>
+<tr><td><code>KjB</code></td><td><strong>54.53</strong></td><td>0.063</td><td>0.6461</td><td>0.2247</td><td>44 151.7</td><td>655 628.6</td><td>134286</td><td>6844</td></tr>
+<tr><td><code>NNjB</code></td><td><strong>54.31</strong></td><td>0.093</td><td>0.4213</td><td>0.0963</td><td>28 788.7</td><td>280 970.0</td><td>87560</td><td>2933</td></tr>
+<tr><td><code>KjjBj</code></td><td><strong>83.64</strong></td><td>0.340</td><td>0.1983</td><td>0.0090</td><td>13 551.4</td><td>26 248.1</td><td>41216</td><td>274</td></tr>
+<tr><td><code>NNjjBj</code></td><td><strong>88.56</strong></td><td>0.381</td><td>0.1869</td><td>0.0071</td><td>12 769.2</td><td>20 787.8</td><td>38837</td><td>217</td></tr>
+</table></div>
+<p>Regenerated 2026-09-27 for the pythia-dipole-recoil samples. The old buggy</p>
+<p>Pythia gave 44.33 / 45.24 / 56.54 / 56.53 / 71.39 / 73.21 for the same rows.</p>
+<p>Every net loses significance under generator transfer, and the tight-cut</p>
+<p>nets still lose more than the loose-cut ones. <code>S/√B</code> drops ~7–11% for</p>
+<p><code>Kj</code>/<code>NNj</code>/<code>KjB</code>/<code>NNjB</code> and ~17–19% for <code>KjjBj</code>/<code>NNjjBj</code>.</p>
+<p>Compared with the buggy Pythia (~3–7% and ~29–33%), the gap has narrowed</p>
+<p>from both ends:</p>
+<ul>
+<li><strong>Loose-cut nets lose a few % more.</strong> Part of this is an overall</li>
+</ul>
+<p>  normalization effect: fewer dipole-recoil Pythia events pass the</p>
+<p>  preselection (e.g. VBFZ σ_eff 0.240 → 0.226 pb), so both <code>S</code> and <code>B</code> shrink.</p>
+<ul>
+<li><strong>Tight-cut 3rd-jet nets recover a lot.</strong> <code>NNjjBj</code> goes 73.21 → 88.56 and</li>
+</ul>
+<p>  <code>eff_sig</code> 0.159 → 0.187, i.e. the corrected Pythia&#x27;s 3rd-jet radiation is</p>
+<p>  much closer to Herwig&#x27;s.</p>
+<p>The ranking is essentially preserved (<code>NNjjBj</code> best, <code>Kj</code> worst). <code>KjB</code>/<code>NNjB</code></p>
+<p>still swap, by a small margin (54.53 vs 54.31). The two feedforward/DeepSets</p>
+<p>pairs remain close under transfer, just as they were on Herwig.</p>
+<h3 id="z-only-table-performance-resilience-herwig-vs-pythia">Z_only_table (performance &amp; resilience, Herwig vs Pythia)</h3>
+<p>Added 2026-09-14: recasts the two <code>Z_only_table</code> sections above with a</p>
+<p>pure efficiency-ratio figure of merit, <strong>performance</strong> = <code>eps_sig/sqrt(eps_bkg)</code></p>
+<p>— unlike <code>S/√B</code>, independent of cross-section normalization, so directly</p>
+<p>comparable across generators — and introduces <strong>resilience</strong>, the symmetric</p>
+<p>sensitivity of a fixed tagger&#x27;s <code>(eps_sig, eps_bkg)</code> to swapping Herwig for</p>
+<p>Pythia at the identical Herwig-chosen cut (same transferred-cut convention as</p>
+<p>the Pythia-transfer table above — no re-optimization on Pythia):</p>
+<p><code>zeta(Herwig,Pythia) = { 0.5 * [ ((effS_hw-effS_py)/(effS_hw+effS_py))^2 + ((effB_hw-effB_py)/(effB_hw+effB_py))^2 ] }^-1/2</code></p>
+<p>Larger <code>zeta</code> = more resilient (less sensitive) to the generator swap. The</p>
+<p>&quot;no tagging&quot; baseline performance is exactly <code>1.00</code> for either generator,</p>
+<p>since <code>eps_sig=eps_bkg=1</code> at the no-NN-cut point on the same</p>
+<p><code>mjj&gt;400 GeV</code> + <code>|ΔY_jj|&gt;2.5</code>-preselected sample used throughout — stated</p>
+<p>once here rather than as a repeated table column.</p>
+<p><strong>Operating point = maximum Herwig performance (changed 2026-11-15).</strong> Each</p>
+<p>net&#x27;s Herwig operating point is the point of its Herwig test-split ROC grid</p>
+<p>(<code>roc_data_Z.npz</code>, the same grid used everywhere above) with the largest</p>
+<p><code>performance</code>, subject to a raised <code>raw B &gt;= 20</code> floor (up from the</p>
+<p><code>raw B &gt;= 10</code> used elsewhere in this document). Before 2026-11-15 this table</p>
+<p>reused the <code>S/√B</code>-optimal point. Both choices give the same point: for a</p>
+<p>fixed sample <code>S/√B = (σ_S·√L/√σ_B) × eps_sig/sqrt(eps_bkg)</code>, a constant</p>
+<p>times <code>performance</code>, so both peak at the same ROC point. Checked for all 6</p>
+<p>nets (<code>same_sqrtB = 1</code> in the output file): identical grid points and cuts.</p>
+<p>The floor binds for none of them (Herwig raw B 34–2347, no <code>†</code>), and with no</p>
+<p>floor at all the same points are selected. Rerunning on 2026-11-15</p>
+<p>reproduced every number below exactly; only the selection criterion and the</p>
+<p>column order (Herwig next to Pythia) changed.</p>
+<p><strong>Same cut for Herwig and Pythia.</strong> For each net, the NN-score cut <code>c</code></p>
+<p>defining the Herwig point is recovered by re-scoring the Herwig test split at</p>
+<p>full resolution (pass = <code>score &gt;= c</code>, the <code>roc_curve</code> convention). That one</p>
+<p><code>c</code> is applied to the re-scored Herwig test split (<code>eff_sig</code>/<code>eff_bkg (Hw)</code>)</p>
+<p>and to the net&#x27;s inference on the full MG5+Pythia sample</p>
+<p>(<code>eff_sig</code>/<code>eff_bkg (Py)</code>), and ζ is computed from these four efficiencies.</p>
+<p>Applying <code>c</code> to the Herwig test split reproduces the chosen grid point</p>
+<p>exactly (distance 0 for all 6 nets). Cuts (<code>cut</code> column of the output file):</p>
+<p><code>Kj</code> 0.3638, <code>NNj</code> 0.4420, <code>KjB</code> 0.5422, <code>NNjB</code> 0.6633, <code>KjjBj</code> 0.9111,</p>
+<p><code>NNjjBj</code> 0.9101.</p>
+<p><strong>Statistical errors:</strong> <code>eff_sig</code>/<code>eff_bkg</code> are each a binomial proportion</p>
+<p><code>k/N</code> (MC events passing the fixed cut, out of the total signal/background</p>
+<p>population in that generator&#x27;s sample), so their statistical error is the</p>
+<p>standard normal-approximation binomial error <code>sigma_eff = sqrt(eff*(1-eff)/N)</code></p>
+<p>— the same formula used for efficiency plots throughout HEP. This is only</p>
+<p>approximate for the smallest-count rows (e.g. <code>NNjjBj</code>&#x27;s Herwig <code>raw B ≈ 34</code>,</p>
+<p>where the true binomial interval is mildly asymmetric), but adequate here.</p>
+<p><code>performance</code> and <code>resilience</code> are then deterministic functions of these four</p>
+<p>(independent) efficiencies, so their errors are obtained by standard linear</p>
+<p>(delta-method) error propagation, <code>sigma_f^2 = sum_i (df/dxi)^2 * sigma_xi^2</code>;</p>
+<p><code>resilience</code>&#x27;s partial derivatives are unwieldy to write out by hand (nested</p>
+<p>ratios inside a <code>-1/2</code> power over 4 variables), so they&#x27;re evaluated</p>
+<p>numerically via central finite differences rather than derived analytically.</p>
+<div class="tbl-wrap"><table>
+<tr><th>Net</th><th>eff_sig (Hw)</th><th>eff_sig (Py)</th><th>eff_bkg (Hw)</th><th>eff_bkg (Py)</th><th>Performance (Hw)</th><th>Performance (Py)</th><th>Resilience ζ</th></tr>
+<tr><td><code>Kj</code></td><td>0.8694 ± 0.0019</td><td>0.8373 ± 0.0008</td><td>0.6857 ± 0.0079</td><td>0.6203 ± 0.0028</td><td><strong>1.050 ± 0.007</strong></td><td><strong>1.063 ± 0.003</strong></td><td>26.44 ± 2.87</td></tr>
+<tr><td><code>NNj</code></td><td>0.7495 ± 0.0025</td><td>0.6772 ± 0.0010</td><td>0.4782 ± 0.0085</td><td>0.3914 ± 0.0028</td><td><strong>1.084 ± 0.010</strong></td><td><strong>1.082 ± 0.004</strong></td><td>12.62 ± 0.96</td></tr>
+<tr><td><code>KjB</code></td><td>0.6746 ± 0.0027</td><td>0.6461 ± 0.0010</td><td>0.2658 ± 0.0076</td><td>0.2247 ± 0.0024</td><td><strong>1.308 ± 0.019</strong></td><td><strong>1.363 ± 0.008</strong></td><td>16.35 ± 2.76</td></tr>
+<tr><td><code>NNjB</code></td><td>0.4706 ± 0.0028</td><td>0.4213 ± 0.0011</td><td>0.1262 ± 0.0057</td><td>0.0963 ± 0.0017</td><td><strong>1.325 ± 0.031</strong></td><td><strong>1.358 ± 0.012</strong></td><td>9.74 ± 1.47</td></tr>
+<tr><td><code>KjjBj</code></td><td>0.2427 ± 0.0024</td><td>0.1983 ± 0.0009</td><td>0.0117 ± 0.0018</td><td>0.0090 ± 0.0005</td><td><strong>2.245 ± 0.178</strong></td><td><strong>2.091 ± 0.064</strong></td><td>8.60 ± 3.43</td></tr>
+<tr><td><code>NNjjBj</code></td><td>0.2429 ± 0.0024</td><td>0.1869 ± 0.0009</td><td>0.0099 ± 0.0017</td><td>0.0071 ± 0.0005</td><td><strong>2.437 ± 0.209</strong></td><td><strong>2.214 ± 0.076</strong></td><td>6.74 ± 2.25</td></tr>
+</table></div>
+<p>Pythia columns and ζ regenerated 2026-09-27 for the pythia-dipole-recoil</p>
+<p>samples. The <code>KjB</code> Herwig point moved by one ROC grid step (see the</p>
+<p>changelog near the top). Old buggy-Pythia ζ: 22.50 / 10.27 / 15.36 / 8.18 /</p>
+<p>7.72 / 6.07.</p>
+<p>The errors show which <code>performance</code> shifts are statistically meaningful</p>
+<p>and which are noise:</p>
+<ul>
+<li><code>KjB</code>&#x27;s Herwig→Pythia increase (1.308±0.019 → 1.363±0.008) is significant.</li>
+<li><code>KjjBj</code>&#x27;s decrease (2.245±0.178 → 2.091±0.064) is now within ~1σ. It was</li>
+</ul>
+<p>  2.245 → 1.731 with the buggy Pythia. The tighter</p>
+<p>cuts carry visibly larger relative errors (<code>NNjjBj</code> performance is ~9%</p>
+<p>uncertain vs <code>Kj</code>&#x27;s &lt;1%) — a direct consequence of their much smaller raw</p>
+<p>background counts.</p>
+<p>Unlike <code>S/√B</code>, which drops under generator transfer for every net (see</p>
+<p>above), this pure efficiency-ratio <code>performance</code> metric *increases* or stays</p>
+<p>flat from Herwig to Pythia for the four loosest-cut nets</p>
+<p>(<code>Kj</code>/<code>NNj</code>/<code>KjB</code>/<code>NNjB</code>, e.g. <code>KjB</code> 1.308→1.363, <code>NNj</code> 1.084→1.082). It</p>
+<p>only *decreases* for the two tightest-cut ones (<code>KjjBj</code>/<code>NNjjBj</code>, e.g.</p>
+<p><code>NNjjBj</code> 2.437→2.214, much milder than the 2.437→1.775 seen with the buggy</p>
+<p>Pythia) — comparing <code>eps_sig</code> and</p>
+<p><code>eps_bkg</code> on equal footing (rather than weighting them by each generator&#x27;s</p>
+<p>own total cross section) reveals a more nuanced, cut-dependent picture than</p>
+<p>the uniform decline seen in absolute <code>S/√B</code>.</p>
+<p>Resilience is highest for the simplest, loosest-cut net (<code>Kj</code>, ζ=26.44) and</p>
+<p>lowest for the richest, tightest-cut one (<code>NNjjBj</code>, ζ=6.74), consistent with</p>
+<p>the larger relative <code>S/√B</code> drops already seen for <code>KjjBj</code>/<code>NNjjBj</code> in the</p>
+<p>Pythia-transfer table above. Every ζ is higher than with the buggy Pythia,</p>
+<p>so the corrected shower sits closer to Herwig. Within each</p>
+<p>constituent-ablation pair, the feedforward net (no constituents) is</p>
+<p>consistently *more* resilient than its DeepSets counterpart — <code>Kj</code> 26.44 vs</p>
+<p><code>NNj</code> 12.62, <code>KjB</code> 16.35 vs <code>NNjB</code> 9.74, <code>KjjBj</code> 8.60 vs <code>NNjjBj</code> 6.74</p>
+<p>(the last pair within errors) — suggesting the per-constituent substructure</p>
+<p>information that helps performance on Herwig is also the part most sensitive</p>
+<p>to the Herwig/Pythia parton-shower difference.</p>
+<p>Output: <code>figs/summer26/Z_performance_resilience.txt</code>, written by</p>
+<p><code>summer26/pythia_transfer.py</code> (which also writes <code>pythia_transfer.txt</code>). It</p>
+<p>re-scores with every net&#x27;s saved model, so run it on a GPU node:</p>
+<p><code>condor_submit -name bigbird24.cern.ch summer26/pythia_transfer_gpu.sub</code></p>
+<p>(log in <code>summer26/logs/</code>; the job also prints the operating-point check</p>
+<p>table).</p>
+<h3 id="w-only-table-value-of-the-jet-constituents-w-channel">W_only_table: value of the jet constituents (W channel)</h3>
+<p>Added 2026-09-03: the W-channel analog of the <code>Z_only_table</code> above, using</p>
+<p><code>KjB</code>/<code>KjjBj</code>&#x27;s <code>_W</code> variants.</p>
+<p><code>Kj_W</code> added 2026-09-07 (trained via <code>make_variants.py</code>&#x27;s <code>VARIANTS</code> list,</p>
+<p>same mechanism as <code>KjB_W</code>/<code>KjjBj_W</code>) so this table can mirror the Z-channel</p>
+<p>row set exactly; narrowed at the same time to just the constituent-ablation</p>
+<p>family (<code>Kj</code>/<code>NNj</code>, <code>KjB</code>/<code>NNjB</code>, <code>KjjBj</code>/<code>NNjjBj</code>) — <code>NNkin</code>, <code>NNjj</code>,</p>
+<p><code>NNjjB</code> dropped, matching <code>Z_only_table</code>; <code>S/(S+B)</code> (purity) and</p>
+<p><code>eff_sig</code>/<code>eff_bkg</code> added as context columns.</p>
+<p>Unoptimized baseline (<code>_0</code>, identical for every net in the W channel):</p>
+<p>S/√B₀ = 158.10, S₀ = 741 869.6, B₀ = 22 017 470.1,</p>
+<p>raw S₀ = 26461, raw B₀ = 3391.</p>
+<div class="tbl-wrap"><table>
+<tr><th>Net</th><th>S/√B</th><th>S/(S+B)</th><th>eff_sig</th><th>eff_bkg</th><th>S</th><th>B</th><th>raw S</th><th>raw B</th></tr>
+<tr><td><code>Kj</code></td><td><strong>163.74</strong></td><td>0.041</td><td>0.8531</td><td>0.6786</td><td>632 892.3</td><td>14 940 194.2</td><td>22574</td><td>2301</td></tr>
+<tr><td><code>NNj</code></td><td><strong>169.62</strong></td><td>0.044</td><td>0.8438</td><td>0.6187</td><td>626 023.4</td><td>13 622 132.8</td><td>22329</td><td>2098</td></tr>
+<tr><td><code>KjB</code></td><td><strong>210.33</strong></td><td>0.085</td><td>0.6397</td><td>0.2312</td><td>474 543.1</td><td>5 090 444.3</td><td>16926</td><td>784</td></tr>
+<tr><td><code>NNjB</code></td><td><strong>218.54</strong></td><td>0.095</td><td>0.6140</td><td>0.1973</td><td>455 478.4</td><td>4 343 759.2</td><td>16246</td><td>669</td></tr>
+<tr><td><code>KjjBj</code></td><td><strong>346.59</strong></td><td>0.497</td><td>0.1641</td><td>0.0056</td><td>121 733.8</td><td>123 365.4</td><td>4342</td><td>19†</td></tr>
+<tr><td><code>NNjjBj</code></td><td><strong>377.13</strong></td><td>0.499</td><td>0.1921</td><td>0.0065</td><td>142 536.8</td><td>142 844.1</td><td>5084</td><td>22†</td></tr>
+</table></div>
+<p>Same columns/objective/<code>†</code> convention as the <code>Z_only_table</code>. Same</p>
+<p>qualitative pattern as Z: <code>KjB</code> (210.33) trails <code>NNjB</code> (218.54) and <code>KjjBj</code></p>
+<p>(346.59) trails <code>NNjjBj</code> (377.13) — constituents help in both channels, by a</p>
+<p>similar relative margin. <code>Kj</code> (163.74) trailing <code>NNj</code> (169.62) and <code>KjjBj</code></p>
+<p>(346.59) trailing <code>NNjjBj</code> (377.13) hold the same relative pattern as Z too.</p>
+<h3 id="w-only-table-pythia-transfer-no-retraining">W_only_table (Pythia transfer, no retraining)</h3>
+<p>Added 2026-09-07: same generator-transfer test as the `Z_only_table (Pythia</p>
+<p>transfer...)` table above — each net&#x27;s Herwig-chosen score cut, applied</p>
+<p>unchanged to the full MG5+Pythia sample.</p>
+<div class="tbl-wrap"><table>
+<tr><th>Net</th><th>S/√B</th><th>S/(S+B)</th><th>eff_sig</th><th>eff_bkg</th><th>S</th><th>B</th><th>raw S</th><th>raw B</th></tr>
+<tr><td><code>Kj</code></td><td><strong>144.58</strong></td><td>0.035</td><td>0.8093</td><td>0.6031</td><td>579 071.8</td><td>16 042 120.0</td><td>142898</td><td>17316</td></tr>
+<tr><td><code>NNj</code></td><td><strong>147.39</strong></td><td>0.037</td><td>0.7813</td><td>0.5409</td><td>559 045.1</td><td>14 387 510.0</td><td>137956</td><td>15530</td></tr>
+<tr><td><code>KjB</code></td><td><strong>183.98</strong></td><td>0.073</td><td>0.6032</td><td>0.2069</td><td>431 594.8</td><td>5 503 014.1</td><td>106505</td><td>5940</td></tr>
+<tr><td><code>NNjB</code></td><td><strong>185.24</strong></td><td>0.079</td><td>0.5614</td><td>0.1768</td><td>401 708.8</td><td>4 702 575.7</td><td>99130</td><td>5076</td></tr>
+<tr><td><code>KjjBj</code></td><td><strong>257.88</strong></td><td>0.424</td><td>0.1265</td><td>0.0046</td><td>90 521.2</td><td>123 215.6</td><td>22338</td><td>133</td></tr>
+<tr><td><code>NNjjBj</code></td><td><strong>291.71</strong></td><td>0.467</td><td>0.1359</td><td>0.0042</td><td>97 264.3</td><td>111 172.0</td><td>24002</td><td>120</td></tr>
+</table></div>
+<p>Regenerated 2026-09-27 for the pythia-dipole-recoil samples. The old buggy</p>
+<p>Pythia gave 154.07 / 156.67 / 194.17 / 196.61 / 208.70 / 221.41.</p>
+<p>Same pattern as Z: every net loses significance under transfer, more so for</p>
+<p>the tight-cut nets (<code>KjjBj</code>/<code>NNjjBj</code>, ~23–26% drop, down from ~40% with the</p>
+<p>buggy Pythia) than the loose-cut ones (<code>Kj</code>/<code>NNj</code>, ~12–13%, up from ~6–8%,</p>
+<p>partly from the lower Pythia σ_eff after preselection). Unlike Z&#x27;s</p>
+<p><code>KjB</code>/<code>NNjB</code> flip, W&#x27;s ranking is fully preserved under transfer (no swaps).</p>
+<p>Output: <code>figs/summer26/pythia_transfer.txt</code>.</p>
+<h3 id="pull-vector-angle-inside-the-s-b-optimal-signal-region">Pull-vector angle inside the S/√B-optimal signal region</h3>
+<p>Added 2026-09-02 (<code>summer26/spva_signal_region.py</code>): for <code>NNj</code>, <code>NNjj</code>, and</p>
+<p><code>NNjjBj</code>, the leading (true pT-highest, via <code>leadJetIndex</code> — not the</p>
+<p>randomized jet slot 0 used for NN training) jet&#x27;s pull-vector angle</p>
+<p><code>|θ_s|</code> (<code>jetSPVA</code>), shown separately for VBF and QCD Herwig events that pass</p>
+<p>each net&#x27;s own S/√B-optimal score cut from the table above. The cut is</p>
+<p>recovered by re-scoring the Herwig test split with each net&#x27;s saved model and</p>
+<p>matching the resulting ROC curve to the already-tabulated <code>(eff_sig, eff_bkg)</code></p>
+<p>operating point; the resulting passing raw <code>S</code>/<code>B</code> counts reproduce the <code>raw S</code>/</p>
+<p><code>raw B</code> columns above exactly (23076/1637 for <code>NNj</code>, 18233/719 for <code>NNjj</code>,</p>
+<p>7479/34 for <code>NNjjBj</code>), confirming the recovered threshold is the same</p>
+<p>operating point.</p>
+<p>Absolute normalization (updated 2026-09-02): each histogram&#x27;s raw-MC passing-</p>
+<p>event shape is rescaled so its integral equals <code>analyze_one()</code>&#x27;s BR-rescaled</p>
+<p><code>S</code> (VBF) or <code>B</code> (QCD) at <code>L = 300 fb⁻¹</code> — the same totals in the table above,</p>
+<p>not a separate re-derivation — giving an <code>Events / rad</code> y-axis instead of a</p>
+<p>unit-normalized shape comparison. Plotted log-<code>y</code>: <code>S</code> and <code>B</code> differ by up to</p>
+<p>~22× in absolute scale across the three nets&#x27; cuts, which would otherwise</p>
+<p>flatten the signal curve to near-zero on a linear axis.</p>
+<p>Caught in the process: <code>jetSPVA</code> in the friend h5 files is the *signed* pull</p>
+<p>angle in <code>[-π, π]</code> (~50/50 split), not <code>|θ_s|</code> directly — unlike</p>
+<p><code>spva_plots.py</code>&#x27;s <code>hLeadJetSPVA</code> ROOT histograms, which already take <code>abs()</code></p>
+<p>at C++ fill time. <code>spva_signal_region.py</code>&#x27;s first pass skipped that <code>abs()</code>,</p>
+<p>silently binning only the ~50% of events with a positive raw angle into</p>
+<p><code>[0, π]</code> (the rest fell outside the binning range and were dropped from the</p>
+<p>histogram, though the displayed absolute total was unaffected — see the</p>
+<p>script&#x27;s <code>load_leadjet_spva()</code> docstring). Fixed; raw histogrammed counts now</p>
+<p>match the passing <code>S</code>/<code>B</code> counts almost exactly (23068/1637, 19200/806,</p>
+<p>7694/41 vs. the tabulated 23076/1637, 19208/806, 7697/41 — the handful of</p>
+<p>missing events are the genuine <code>-99</code> no-pull-vector sentinel, NC=1 jets).</p>
+<ul>
+<li><strong>NNj</strong> (ε_sig=0.750, ε_bkg=0.478, S=51 321.6, B=1 122 593.3): good raw-MC</li>
+</ul>
+<p>  stats on both sides. VBF stays peaked toward small <code>|θ_s|</code>; QCD is flatter</p>
+<p>  with a mild excess at large angle — the shape difference the pull-angle</p>
+<p>  variable is designed to capture survives a loose cut, even though QCD</p>
+<p>  outnumbers VBF by ×22 in absolute yield.</p>
+<ul>
+<li><strong>NNjj</strong> (S=40 550.7, B=493 063.3) and <strong>NNjjBj</strong> (S=16 633.5, B=23 315.9):</li>
+</ul>
+<p>  same qualitative VBF/QCD shape difference, though <code>NNjjBj</code>&#x27;s very tight cut</p>
+<p>  (ε_bkg=0.010, only 34 raw background events) makes the QCD histogram</p>
+<p>  statistics-limited — visible as large error bars rather than a smooth curve.</p>
+<p>Every plot&#x27;s title reports only the expected event yield for VBF and QCD at</p>
+<p><code>L = 300 fb⁻¹</code>, with the raw MC count passing the cut in parenthesis (no</p>
+<p>efficiencies or other text); a black <code>VBF + QCD</code> step line adds the two</p>
+<p>absolute-yield histograms bin-by-bin, showing the total shape an inclusive</p>
+<p>counting experiment in the signal region would actually see.</p>
+<p>Extended 2026-09-03 to <code>NNjB</code> across all three of its channel variants:</p>
+<p><strong>Z</strong> (ε_sig=0.471, ε_bkg=0.126, S=32 223.9, B=296 249.4, raw S/B=14489/432)</p>
+<p>and <strong>W</strong> (ε_sig=0.614, ε_bkg=0.197, S=455 478.4, B=4 343 759.2,</p>
+<p>raw S/B=16246/669) each get their own plot from that channel&#x27;s own model and</p>
+<p>own S/√B-optimal cut, and a third, <strong>V = W+Z</strong>, adds the two channels&#x27;</p>
+<p>already-absolute (<code>L = 300 fb⁻¹</code>) histograms bin-by-bin (VBF=487 702.3,</p>
+<p>QCD=4 640 008.6) — the combined yield if each channel is run inclusively at</p>
+<p>its own best <code>NNjB</code> working point. Errors on the <code>V</code> histogram are added in</p>
+<p>quadrature; raw counts and yields are added linearly.</p>
+<p>Output: <code>figs/summer26/jetSPVA_SR_{NNj,NNjj,NNjjBj}_Z.pdf</code>,</p>
+<p><code>figs/summer26/jetSPVA_SR_NNjB_{Z,W,V}.pdf</code>.</p>
 <hr>
 <h2 id="event-level-nn-score-columns-in-the-h5-files-per-channel-2026-07-08">Event-level NN score columns in the h5 files (per-channel, 2026-07-08)</h2>
 <p>Each production h5 file carries per-event sigmoid scores written back by the</p>
@@ -570,24 +956,24 @@ condor_submit -name bigbird24.cern.ch summer26/NNjjBj_W/save_scores.sub</code></
 <div class="tbl-wrap"><table>
 <tr><th>Full path</th><th>Size (MB)</th></tr>
 <tr><td><code>/eos/user/a/apapaefs/Projects/Pull/summer2026-hwsim-campaign-runner/campaigns/campaign-00023/merged/VBFH_herwig.root</code></td><td>14869</td></tr>
-<tr><td><code>/eos/user/a/apapaefs/Projects/Pull/summer2026-hwsim-campaign-runner/campaigns/campaign-00023/merged/VBFH_mg5_pythia.root</code></td><td>15912</td></tr>
+<tr><td><code>/eos/user/a/apapaefs/Projects/Pull/pythia-dipole-recoil/merged/VBFH/VBFH_mg5_pythia_dipolerecoil.root</code></td><td>14655</td></tr>
 <tr><td><code>/eos/user/a/apapaefs/Projects/Pull/summer2026-hwsim-campaign-runner/campaigns/campaign-00023/merged/VBFW_herwig.root</code></td><td>15304</td></tr>
-<tr><td><code>/eos/user/a/apapaefs/Projects/Pull/summer2026-hwsim-campaign-runner/campaigns/campaign-00023/merged/VBFW_mg5_pythia.root</code></td><td>15981</td></tr>
+<tr><td><code>/eos/user/a/apapaefs/Projects/Pull/pythia-dipole-recoil/merged/VBFW/VBFW_mg5_pythia_dipolerecoil.root</code></td><td>15098</td></tr>
 <tr><td><code>/eos/user/a/apapaefs/Projects/Pull/summer2026-hwsim-campaign-runner/campaigns/campaign-00023/merged/VBFZ_herwig.root</code></td><td>15371</td></tr>
-<tr><td><code>/eos/user/a/apapaefs/Projects/Pull/summer2026-hwsim-campaign-runner/campaigns/campaign-00023/merged/VBFZ_mg5_pythia.root</code></td><td>16027</td></tr>
+<tr><td><code>/eos/user/a/apapaefs/Projects/Pull/pythia-dipole-recoil/merged/VBFZ/VBFZ_mg5_pythia_dipolerecoil.root</code></td><td>15197</td></tr>
 <tr><td><code>/eos/user/a/apapaefs/Projects/Pull/summer2026-hwsim-campaign-runner/campaigns/campaign-00023/merged/QCDWjj_herwig.root</code></td><td>16220</td></tr>
-<tr><td><code>/eos/user/a/apapaefs/Projects/Pull/summer2026-hwsim-campaign-runner/campaigns/campaign-00023/merged/QCDWjj_mg5_pythia.root</code></td><td>16774</td></tr>
+<tr><td><code>/eos/user/a/apapaefs/Projects/Pull/pythia-dipole-recoil/merged/QCDWjj/QCDWjj_mg5_pythia_dipolerecoil.root</code></td><td>16368</td></tr>
 <tr><td><code>/eos/user/a/apapaefs/Projects/Pull/summer2026-hwsim-campaign-runner/campaigns/campaign-00023/merged/QCDZjj_herwig.root</code></td><td>16198</td></tr>
-<tr><td><code>/eos/user/a/apapaefs/Projects/Pull/summer2026-hwsim-campaign-runner/campaigns/campaign-00023/merged/QCDZjj_mg5_pythia.root</code></td><td>16776</td></tr>
+<tr><td><code>/eos/user/a/apapaefs/Projects/Pull/pythia-dipole-recoil/merged/QCDZjj/QCDZjj_mg5_pythia_dipolerecoil.root</code></td><td>16368</td></tr>
 <tr><td><code>/eos/user/a/apapaefs/Projects/Pull/summer2026-hwsim-campaign-runner/campaigns/campaign-00030/merged/QCDHjj_herwig.root</code></td><td>17538</td></tr>
-<tr><td><code>/eos/user/a/apapaefs/Projects/Pull/summer2026-hwsim-campaign-runner/campaigns/campaign-00031/merged/QCDHjj_mg5_pythia.root</code></td><td>7380</td></tr>
+<tr><td><code>/eos/user/a/apapaefs/Projects/Pull/pythia-dipole-recoil/merged/QCDHjj/QCDHjj_mg5_pythia_dipolerecoil.root</code></td><td>7168</td></tr>
 </table></div>
-<p>Total: ~178 GB across 12 files.</p>
+<p>Total: ~180 GB across 12 files (sizes in MiB; Pythia rows are the dipole-recoil files since 2026-09-27).</p>
 <hr>
 <h2 id="file-map">File map</h2>
 <pre><code>makefriends/C/
 ├── run.summer26.sh         # full production script for summer26
-├── friends/summer26/       # 12x {_herwig,_mg5_pythia}.{friend.root,h5}
+├── friends/summer26/       # 12x {_herwig,_mg5_pythia}.{friend.root,h5}; pythia_prefix_bug/ = old buggy Pythia
 ├── figs/summer26/          # diagnostic PDFs
 └── summer26/               # analysis code
     ├── plots.py            # diagnostic plots (adapt from summer25/plots.py)

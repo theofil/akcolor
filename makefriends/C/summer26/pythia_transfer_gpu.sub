@@ -1,0 +1,15 @@
+executable     = /eos/home-t/theofil/work/akcolor/makefriends/C/summer26/pythia_transfer_gpu.sh
+output         = /eos/home-t/theofil/work/akcolor/makefriends/C/summer26/logs/pythia_transfer_gpu.$(ClusterId).out
+error          = /eos/home-t/theofil/work/akcolor/makefriends/C/summer26/logs/pythia_transfer_gpu.$(ClusterId).err
+log            = /eos/home-t/theofil/work/akcolor/makefriends/C/summer26/logs/pythia_transfer_gpu.$(ClusterId).log
+
+request_cpus   = 2
+request_memory = 12GB
+request_gpus   = 1
+
+# b9g57n0009's GPU is unsupported by the LCG_106_cuda torch build ("no kernel image")
+requirements   = (Machine =!= "b9g57n0009.cern.ch")
+
++JobFlavour    = "microcentury"
+
+queue

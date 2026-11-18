@@ -21,6 +21,7 @@ mkdir -p "$JOBDIR"
 GO_FAST=false
 GO_FAST_N=100
 NJOBS=1           # samples processed in parallel; each sample runs all its jobs at once; override with --jobs N
+PYTHIA_ONLY=false # --pythiaOnly: run only the 6 MG5+Pythia samples, into a staging dir (see below)
 for (( i=1; i<=$#; i++ )); do
     arg="${!i}"
     if [[ "$arg" == "--goFast" ]]; then
@@ -30,6 +31,8 @@ for (( i=1; i<=$#; i++ )); do
             GO_FAST_N="${!next}"
             i=$next
         fi
+    elif [[ "$arg" == "--pythiaOnly" ]]; then
+        PYTHIA_ONLY=true
     elif [[ "$arg" == "--jobs" ]]; then
         next=$((i+1))
         if [[ $next -le $# && "${!next}" =~ ^[0-9]+$ ]]; then
@@ -42,25 +45,24 @@ done
 # ── Campaign source directories ───────────────────────────────────────────────
 CAMPAIGN23="/eos/user/a/apapaefs/Projects/Pull/summer2026-hwsim-campaign-runner/campaigns/campaign-00023/merged"
 CAMPAIGN30="/eos/user/a/apapaefs/Projects/Pull/summer2026-hwsim-campaign-runner/campaigns/campaign-00030/merged"
-CAMPAIGN31="/eos/user/a/apapaefs/Projects/Pull/summer2026-hwsim-campaign-runner/campaigns/campaign-00031/merged"
+# MG5+Pythia: pythia-dipole-recoil re-shower (2026-09-25) replaces the buggy
+# campaign-00023/00031 Pythia files; same events, same evweight normalization.
+PYDIPOLE="/eos/user/a/apapaefs/Projects/Pull/pythia-dipole-recoil/merged"
 
 # ── Symlinks (inside tmp) ─────────────────────────────────────────────────────
 declare -A ALL_SYMLINKS
-# campaign-00023 — Herwig + MG5+Pythia pairs
+# campaign-00023 — Herwig
 ALL_SYMLINKS["VBFH_herwig.root"]="$CAMPAIGN23/VBFH_herwig.root"
-ALL_SYMLINKS["VBFH_mg5_pythia.root"]="$CAMPAIGN23/VBFH_mg5_pythia.root"
 ALL_SYMLINKS["VBFW_herwig.root"]="$CAMPAIGN23/VBFW_herwig.root"
-ALL_SYMLINKS["VBFW_mg5_pythia.root"]="$CAMPAIGN23/VBFW_mg5_pythia.root"
 ALL_SYMLINKS["VBFZ_herwig.root"]="$CAMPAIGN23/VBFZ_herwig.root"
-ALL_SYMLINKS["VBFZ_mg5_pythia.root"]="$CAMPAIGN23/VBFZ_mg5_pythia.root"
 ALL_SYMLINKS["QCDWjj_herwig.root"]="$CAMPAIGN23/QCDWjj_herwig.root"
-ALL_SYMLINKS["QCDWjj_mg5_pythia.root"]="$CAMPAIGN23/QCDWjj_mg5_pythia.root"
 ALL_SYMLINKS["QCDZjj_herwig.root"]="$CAMPAIGN23/QCDZjj_herwig.root"
-ALL_SYMLINKS["QCDZjj_mg5_pythia.root"]="$CAMPAIGN23/QCDZjj_mg5_pythia.root"
 # campaign-00030 — QCDHjj Herwig only
 ALL_SYMLINKS["QCDHjj_herwig.root"]="$CAMPAIGN30/QCDHjj_herwig.root"
-# campaign-00031 — QCDHjj MG5+Pythia
-ALL_SYMLINKS["QCDHjj_mg5_pythia.root"]="$CAMPAIGN31/QCDHjj_mg5_pythia.root"
+# pythia-dipole-recoil — all six MG5+Pythia samples
+for proc in VBFH VBFW VBFZ QCDHjj QCDWjj QCDZjj; do
+    ALL_SYMLINKS["${proc}_mg5_pythia.root"]="$PYDIPOLE/$proc/${proc}_mg5_pythia_dipolerecoil.root"
+done
 
 for link in "${!ALL_SYMLINKS[@]}"; do
     if [ ! -L "$JOBDIR/$link" ]; then
@@ -73,7 +75,7 @@ done
 # VBFH  herwig: 2.97189   mg5_pythia: 2.88990
 # VBFW  herwig: 7.494      mg5_pythia: 7.20333
 # VBFZ  herwig: 1.099      mg5_pythia: 1.08581
-# QCDHjj herwig: 5.06051   mg5_pythia: 4.982 (camp-00031)
+# QCDHjj herwig: 5.06051   mg5_pythia: 4.982
 # QCDWjj herwig: 1733.3    mg5_pythia: 1646.805
 # QCDZjj herwig: 340.2     mg5_pythia: 316.363
 
@@ -130,6 +132,18 @@ else
         "QCDZjj_herwig.root:20:50000:340.2:QCDZjj_herwig.friend.root:Z"
         "QCDZjj_mg5_pythia.root:20:50000:316.363:QCDZjj_mg5_pythia.friend.root:Z"
     )
+
+    # --pythiaOnly: keep only the mg5_pythia rows and write to a staging dir, so
+    # root_to_hdf5.py (which rewrites every *.friend.root in OUTDIR) cannot touch
+    # the Herwig h5 files and their NN-score columns.
+    if $PYTHIA_ONLY; then
+        OUTDIR="friends/summer26/pythia_stage"
+        mkdir -p "$OUTDIR"
+        kept=()
+        for s in "${samples[@]}"; do [[ "$s" == *_mg5_pythia.root:* ]] && kept+=("$s"); done
+        samples=("${kept[@]}")
+        echo "[$(date +%H:%M:%S)] --pythiaOnly: ${#samples[@]} samples -> $OUTDIR"
+    fi
 
     fail=0
     i=0

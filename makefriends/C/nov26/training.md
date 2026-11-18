@@ -243,18 +243,20 @@ Both arrays are out-of-fold scores. They can be combined into an event-level sco
 
 "Stopped at epoch" is where early stopping triggered; the best epoch is 15 earlier. Fold 3 ran on a GPU newer than the LCG_106 PyTorch build supports natively, so its kernels were compiled at start-up and its first epoch took 5 minutes instead of 16 s. Its results agree with the other folds.
 
-**Out-of-fold AUC.** Every event is scored by the network that never saw it.
+**Figures of merit.** Every event is scored by the network that never saw it. Two numbers summarise the ROC curve:
+- **AUC**, the area under the ROC curve: the probability that a random VBF jet scores higher than a random QCD jet.
+- **ε_S(1 %)**, the signal efficiency at 1 % background efficiency. Cut on the score so that only 1 % of the QCD jets survive; ε_S(1 %) is the fraction of VBF jets that survive the same cut. It measures the high-purity end of the ROC curve, which the AUC barely weighs.
 
-| Jets | Herwig | MG5+Pythia |
-|---|---|---|
-| Gate jets (roles A + B) | 0.7643 | 0.7637 |
-| 1st jet of gate events (role A) | 0.7640 | 0.7634 |
-| 2nd jet of gate events (role B) | 0.7646 | 0.7640 |
-| Gate == 0 jets (role C) | 0.7199 | 0.7094 |
-| Gate jets of VBF-preselected events (mjj > 400, \|ΔY\| > 2.5) | 0.6877 | 0.6961 |
+| Jets | AUC Herwig | AUC MG5+Pythia | ε_S(1 %) Herwig | ε_S(1 %) MG5+Pythia |
+|---|---|---|---|---|
+| Gate jets (roles A + B) | 0.7643 | 0.7637 | 0.0983 | 0.1028 |
+| 1st jet of gate events (role A) | 0.7640 | 0.7634 | 0.0980 | 0.1009 |
+| 2nd jet of gate events (role B) | 0.7646 | 0.7640 | 0.0990 | 0.1044 |
+| Gate == 0 jets (role C) | 0.7199 | 0.7094 | 0.0632 | 0.0596 |
+| Gate jets of VBF-preselected events (mjj > 400, \|ΔY\| > 2.5) | 0.6877 | 0.6961 | 0.0497 | 0.0575 |
 
-- **1st vs 2nd jet:** the AUCs agree within 0.0006. This is the consistency check of section 9: no sign of leakage or of a slot bias.
-- **Spread of the five networks** on their own Herwig gate jets: 0.7632, 0.7665, 0.7659, 0.7634, 0.7627 (rms 0.0016).
+- **1st vs 2nd jet:** the AUCs agree within 0.0006. For ε_S(1 %) a bootstrap (`nov26/bootstrap_scores.py`, which resamples whole events) gives a statistical uncertainty of about 0.0016 for the 1st or the 2nd jets alone, and 0.0022–0.0024 for their difference. The measured differences are 0.0010 (Herwig, 0.5σ) and 0.0035 (Pythia, 1.5σ). This is the consistency check of section 9: no sign of leakage or of a slot bias.
+- **Spread of the five networks** on their own Herwig gate jets: AUC 0.7632, 0.7665, 0.7659, 0.7634, 0.7627 (rms 0.0016); ε_S(1 %) 0.0969, 0.0980, 0.1010, 0.0988, 0.0952 (rms 0.0019).
 - **Generator transfer:** the Herwig-trained networks lose nothing on Pythia for gate jets.
 - **VBF-preselected events:** the AUC is lower here because the preselection has already removed the easiest kinematic differences.
 
@@ -278,18 +280,18 @@ The two are compatible. The statistical uncertainty is about 0.008 for NNj's tes
 - An epoch takes about 1 minute on a full H100, 1.5 minutes on a MIG slice and 3 minutes on a T4.
 - In every fold, the best validation loss is 0.0011–0.0014 lower than NNjPF's on the same validation jets.
 
-**Out-of-fold AUC.**
+**Figures of merit.**
 
-| Jets | Herwig | MG5+Pythia |
-|---|---|---|
-| Gate jets (roles A + B) | 0.7656 | 0.7634 |
-| 1st jet of gate events (role A) | 0.7653 | 0.7631 |
-| 2nd jet of gate events (role B) | 0.7659 | 0.7637 |
-| Gate == 0 jets (role C) | 0.7214 | 0.7100 |
-| Gate jets of VBF-preselected events (mjj > 400, \|ΔY\| > 2.5) | 0.6913 | 0.6969 |
+| Jets | AUC Herwig | AUC MG5+Pythia | ε_S(1 %) Herwig | ε_S(1 %) MG5+Pythia |
+|---|---|---|---|---|
+| Gate jets (roles A + B) | 0.7656 | 0.7634 | 0.0970 | 0.1015 |
+| 1st jet of gate events (role A) | 0.7653 | 0.7631 | 0.0956 | 0.1005 |
+| 2nd jet of gate events (role B) | 0.7659 | 0.7637 | 0.0984 | 0.1022 |
+| Gate == 0 jets (role C) | 0.7214 | 0.7100 | 0.0650 | 0.0609 |
+| Gate jets of VBF-preselected events (mjj > 400, \|ΔY\| > 2.5) | 0.6913 | 0.6969 | 0.0531 | 0.0589 |
 
-- **1st vs 2nd jet:** the AUCs agree within 0.0006, as for NNjPF.
-- **Spread of the five networks** on their own Herwig gate jets: 0.7649, 0.7674, 0.7675, 0.7643, 0.7640 (rms 0.0015).
+- **1st vs 2nd jet:** the AUCs agree within 0.0006, and ε_S(1 %) within 0.0028 (at most 1.3σ), as for NNjPF.
+- **Spread of the five networks** on their own Herwig gate jets: AUC 0.7649, 0.7674, 0.7675, 0.7643, 0.7640 (rms 0.0015); ε_S(1 %) 0.0956, 0.0945, 0.1018, 0.0974, 0.0964 (rms 0.0025).
 
 ### ParTj vs NNjPF
 
@@ -299,13 +301,17 @@ Both nets scored exactly the same jets, so they can be compared jet by jet. This
 - Each AUC on its own fluctuates by about 0.001, from the finite number of jets. The two nets' scores are 98 % correlated, so this fluctuation is nearly the same for both and cancels in the difference.
 - The five inference sets are disjoint, so the five differences are independent. The table gives their mean ± its standard error.
 
-| Jets | Herwig | MG5+Pythia |
-|---|---|---|
-| Gate jets | +0.0013 ± 0.0002 | −0.0003 ± 0.0005 |
-| Gate == 0 jets | +0.0016 ± 0.0002 | +0.0006 ± 0.0003 |
-| Gate jets of VBF-preselected events | +0.0036 ± 0.0003 | +0.0008 ± 0.0006 |
+| Jets | AUC, Herwig | AUC, MG5+Pythia | ε_S(1 %), Herwig | ε_S(1 %), MG5+Pythia |
+|---|---|---|---|---|
+| Gate jets | +0.0013 ± 0.0002 | −0.0003 ± 0.0005 | −0.0008 ± 0.0009 | −0.0009 ± 0.0015 |
+| Gate == 0 jets | +0.0016 ± 0.0002 | +0.0006 ± 0.0003 | +0.0019 ± 0.0004 | +0.0013 ± 0.0004 |
+| Gate jets of VBF-preselected events | +0.0036 ± 0.0003 | +0.0008 ± 0.0006 | +0.0047 ± 0.0016 | +0.0022 ± 0.0014 |
 
-Background rejection of the VBF-preselected gate jets at fixed signal efficiency (the lower panel of `figs/nov26/roc_nets.pdf` shows the ratio):
+**ROC curves** (`figs/nov26/roc_nets.pdf`): one column each for the gate jets, the gate == 0 jets and the VBF-preselected gate jets.
+- Top panels: background rejection 1/ε_B against signal efficiency, for both nets and both generators. A dotted line marks ε_B = 1 %, and the legends give the AUC and ε_S(1 %).
+- Lower panels: the ratio of the two nets' rejections at equal signal efficiency.
+
+Background rejection of the VBF-preselected gate jets at fixed signal efficiency:
 
 | Signal efficiency | 5 % | 10 % | 20 % | 30 % | 50 % | 70 % | 90 % |
 |---|---|---|---|---|---|---|---|
@@ -314,7 +320,8 @@ Background rejection of the VBF-preselected gate jets at fixed signal efficiency
 | NNjPF rejection, MG5+Pythia | 120.2 | 45.3 | 17.3 | 9.5 | 4.3 | 2.4 | 1.4 |
 | ParTj / NNjPF, MG5+Pythia | 1.022 | 1.022 | 1.007 | 1.002 | 0.999 | 1.002 | 1.002 |
 
-- **On Herwig**, the generator both nets were trained on, ParTj is better in all five fold models and for all three groups of jets. The gain is small. Its largest relative size is at high purity: +12 % rejection at 5 % signal efficiency. Only about 450 background jets survive there, so that point is the least precise.
+- **On Herwig**, the generator both nets were trained on, ParTj has the higher AUC in all five fold models and for all three groups of jets. The gain is small. Its largest relative size is at high purity for the VBF-preselected jets: +12 % rejection at 5 % signal efficiency. Only about 450 background jets survive there, so that point is the least precise.
+- **At the 1 % working point** ParTj keeps a gain for the gate == 0 jets and the VBF-preselected jets, but not for the gate jets as a whole (−0.0008 ± 0.0009).
 - **On MG5+Pythia** most of the gain disappears. This suggests that much of what ParTj adds through the constituent pairs is specific to how Herwig showers and hadronises, rather than a VBF-vs-QCD difference that both generators share.
 - **Cost:** ParTj has 12 times more parameters (265k vs 22k). It took 39–107 minutes per fold, against 12–19 for NNjPF (on different GPUs).
 

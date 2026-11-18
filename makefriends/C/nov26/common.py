@@ -1,6 +1,6 @@
 """Inputs and cross-fitting folds shared by the nov26 jet networks (NNjPF, ParTj).
 
-One training example is one jet of friends/nov26/<sample>.h5 (Herwig only for training):
+One training example is one jet of friends/nov26/<sample>.h5 (Herwig; MG5+Pythia with set_train_gen):
   role A (0): gate == 1, slot 0 (randomly the leading or subleading jet)   -> train / validation
   role B (1): gate == 1, slot 1 (the "unbiased 2nd jet")                   -> never trained on, scored only
   role C (2): gate == 0, every stored jet                                  -> train / validation
@@ -8,6 +8,10 @@ Every event gets one of 10 sub-folds (fixed seed), stratified within (sample, ga
 Fold model k infers on sub-folds {2k, 2k+1}, validates on (2k+2) % 10 and trains on the other
 seven (70 / 10 / 20), so every event is scored once by a model that never saw it.
 Details and the reasoning: nov26/training.md.
+
+The same code serves the fall26 campaign (Fall2026 samples, fall26.md): set_campaign('fall26')
+switches the friends, output and figure folders and turns on event weights (kWeight) in the
+training loss and in the metrics; see fall26/training.md. The default campaign is nov26.
 """
 import os
 import time
@@ -17,10 +21,48 @@ import h5py
 import numpy as np
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))     # makefriends/C
-FRIENDS = os.path.join(BASE, 'friends', 'nov26')
-LABEL = {'VBFZ_herwig': 1, 'QCDZjj_herwig': 0, 'VBFZ_mg5_pythia': 1, 'QCDZjj_mg5_pythia': 0}
-TRAIN_SAMPLES = ('VBFZ_herwig', 'QCDZjj_herwig')
-TRANSFER_SAMPLES = ('VBFZ_mg5_pythia', 'QCDZjj_mg5_pythia')
+# per campaign: friends (h5 inputs), out (<out>/<net>/: models, scores, logs), figs, and whether
+# the event weights kWeight enter the loss and the metrics
+CAMPAIGNS = {
+    'nov26':  dict(friends=os.path.join(BASE, 'friends', 'nov26'), out=os.path.join(BASE, 'nov26'),
+                   figs=os.path.join(BASE, 'figs', 'nov26'), event_weights=False),
+    'fall26': dict(friends=os.path.join(BASE, 'friends', 'fall26'), out=os.path.join(BASE, 'fall26'),
+                   figs=os.path.join(BASE, 'figs', 'fall26'), event_weights=True),
+}
+CAMPAIGN = 'nov26'
+FRIENDS, OUT, FIGS, EVENT_WEIGHTS = (CAMPAIGNS[CAMPAIGN][k] for k in ('friends', 'out', 'figs', 'event_weights'))
+
+
+def set_campaign(name):
+    """Point this module (h5_path, output and figure folders, event weights) at one campaign."""
+    global CAMPAIGN, FRIENDS, OUT, FIGS, EVENT_WEIGHTS
+    c = CAMPAIGNS[name]
+    CAMPAIGN, FRIENDS, OUT, FIGS, EVENT_WEIGHTS = name, c['friends'], c['out'], c['figs'], c['event_weights']
+
+
+LABEL ={'VBFZ_herwig': 1, 'QCDZjj_herwig': 0, 'VBFZ_mg5_pythia': 1, 'QCDZjj_mg5_pythia': 0}
+GEN_SAMPLES = {'herwig': ('VBFZ_herwig', 'QCDZjj_herwig'),               # (signal, background)
+               'pythia': ('VBFZ_mg5_pythia', 'QCDZjj_mg5_pythia')}
+# training generator: Herwig by default. set_train_gen('pythia') trains on MG5+Pythia instead
+# (the generator-swap test, fall26/training.md); its outputs carry the suffix '_py': folder
+# <campaign>/<net>_py/ and h5 column <net>_py. The sub-folds are per sample, so either way
+# every jet of all four files is scored by a model that never saw it.
+TRAIN_GEN = 'herwig'
+TRAIN_SAMPLES, TRANSFER_SAMPLES = GEN_SAMPLES['herwig'], GEN_SAMPLES['pythia']
+NET_SUFFIX = {'herwig': '', 'pythia': '_py'}
+
+
+def set_train_gen(gen):
+    """Train on `gen` ('herwig' or 'pythia'); the other generator becomes the transfer test."""
+    global TRAIN_GEN, TRAIN_SAMPLES, TRANSFER_SAMPLES
+    other = 'pythia' if gen == 'herwig' else 'herwig'
+    TRAIN_GEN, TRAIN_SAMPLES, TRANSFER_SAMPLES = gen, GEN_SAMPLES[gen], GEN_SAMPLES[other]
+
+
+def net_name(net, gen=None):
+    """Folder and h5-column name of `net` trained on `gen` (default: the current TRAIN_GEN)."""
+    return net + NET_SUFFIX[gen or TRAIN_GEN]
+
 
 ROLE_A, ROLE_B, ROLE_C = 0, 1, 2
 ROLE_NAMES = {ROLE_A: 'A (gate, slot 0)', ROLE_B: 'B (gate, slot 1)', ROLE_C: 'C (gate == 0)'}
@@ -132,22 +174,37 @@ def take(d, sel):
     return {k: v[sel] for k, v in d.items()}
 
 
-def class_balance_weights(label, role):
+def class_balance_weights(label, role, kweight=None):
     """Per-jet training weight that removes the population-dependent class prior.
 
     The populations are the gate jets (roles A, B) and the gate == 0 jets (role C). Within
     population P each jet of class c gets w = N_P / (2 N_{P,c}): the two classes then carry
-    equal weight inside P, and P keeps its total weight N_P (mean weight 1)."""
+    equal weight inside P, and P keeps its total weight N_P (mean weight 1).
+
+    With event weights (kweight, the fall26 campaign) a jet gets
+        w = kWeight * N_P / (2 * sum of kWeight over the jets of class c in P):
+    the class and population totals are the same as above, and inside a class the jets keep
+    the relative weights of their events (the generator's weights are not replaced by 1)."""
     pop = (np.asarray(role) == ROLE_C).astype(np.int64)
     label = np.asarray(label)
+    kw = None if kweight is None else np.asarray(kweight, np.float64)
     w = np.zeros(len(label), np.float32)
     for p in (0, 1):
         in_p = pop == p
         for c in (0, 1):
             m = in_p & (label == c)
             if m.any():
-                w[m] = in_p.sum() / (2.0 * m.sum())
+                if kw is None:
+                    w[m] = in_p.sum() / (2.0 * m.sum())
+                else:
+                    w[m] = kw[m] * in_p.sum() / (2.0 * kw[m].sum())
     return w
+
+
+def n_eff(w):
+    """Effective number of events (sum w)^2 / sum w^2 of a weighted sample."""
+    w = np.asarray(w, np.float64)
+    return float(w.sum() ** 2 / (w * w).sum()) if len(w) else 0.0
 
 
 # ── h5 output ─────────────────────────────────────────────────────────────────

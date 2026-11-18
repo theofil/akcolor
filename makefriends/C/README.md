@@ -20,12 +20,22 @@ only as a generator-transfer test at inference.
 | Network | Input features |
 |---------|----------------|
 | **NNkin** | 12 kinematic scalars: `dPhijj, dYjj, mjj, ptjj` + `eta, m, phi, pt` for each of the two leading jets |
-| **NNj** | Leading jet: \|η\|, m, pT + up to 80 constituents × (Δη, ΔΦ, pT/pT_jet) |
-| **NNjB** | NNj inputs + generator boson `bosonPt, bosonEta, bosonPhi` (`bosonM` only in the `_H` variant) |
-| **NNjj** | Both jets: η (signed), m, pT + up to 80 constituents × (Δη_raw, ΔΦ, pT/pT_jet) per jet |
+| **Kj** | Z-only feedforward baseline (no constituents): leading jet's own \|η\|, m, φ, pT (jet slot 0) |
+| **NNj** | Leading jet: \|η\|, m, pT (no φ) + up to 80 constituents × (Δη, ΔΦ, pT/pT_jet) |
+| **KjB** | Z/W-only feedforward, no-constituents counterpart to NNjB: NNjB's jet + boson scalars, no constituent branch |
+| **NNjB** | NNj inputs + jet φ + generator boson `bosonPt, bosonEta, bosonPhi` (`bosonM` only in the `_H` variant) |
+| **NNjj** | Both jets: η (signed), m, pT, φ + up to 80 constituents × (Δη_raw, ΔΦ, pT/pT_jet) per jet |
 | **NNjjB** | NNjj inputs + generator boson `bosonPt, bosonEta, bosonPhi` (`bosonM` only in the `_H` variant) |
+| **KjjBj** | Z/W-only feedforward, no-constituents counterpart to NNjjBj: NNjjBj's jet/3rd-jet/boson scalars, no constituent branches |
+| **NNjjBj** | NNjjB inputs + 3rd pt-ordered jet's η, m, φ, pT and constituents (zero when absent) |
 
-NNkin is a plain MLP; the others are DeepSets over jet constituents. `bosonM`
+NNkin, Kj, KjB and KjjBj are plain MLPs (Kj is Z-channel-only; KjB/KjjBj are
+Z+W-only — none of the three has an `_H` variant); the rest are DeepSets over
+jet constituents. Jet-level φ was added to NNjB/NNjj/NNjjB/NNjjBj on
+2026-09-03 (NNj and Kj deliberately excluded — NNj stays a minimal, no-φ
+single-jet baseline; Kj already had it). KjB/KjjBj were added 2026-09-03 as
+the no-constituents ablation baselines for NNjB/NNjjBj (see the
+`Z_only_table`/`W_only_table` in `summer26.md`). `bosonM`
 is excluded from the Z/W boson nets because it is an on-shell generation
 artifact in the Herwig QCD samples (see `tuesday.md`); for H it is a harmless
 constant (125) and was kept. See
@@ -40,7 +50,7 @@ recipe, and per-process condor submission (`train.txt`, `infer.txt`).
 Python training, inference, and plotting all rely on it:
 
 ```bash
-source init.txt
+source init.source
 ```
 
 which is equivalent to:
@@ -61,7 +71,7 @@ make
 ```
 
 The Makefile resolves `root-config` and `fastjet-config` from `PATH` (set by
-`init.txt`), so the binary is compiled and linked against the LCG ROOT and
+`init.source`), so the binary is compiled and linked against the LCG ROOT and
 FastJet libraries. If `fastjet-config` is not on `PATH` it falls back to the
 CMS CVMFS installation at
 `/cvmfs/cms.cern.ch/el9_amd64_gcc12/external/fastjet/3.4.1-...`.
@@ -74,11 +84,11 @@ CMS CVMFS installation at
 anti-kT (R=0.4) via FastJet, computes the **pull vector** for each jet, and
 writes a "friend" ROOT tree.
 
-> **Prerequisite**: `source init.txt` must be active — the script uses the
+> **Prerequisite**: `source init.source` must be active — the script uses the
 > LCG `hadd`, `python3`, and `makefriends` (compiled against LCG ROOT) without
 > any internal environment setup.
 
-### summer26 (MadGraph5+Pythia samples, campaign-00022)
+### summer26 (Herwig + MadGraph5+Pythia samples)
 
 #### Quick test (100 events per sample, foreground)
 
@@ -94,8 +104,26 @@ writes a "friend" ROOT tree.
 ./run.summer26.sh
 ```
 
-**Input files** (symlinked automatically from campaign-00022 EOS) — each
-process is produced with two generators, Herwig and MadGraph5+Pythia:
+#### Pythia-only reproduction
+
+```bash
+./run.summer26.sh --pythiaOnly
+```
+
+Runs only the 6 `*_mg5_pythia` samples and writes them (friend.root + h5) to
+the staging dir `friends/summer26/pythia_stage/`; move them into
+`friends/summer26/` by hand. The staging dir exists because
+`root_to_hdf5.py` rewrites *every* `*.friend.root` in its folder, which would
+drop the NN-score columns (`save_scores.py`) from the untouched Herwig h5 files.
+
+**Input files** (symlinked automatically from EOS) — each process is produced
+with two generators, Herwig (campaign-00023, QCDHjj from campaign-00030) and
+MadGraph5+Pythia. Since 2026-09-27 all six MG5+Pythia inputs are the
+**pythia-dipole-recoil** re-shower
+(`/eos/user/a/apapaefs/Projects/Pull/pythia-dipole-recoil/merged/<PROC>/<PROC>_mg5_pythia_dipolerecoil.root`,
+also reachable via the `friends/summer26/pythia-dipole-recoil` symlink), which
+fixes a bug in the earlier campaign-00023/00031 Pythia samples. Same events and
+same `evweight` normalization, so the cross sections below are unchanged:
 
 | File | Sample | Cross section | `--boson` |
 |------|--------|---------------|-----------|
@@ -286,3 +314,25 @@ Branches, h5 layout and validation are in [nov26.md](nov26.md).
 The jet networks NNjPF (DeepSets with particle type and charge) and ParTj
 (particle transformer with pairwise features), trained with five-fold
 cross-fitting, are described in [nov26/training.md](nov26/training.md).
+
+---
+
+## fall26 campaign: the Fall2026 collaborator samples (Z channel first)
+
+The Fall2026 samples (13.6 TeV, Herwig 7.3 and MG5+Pythia 8.3) are run through
+the nov26 pipeline by `makefriends_fall26` (`make makefriends_fall26`) and
+`./run.fall26.sh [--goFast N]`. Outputs go to `friends/fall26/`.
+
+What differs from nov26:
+- Each sample is a directory of ROOT chunks, read and merged in the order
+  given by `fall26/manifest.py`.
+- Herwig stores the particles as float32. `makefriends` and
+  `makefriends_nov26` misread such files without any error, so never run
+  them on Fall2026 Herwig chunks.
+- `kWeight = evweight × pb_per_raw_weight`, using the factor from the Fall2026
+  manifest.
+- New branches: `chunk`, `chunkEntry`, `bosonCharge`.
+
+Samples, validation and production numbers are in [fall26.md](fall26.md).
+The jet networks are trained on these samples with event weights; see
+[fall26/training.md](fall26/training.md).

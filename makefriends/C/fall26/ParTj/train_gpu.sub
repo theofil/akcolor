@@ -1,0 +1,18 @@
+executable     = /eos/home-t/theofil/work/akcolor/makefriends/C/nov26/train_gpu.sh
+arguments      = --campaign fall26 --net ParTj --fold $(fold)
+output         = /eos/home-t/theofil/work/akcolor/makefriends/C/fall26/ParTj/logs/train_fold$(fold).$(ClusterId).out
+error          = /eos/home-t/theofil/work/akcolor/makefriends/C/fall26/ParTj/logs/train_fold$(fold).$(ClusterId).err
+log            = /eos/home-t/theofil/work/akcolor/makefriends/C/fall26/ParTj/logs/train_fold$(fold).$(ClusterId).log
+
+request_cpus   = 2
+request_memory = 16GB
+request_gpus   = 1
+# The LCG_106_cuda torch build has no kernels for compute capability 8.0 (A100, A30; also
+# b9g57n0009): such GPUs fail with "no kernel image is available". H100 (sm_90) works via JIT.
+requirements   = (Machine =!= "b9g57n0009.cern.ch")
+require_gpus   = (Capability =!= 8.0) && !regexp("A100|A30", DeviceName)
+
++JobFlavour    = "tomorrow"
+
+# fall26 (Fall2026 Z samples, event-weighted): one job per fold model, code in ../../nov26
+queue fold in (0 1 2 3 4)
